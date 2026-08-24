@@ -1,7 +1,8 @@
+import React from 'react';
 import { Link } from "react-router";
-import "./boton_acceso.css";
+import "./Boton_acceso.css";
 
-function boton_acceso({ text, to }) {
+function Boton_acceso({ text, to }) {
   return (
     <Link className="access-button" to={to}>
       {text}
@@ -9,4 +10,4 @@ function boton_acceso({ text, to }) {
   );
 }
 
-export default boton_acceso;
+export default Boton_acceso;

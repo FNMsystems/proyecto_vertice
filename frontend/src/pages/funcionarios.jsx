@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from "react-router";
 
 function Funcionarios() {
@@ -18,3 +19,5 @@ function Funcionarios() {
     </main>
   );
 }
+
+export default Funcionarios;

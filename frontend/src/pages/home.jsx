@@ -1,4 +1,5 @@
-import boton_acceso from "../components/boton_acceso";
+import React from 'react';
+import boton_acceso from "../components/Boton_acceso";
 import logoColegio from "../img/logo_institucional.png";
 import fondoColegio from "../img/home_fondo.jpeg";
 import "./home.css";
@@ -36,12 +37,12 @@ function Home() {
         <nav className="home-card__buttons" aria-label="Tipos de usuario">
           <boton_acceso
             text="Funcionarios"
-            to="/funcionarios"
+            to="/Funcionarios"
           />
 
           <boton_acceso
             text="Apoderados"
-            to="/apoderados"
+            to="/Apoderados"
           />
         </nav>
       </section>
