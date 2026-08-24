@@ -1,46 +1,36 @@
 .boton_acceso {
   width: 100%;
-  min-height: 64px;
+  min-height: 56px;
 
   display: flex;
   justify-content: center;
   align-items: center;
 
-  padding: 16px 24px;
+  padding: 14px 24px;
+  margin-bottom: 12px;
 
   color: #ffffff;
-  background-color: #a81616;
+  background-color: #a82727;
 
-  border: 2px solid #a81616;
-  border-radius: 12px;
+  border: none;
+  border-radius: 10px;
 
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 700;
   text-align: center;
   text-decoration: none;
 
-  box-shadow: 0 6px 14px rgba(168, 22, 22, 0.25);
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
 
-  transition:
-    background-color 0.2s ease,
-    border-color 0.2s ease,
-    transform 0.2s ease,
-    box-shadow 0.2s ease;
+  transition: all 0.2s ease-in-out;
 }
 
 .boton_acceso:hover {
-  background-color: #871212;
-  border-color: #871212;
-
+  background-color: #a82727;
   transform: translateY(-2px);
-  box-shadow: 0 9px 18px rgba(135, 18, 18, 0.32);
+  box-shadow: 0 6px 16px rgba(185, 28, 28, 0.5);
 }
 
 .boton_acceso:active {
   transform: translateY(0);
-}
-
-.boton_acceso:focus-visible {
-  outline: 4px solid rgba(168, 22, 22, 0.3);
-  outline-offset: 3px;
 }

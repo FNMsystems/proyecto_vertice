@@ -1,13 +1,13 @@
 import React from 'react';
-import { Link } from "react-router";
-import "./Boton_acceso.css";
+import { Link } from "react-router-dom";
+import "./boton_acceso.css"; 
 
-function Boton_acceso({ text, to }) {
+function BotonAcceso({ text, to }) {
   return (
-    <Link className="access-button" to={to}>
+    <Link className="boton_acceso" to={to}>
       {text}
     </Link>
   );
 }
 
-export default Boton_acceso;
+export default BotonAcceso;
