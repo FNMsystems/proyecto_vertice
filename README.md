@@ -12,3 +12,13 @@ El proyecto consta de una plataforma educacional, esta es la mejora de proyectos
 3. Justificativos medicos
 4. Áreas especificas según rol dentro de la institución
 5. Mejora de procesos como matriculas, Intenciones de Matricula entre otros.
+
+Librerias
+
+npm install cors
+
+vertice 
+cd backend
+npm install express cors
+npm install
+npm start
