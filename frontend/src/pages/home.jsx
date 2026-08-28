@@ -42,7 +42,7 @@ function Home() {
 
           <BotonAcceso
             text="Apoderados"
-            to="/apoderados"
+            to="/apoderado"
           />
         </nav>
       </section>
