@@ -1,46 +1,29 @@
 import express from 'express';
 import cors from 'cors';
-import { usuarios, cursos, asignacionesClases } from './models/mockData.js';
+import dotenv from 'dotenv';
+import pool from './config/db.js';
+
+import authRoutes from './routes/authRoutes.js';
+import personalRoutes from './routes/personalRoutes.js';
+
+dotenv.config();
 
 const app = express();
-const PORT = 3000;
 
 app.use(cors());
 app.use(express.json());
 
-app.post('/api/auth/login', (req, res) => {
-  const { email, password } = req.body;
-  const usuario = usuarios.find((u) => u.email === email && u.password === password);
+app.use('/api/auth', authRoutes);
+app.use('/api/personal', personalRoutes);
 
-  if (!usuario) {
-    return res.status(401).json({ message: 'Credenciales inválidas' });
+const PORT = process.env.PORT || 3000;
+
+app.listen(PORT, async () => {
+  try {
+    await pool.query('SELECT NOW()');
+    console.log(`Conexión exitosa a PostgreSQL (Base de datos: ${process.env.DB_NAME})`);
+    console.log(`Servidor backend seguro corriendo en http://localhost:${PORT}`);
+  } catch (error) {
+    console.error('Error al conectar con PostgreSQL:', error.message);
   }
-
-  return res.json(usuario);
-});
-
-app.get('/api/asistencia/vista/:usuarioId', (req, res) => {
-  const userIdNum = Number(req.params.usuarioId);
-  const usuario = usuarios.find((u) => Number(u.id) === userIdNum);
-
-  if (!usuario) {
-    return res.status(404).json({ message: 'Usuario no encontrado' });
-  }
-
-  const misCursosJefe = cursos.filter((c) => Number(c.profesorJefeId) === userIdNum);
-  const misAsignaturas = asignacionesClases
-    .filter((a) => Number(a.profesorId) === userIdNum)
-    .map((a) => {
-      const cursoInfo = cursos.find((c) => Number(c.id) === Number(a.cursoId));
-      return {
-        ...a,
-        nombreCurso: cursoInfo ? cursoInfo.nombre : `Curso #${a.cursoId}`
-      };
-    });
-
-  return res.json({ usuario, misCursosJefe, misAsignaturas });
-});
-
-app.listen(PORT, () => {
-  console.log(`Servidor corriendo en puerto ${PORT}`);
 });

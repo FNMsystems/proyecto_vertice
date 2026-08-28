@@ -22,3 +22,8 @@ cd backend
 npm install express cors
 npm install
 npm start
+
+en la backend intalamos 
+npm install pg dotenv
+
+npm install bcrypt

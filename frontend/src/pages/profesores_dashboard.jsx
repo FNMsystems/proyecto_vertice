@@ -106,7 +106,7 @@ function ProfesoresDashboard() {
           </div>
         </div>
         <button onClick={handleCerrarSesion} className="btn-logout-teacher">
-          🚪 Cerrar Sesión
+           Cerrar Sesión
         </button>
       </header>
 
