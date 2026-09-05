@@ -1,0 +1,36 @@
+.boton_acceso {
+  width: 100%;
+  min-height: 56px;
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  padding: 14px 24px;
+  margin-bottom: 12px;
+
+  color: #ffffff;
+  background-color: #a82727;
+
+  border: none;
+  border-radius: 10px;
+
+  font-size: 16px;
+  font-weight: 700;
+  text-align: center;
+  text-decoration: none;
+
+  box-shadow: 0 4px 12px rgba(220, 38, 38, 0.4);
+
+  transition: all 0.2s ease-in-out;
+}
+
+.boton_acceso:hover {
+  background-color: #a82727;
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(185, 28, 28, 0.5);
+}
+
+.boton_acceso:active {
+  transform: translateY(0);
+}
