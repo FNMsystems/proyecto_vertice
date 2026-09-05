@@ -5,6 +5,7 @@ import pool from './config/db.js';
 
 import authRoutes from './routes/authRoutes.js';
 import personalRoutes from './routes/personalRoutes.js';
+import alumnoRoutes from './routes/alumnoRoutes.js';
 
 dotenv.config();
 
@@ -15,6 +16,7 @@ app.use(express.json());
 
 app.use('/api/auth', authRoutes);
 app.use('/api/personal', personalRoutes);
+app.use('/api/alumnos', alumnoRoutes);
 
 const PORT = process.env.PORT || 3000;
 

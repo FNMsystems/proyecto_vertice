@@ -11,28 +11,45 @@ import UtpDashboard from "./pages/utp_dashboard.jsx";
 function App() {
   const getUsuario = () => JSON.parse(localStorage.getItem("usuario")) || null;
 
+  const esDirectorOAdmin = () => {
+    const rol = getUsuario()?.rol;
+    return rol === "DIRECTOR" || rol === "ADMIN";
+  };
+
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/funcionarios" element={<Funcionarios />} />
       <Route path="/apoderados" element={<Apoderados />} />
 
+      {/* Ambas rutas apuntan al panel del director */}
+      <Route
+        path="/director"
+        element={esDirectorOAdmin() ? <DirectorDashboard /> : <Navigate to="/funcionarios" />}
+      />
       <Route
         path="/director_dashboard"
-        element={
-          getUsuario()?.rol === "ADMIN" ? <DirectorDashboard /> : <Navigate to="/funcionarios" />
-        }
+        element={esDirectorOAdmin() ? <DirectorDashboard /> : <Navigate to="/funcionarios" />}
       />
+
       <Route
         path="/profesores_dashboard"
         element={
-          getUsuario()?.rol === "PROFESOR" ? <ProfesoresDashboard /> : <Navigate to="/funcionarios" />
+          ["DOCENTE", "PROFESOR"].includes(getUsuario()?.rol) ? (
+            <ProfesoresDashboard />
+          ) : (
+            <Navigate to="/funcionarios" />
+          )
         }
       />
       <Route
         path="/inspectoria_dashboard"
         element={
-          getUsuario()?.rol === "INSPECTOR" ? <InspectoriaDashboard /> : <Navigate to="/funcionarios" />
+          ["INSPECTOR_GENERAL", "INSPECTOR"].includes(getUsuario()?.rol) ? (
+            <InspectoriaDashboard />
+          ) : (
+            <Navigate to="/funcionarios" />
+          )
         }
       />
       <Route

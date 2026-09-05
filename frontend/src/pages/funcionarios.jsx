@@ -1,18 +1,19 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { loginService } from '../services/authService.js';
 import logoColegio from '../img/logo_institucional.png';
 import fondoColegio from '../img/home_fondo.jpeg';
 import './login.css';
 
-function Funcionarios() {
+export default function Funcionarios() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [cargando, setCargando] = useState(false);
   const navigate = useNavigate();
 
-  const handleLogin = (e) => {
+  const handleLogin = async (e) => {
     e.preventDefault();
-
     const emailLimpio = email.trim().toLowerCase();
 
     if (!emailLimpio.endsWith('@ordendesanjorge.cl')) {
@@ -20,32 +21,35 @@ function Funcionarios() {
       return;
     }
 
-    let usuarioRespuesta = null;
+    try {
+      setCargando(true);
+      const data = await loginService(emailLimpio, password);
+      const rol = data.usuario.rol;
 
-    if (emailLimpio === 'gustavoinostroza@ordendesanjorge.cl' || emailLimpio.startsWith('director')) {
-      usuarioRespuesta = { id: 1, nombre: 'Gustavo Inostroza (Director)', email: emailLimpio, rol: 'ADMIN' };
-    } else if (emailLimpio === 'carlos@ordendesanjorge.cl' || emailLimpio.startsWith('profesor')) {
-      usuarioRespuesta = { id: 2, nombre: 'Carlos (Profesor)', email: emailLimpio, rol: 'PROFESOR' };
-    } else if (emailLimpio.startsWith('inspector')) {
-      usuarioRespuesta = { id: 3, nombre: 'Marta (Inspectora)', email: emailLimpio, rol: 'INSPECTOR' };
-    } else if (emailLimpio.startsWith('utp')) {
-      usuarioRespuesta = { id: 4, nombre: 'Gonzalo (Jefe UTP)', email: emailLimpio, rol: 'UTP' };
-    } else if (emailLimpio === 'anamaria@ordendesanjorge.cl') {
-      usuarioRespuesta = { id: 5, nombre: 'Ana María (Profesora)', email: emailLimpio, rol: 'PROFESOR' };
-    } else {
-      usuarioRespuesta = { id: 2, nombre: 'Carlos (Profesor)', email: emailLimpio, rol: 'PROFESOR' };
-    }
 
-    localStorage.setItem('usuario', JSON.stringify(usuarioRespuesta));
-
-    if (usuarioRespuesta.rol === 'ADMIN') {
-      navigate('/director_dashboard');
-    } else if (usuarioRespuesta.rol === 'PROFESOR') {
-      navigate('/profesores_dashboard');
-    } else if (usuarioRespuesta.rol === 'INSPECTOR') {
-      navigate('/inspectoria_dashboard');
-    } else if (usuarioRespuesta.rol === 'UTP') {
-      navigate('/utp_dashboard');
+      switch (rol) {
+        case 'DIRECTOR':
+        case 'ADMIN':
+          navigate('/director_dashboard');
+          break;
+        case 'DOCENTE':
+        case 'PROFESOR':
+          navigate('/profesores_dashboard');
+          break;
+        case 'INSPECTOR_GENERAL':
+        case 'INSPECTOR':
+          navigate('/inspectoria_dashboard');
+          break;
+        case 'UTP':
+          navigate('/utp_dashboard');
+          break;
+        default:
+          navigate('/director_dashboard');
+      }
+    } catch (err) {
+      alert(`Error al iniciar sesión: ${err.message}`);
+    } finally {
+      setCargando(false);
     }
   };
 
@@ -91,7 +95,7 @@ function Funcionarios() {
                 type="button"
                 className="toggle-password"
                 onClick={() => setShowPassword(!showPassword)}
-                aria-label="Mostrar contraseña"
+                aria-label="Mostrar u ocultar contraseña"
               >
                 👁
               </button>
@@ -103,8 +107,8 @@ function Funcionarios() {
             <label htmlFor="remember">Recordar mis datos</label>
           </div>
 
-          <button type="submit" className="btn-submit">
-            Ingresar
+          <button type="submit" className="btn-submit" disabled={cargando}>
+            {cargando ? 'Ingresando...' : 'Ingresar'}
           </button>
         </form>
 
@@ -117,5 +121,3 @@ function Funcionarios() {
     </main>
   );
 }
-
-export default Funcionarios;
