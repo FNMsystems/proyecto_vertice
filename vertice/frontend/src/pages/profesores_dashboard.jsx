@@ -1,30 +1,39 @@
 import React, { useState, useEffect } from 'react';
-import { getAlumnos } from '../services/alumnoService.js';
+import { useNavigate } from 'react-router-dom';
+import { mockData } from '../mockData.js';
 import { logoutService, getUsuarioActual } from '../services/authService.js';
 import logoColegio from "../img/logo_institucional.png";
 import fondoInstitucional from "../img/fondo_institucional.jpeg";
 import "./profesores_dashboard.css";
 
 export default function ProfesoresDashboard() {
+  const navigate = useNavigate();
   const usuario = getUsuarioActual();
   const [alumnosList, setAlumnosList] = useState([]);
   const [cargando, setCargando] = useState(true);
-  const [error, setError] = useState(null);
 
   useEffect(() => {
-    cargarDatos();
+    // Carga directa desde mockData.js
+    if (mockData && mockData.alumnos) {
+      setAlumnosList(mockData.alumnos);
+    }
+    setCargando(false);
   }, []);
 
-  const cargarDatos = async () => {
-    try {
-      setCargando(true);
-      const data = await getAlumnos();
-      setAlumnosList(data);
-    } catch (err) {
-      setError(err.message);
-    } finally {
-      setCargando(false);
-    }
+  const handleLogout = () => {
+    logoutService();
+    navigate('/');
+  };
+
+  // Función para calcular el promedio general del alumno basado en sus asignaturas
+  const calcularPromedioGeneral = (asignaturas) => {
+    if (!asignaturas || asignaturas.length === 0) return 'N/A';
+    const promedios = asignaturas
+      .map((a) => parseFloat(a.promedio))
+      .filter((p) => !isNaN(p));
+    if (promedios.length === 0) return 'N/A';
+    const suma = promedios.reduce((acc, curr) => acc + curr, 0);
+    return (suma / promedios.length).toFixed(1);
   };
 
   return (
@@ -34,7 +43,7 @@ export default function ProfesoresDashboard() {
         <h1>Panel de Docentes - Colegio Orden de San Jorge</h1>
         <div className="user-info">
           <span>Profesor: <strong>{usuario?.nombre || 'Docente'}</strong></span>
-          <button onClick={logoutService} className="btn-logout">Cerrar Sesión</button>
+          <button onClick={handleLogout} className="btn-logout">Cerrar Sesión</button>
         </div>
       </header>
 
@@ -42,18 +51,16 @@ export default function ProfesoresDashboard() {
         <section className="section-card">
           <h2>Lista de Alumnos Matriculados</h2>
           {cargando ? (
-            <p>Cargando información desde PostgreSQL...</p>
-          ) : error ? (
-            <p className="error-msg">Error: {error}</p>
+            <p>Cargando información de alumnos...</p>
           ) : (
             <table className="tabla-datos">
               <thead>
                 <tr>
                   <th>RUT</th>
-                  <th>Nombres</th>
-                  <th>Apellidos</th>
+                  <th>Nombre</th>
+                  <th>Apellido</th>
                   <th>Curso</th>
-                  <th>Promedio</th>
+                  <th>Promedio General</th>
                   <th>% Asistencia</th>
                 </tr>
               </thead>
@@ -61,11 +68,11 @@ export default function ProfesoresDashboard() {
                 {alumnosList.map((alum) => (
                   <tr key={alum.id}>
                     <td>{alum.rut}</td>
-                    <td>{alum.nombres}</td>
-                    <td>{`${alum.apellido_paterno} ${alum.apellido_materno || ''}`}</td>
-                    <td>{alum.curso_nombre || 'Sin Curso'}</td>
-                    <td>{alum.promedio_general || 'N/A'}</td>
-                    <td>{alum.porcentaje_asistencia ? `${alum.porcentaje_asistencia}%` : 'N/A'}</td>
+                    <td>{alum.nombre}</td>
+                    <td>{alum.apellido}</td>
+                    <td>{alum.curso}</td>
+                    <td>{calcularPromedioGeneral(alum.asignaturas)}</td>
+                    <td>{alum.asistenciaPorcentaje ? `${alum.asistenciaPorcentaje}%` : 'N/A'}</td>
                   </tr>
                 ))}
               </tbody>
