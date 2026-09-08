@@ -1,11 +1,11 @@
 .inspectoria-container {
   min-height: 100vh;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)), url('../img/fondo_institucional.jpg');
+  background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('../img/fondo_institucional.jpg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   font-family: Arial, sans-serif;
-  color: #333333;
+  color: #8e0000; /* Texto principal en rojo oscuro institucional */
 }
 
 .inspectoria-header {
@@ -42,6 +42,11 @@
   cursor: pointer;
   font-weight: bold;
   font-size: 1rem;
+  transition: all 0.2s ease;
+}
+
+.tab-insp-btn:hover {
+  background-color: #ffebee;
 }
 
 .tab-insp-btn.active {
@@ -51,10 +56,10 @@
 
 .panel-card {
   background-color: #ffffff;
-  border: 1px solid #d32f2f;
+  border: 2px solid #b71c1c;
   border-radius: 8px;
   padding: 25px;
-  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+  box-shadow: 0 4px 10px rgba(183, 28, 28, 0.1);
 }
 
 .input-qr {
@@ -66,6 +71,14 @@
   border-radius: 4px;
   margin-bottom: 15px;
   box-sizing: border-box;
+  background-color: #fff;
+  color: #8e0000;
+}
+
+.input-qr:focus {
+  outline: none;
+  border-color: #8e0000;
+  box-shadow: 0 0 5px rgba(183, 28, 28, 0.3);
 }
 
 .btn-inspectoria {
@@ -84,8 +97,8 @@
 }
 
 .datos-retiro-box {
-  background-color: #ffebee;
-  border: 2px solid #d32f2f;
+  background-color: #ffffff; /* Cambiado de rosado suave a blanco puro */
+  border: 2px solid #b71c1c;
   border-radius: 6px;
   padding: 20px;
   margin-top: 20px;
@@ -111,15 +124,18 @@
 
 .tabla-inspectoria td {
   padding: 12px;
-  border-bottom: 1px solid #e0e0e0;
+  border-bottom: 1px solid #ffcdd2; /* Líneas divisorias en rojo muy claro */
+  color: #5c0000;
 }
 
 .select-curso {
   padding: 10px;
-  border: 1px solid #ccc;
+  border: 2px solid #b71c1c; /* Cambiado de gris a rojo */
   border-radius: 4px;
   margin-bottom: 15px;
   font-size: 1rem;
+  background-color: #ffffff;
+  color: #8e0000;
 }
 
 .btn-atraso {
