@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import './apoderado_dashboard.css';
+import { mockData } from '../mockData';
 
-const ApoderadoDashboard = ({ apoderadoId }) => {
+const ApoderadoDashboard = ({ apoderadoId = 5 }) => {
   const [alumnos, setAlumnos] = useState([]);
   const [alumnoSeleccionado, setAlumnoSeleccionado] = useState(null);
   const [detalle, setDetalle] = useState(null);
@@ -12,47 +13,27 @@ const ApoderadoDashboard = ({ apoderadoId }) => {
   const [archivo, setArchivo] = useState(null);
 
   useEffect(() => {
-    if (apoderadoId) {
-      fetch(`/api/apoderados/${apoderadoId}/alumnos`)
-        .then(res => res.json())
-        .then(data => setAlumnos(data))
-        .catch(err => console.error("Error al obtener alumnos:", err));
-    }
+    // Carga de alumnos en local sin backend
+    const misHijos = mockData.alumnos.filter(a => a.apoderadoId === apoderadoId);
+    setAlumnos(misHijos);
   }, [apoderadoId]);
 
   const seleccionarAlumno = (alumno) => {
     setAlumnoSeleccionado(alumno);
     setCargando(true);
-    fetch(`/api/apoderados/alumno/${alumno.id}/detalle`)
-      .then(res => res.json())
-      .then(data => {
-        setDetalle(data);
-        setCargando(false);
-      })
-      .catch(err => {
-        console.error("Error al obtener detalle:", err);
-        setCargando(false);
-      });
+    
+    // Simula tiempo de respuesta
+    setTimeout(() => {
+      setDetalle(alumno);
+      setCargando(false);
+    }, 200);
   };
 
   const handleSubmitJustificativo = (e) => {
     e.preventDefault();
-    const formData = new FormData();
-    formData.append('alumno_id', alumnoSeleccionado.id);
-    formData.append('motivo', motivo);
-    formData.append('archivo', archivo);
-
-    fetch('/api/justificativos', {
-      method: 'POST',
-      body: formData
-    })
-    .then(res => {
-      if (res.ok) {
-        alert("Justificativo enviado exitosamente.");
-        setMotivo('');
-        setArchivo(null);
-      }
-    });
+    alert("Justificativo enviado exitosamente (Modo Prueba)");
+    setMotivo('');
+    setArchivo(null);
   };
 
   return (
@@ -73,7 +54,7 @@ const ApoderadoDashboard = ({ apoderadoId }) => {
                   onClick={() => seleccionarAlumno(alumno)}
                 >
                   <h3>{alumno.nombre} {alumno.apellido}</h3>
-                  <p><strong>Curso:</strong> {alumno.curso || 'Sin asignar'}</p>
+                  <p><strong>Curso:</strong> {alumno.curso}</p>
                   <p><strong>RUT:</strong> {alumno.rut}</p>
                 </div>
               ))}
@@ -112,7 +93,7 @@ const ApoderadoDashboard = ({ apoderadoId }) => {
                 <>
                   {tab === 'notas' && (
                     <div>
-                      <button className="btn-rojo" onClick={() => window.open(`/api/reportes/notas-pdf/${alumnoSeleccionado.id}`)}>
+                      <button className="btn-rojo" onClick={() => alert("Descargando PDF de notas...")}>
                         Descargar Notas Anuales (PDF)
                       </button>
                       <table className="tabla-custom">
@@ -213,10 +194,10 @@ const ApoderadoDashboard = ({ apoderadoId }) => {
                   {tab === 'certificados' && (
                     <div>
                       <h3>Descarga de Documentos</h3>
-                      <button className="btn-rojo" style={{marginRight: '10px'}} onClick={() => window.open(`/api/certificados/alumno-regular/${alumnoSeleccionado.id}`)}>
+                      <button className="btn-rojo" style={{marginRight: '10px'}} onClick={() => alert("Descargando Certificado de Alumno Regular...")}>
                         Certificado Alumno Regular
                       </button>
-                      <button className="btn-rojo" onClick={() => window.open(`/api/certificados/matricula/${alumnoSeleccionado.id}`)}>
+                      <button className="btn-rojo" onClick={() => alert("Descargando Certificado de Matrícula...")}>
                         Certificado de Matrícula
                       </button>
                     </div>
@@ -224,13 +205,13 @@ const ApoderadoDashboard = ({ apoderadoId }) => {
 
                   {tab === 'comunicaciones' && (
                     <div>
-                      {detalle.comunicaciones.map((c, i) => (
+                      {detalle.comunicaciones.length > 0 ? detalle.comunicaciones.map((c, i) => (
                         <div key={i} style={{marginBottom: '15px', borderBottom: '1px solid #ccc', paddingBottom: '10px'}}>
                           <h4>{c.titulo} ({c.tipo})</h4>
                           <p><small>De: {c.remitente} - {c.fecha}</small></p>
                           <p>{c.contenido}</p>
                         </div>
-                      ))}
+                      )) : <p>No hay comunicaciones registradas.</p>}
                     </div>
                   )}
 

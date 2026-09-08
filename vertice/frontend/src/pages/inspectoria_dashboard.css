@@ -1,0 +1,137 @@
+.inspectoria-container {
+  min-height: 100vh;
+  background-image: linear-gradient(rgba(255, 255, 255, 0.88), rgba(255, 255, 255, 0.88)), url('../img/fondo_institucional.jpg');
+  background-size: cover;
+  background-position: center;
+  background-attachment: fixed;
+  font-family: Arial, sans-serif;
+  color: #333333;
+}
+
+.inspectoria-header {
+  background-color: #b71c1c;
+  color: #ffffff;
+  padding: 20px;
+  text-align: center;
+  border-bottom: 4px solid #8e0000;
+}
+
+.inspectoria-header h1 {
+  margin: 0;
+  font-size: 1.8rem;
+}
+
+.inspectoria-main {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 25px 15px;
+}
+
+.tabs-inspectoria {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 20px;
+}
+
+.tab-insp-btn {
+  background-color: #ffffff;
+  color: #b71c1c;
+  border: 2px solid #b71c1c;
+  padding: 10px 20px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.tab-insp-btn.active {
+  background-color: #b71c1c;
+  color: #ffffff;
+}
+
+.panel-card {
+  background-color: #ffffff;
+  border: 1px solid #d32f2f;
+  border-radius: 8px;
+  padding: 25px;
+  box-shadow: 0 4px 10px rgba(0,0,0,0.05);
+}
+
+.input-qr {
+  width: 100%;
+  max-width: 400px;
+  padding: 12px;
+  font-size: 1rem;
+  border: 2px solid #b71c1c;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  box-sizing: border-box;
+}
+
+.btn-inspectoria {
+  background-color: #b71c1c;
+  color: #ffffff;
+  border: none;
+  padding: 12px 20px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+  font-size: 1rem;
+}
+
+.btn-inspectoria:hover {
+  background-color: #8e0000;
+}
+
+.datos-retiro-box {
+  background-color: #ffebee;
+  border: 2px solid #d32f2f;
+  border-radius: 6px;
+  padding: 20px;
+  margin-top: 20px;
+}
+
+.datos-retiro-box h3 {
+  margin-top: 0;
+  color: #b71c1c;
+}
+
+.tabla-inspectoria {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 15px;
+}
+
+.tabla-inspectoria th {
+  background-color: #b71c1c;
+  color: #ffffff;
+  padding: 12px;
+  text-align: left;
+}
+
+.tabla-inspectoria td {
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+}
+
+.select-curso {
+  padding: 10px;
+  border: 1px solid #ccc;
+  border-radius: 4px;
+  margin-bottom: 15px;
+  font-size: 1rem;
+}
+
+.btn-atraso {
+  background-color: #d32f2f;
+  color: white;
+  border: none;
+  padding: 6px 12px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-weight: bold;
+}
+
+.btn-atraso:hover {
+  background-color: #9a0007;
+}
