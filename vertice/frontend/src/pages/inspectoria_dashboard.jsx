@@ -4,7 +4,7 @@ import { mockData } from '../mockData.js';
 import { logoutService, getUsuarioActual } from '../services/authService.js';
 import logoColegio from "../img/logo_institucional.png";
 import fondoInstitucional from "../img/fondo_institucional.jpeg";
-import "./inspectoria_dashboard.css"; // O usa profesores_dashboard.css si comparten estilos
+import "./inspectoria_dashboard.css"; 
 
 export default function InspectoriaDashboard() {
   const navigate = useNavigate();

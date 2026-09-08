@@ -1,30 +1,68 @@
 .inspectoria-container {
   min-height: 100vh;
-  background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('../img/fondo_institucional.jpg');
+  background-image: linear-gradient(rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.92)), url('../img/fondo_institucional.jpeg');
   background-size: cover;
   background-position: center;
   background-attachment: fixed;
   font-family: Arial, sans-serif;
-  color: #8e0000; /* Texto principal en rojo oscuro institucional */
+  color: #800000;
 }
 
 .inspectoria-header {
-  background-color: #b71c1c;
-  color: #ffffff;
-  padding: 20px;
-  text-align: center;
-  border-bottom: 4px solid #8e0000;
+  background-color: #800000 !important;
+  color: #ffffff !important;
+  padding: 8px 20px !important;
+  height: 55px !important;
+  min-height: 55px !important;
+  max-height: 55px !important;
+  display: flex !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  border-bottom: 3px solid #500000 !important;
+  box-sizing: border-box !important;
+}
+
+.inspectoria-header .logo-header {
+  height: 40px !important;
+  width: auto !important;
 }
 
 .inspectoria-header h1 {
-  margin: 0;
-  font-size: 1.8rem;
+  margin: 0 !important;
+  font-size: 1.1rem !important;
+  color: #ffffff !important;
+  font-weight: bold !important;
+}
+
+.inspectoria-header .user-info {
+  display: flex !important;
+  align-items: center !important;
+  gap: 12px !important;
+  color: #ffffff !important;
+  font-size: 0.9rem !important;
+}
+
+.inspectoria-header .btn-logout {
+  background-color: #ffffff !important;
+  color: #800000 !important;
+  border: none !important;
+  padding: 5px 12px !important;
+  border-radius: 4px !important;
+  font-weight: bold !important;
+  cursor: pointer !important;
+  font-size: 0.85rem !important;
+  transition: all 0.2s ease;
+}
+
+.inspectoria-header .btn-logout:hover {
+  background-color: #f2f2f2 !important;
+  color: #500000 !important;
 }
 
 .inspectoria-main {
   max-width: 1100px;
   margin: 0 auto;
-  padding: 25px 15px;
+  padding: 20px 15px;
 }
 
 .tabs-inspectoria {
@@ -35,13 +73,13 @@
 
 .tab-insp-btn {
   background-color: #ffffff;
-  color: #b71c1c;
-  border: 2px solid #b71c1c;
-  padding: 10px 20px;
+  color: #800000;
+  border: 2px solid #800000;
+  padding: 8px 16px;
   border-radius: 6px;
   cursor: pointer;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.95rem;
   transition: all 0.2s ease;
 }
 
@@ -50,63 +88,68 @@
 }
 
 .tab-insp-btn.active {
-  background-color: #b71c1c;
+  background-color: #800000;
   color: #ffffff;
 }
 
 .panel-card {
   background-color: #ffffff;
-  border: 2px solid #b71c1c;
+  border: 2px solid #800000;
   border-radius: 8px;
-  padding: 25px;
-  box-shadow: 0 4px 10px rgba(183, 28, 28, 0.1);
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(128, 0, 0, 0.1);
+}
+
+.panel-card h2 {
+  font-size: 1.2rem;
+  color: #800000;
+  margin-top: 0;
 }
 
 .input-qr {
   width: 100%;
   max-width: 400px;
-  padding: 12px;
-  font-size: 1rem;
-  border: 2px solid #b71c1c;
+  padding: 10px;
+  font-size: 0.95rem;
+  border: 2px solid #800000;
   border-radius: 4px;
-  margin-bottom: 15px;
   box-sizing: border-box;
   background-color: #fff;
-  color: #8e0000;
+  color: #800000;
 }
 
 .input-qr:focus {
   outline: none;
-  border-color: #8e0000;
-  box-shadow: 0 0 5px rgba(183, 28, 28, 0.3);
+  border-color: #500000;
+  box-shadow: 0 0 5px rgba(128, 0, 0, 0.3);
 }
 
 .btn-inspectoria {
-  background-color: #b71c1c;
+  background-color: #800000;
   color: #ffffff;
   border: none;
-  padding: 12px 20px;
+  padding: 10px 18px;
   border-radius: 4px;
   cursor: pointer;
   font-weight: bold;
-  font-size: 1rem;
+  font-size: 0.95rem;
 }
 
 .btn-inspectoria:hover {
-  background-color: #8e0000;
+  background-color: #500000;
 }
 
 .datos-retiro-box {
-  background-color: #ffffff; /* Cambiado de rosado suave a blanco puro */
-  border: 2px solid #b71c1c;
+  background-color: #ffffff;
+  border: 2px solid #800000;
   border-radius: 6px;
-  padding: 20px;
+  padding: 15px;
   margin-top: 20px;
 }
 
 .datos-retiro-box h3 {
   margin-top: 0;
-  color: #b71c1c;
+  color: #800000;
 }
 
 .tabla-inspectoria {
@@ -116,30 +159,20 @@
 }
 
 .tabla-inspectoria th {
-  background-color: #b71c1c;
+  background-color: #800000;
   color: #ffffff;
-  padding: 12px;
+  padding: 10px;
   text-align: left;
 }
 
 .tabla-inspectoria td {
-  padding: 12px;
-  border-bottom: 1px solid #ffcdd2; /* Líneas divisorias en rojo muy claro */
+  padding: 10px;
+  border-bottom: 1px solid #ffcdd2;
   color: #5c0000;
 }
 
-.select-curso {
-  padding: 10px;
-  border: 2px solid #b71c1c; /* Cambiado de gris a rojo */
-  border-radius: 4px;
-  margin-bottom: 15px;
-  font-size: 1rem;
-  background-color: #ffffff;
-  color: #8e0000;
-}
-
 .btn-atraso {
-  background-color: #d32f2f;
+  background-color: #800000;
   color: white;
   border: none;
   padding: 6px 12px;
@@ -149,5 +182,5 @@
 }
 
 .btn-atraso:hover {
-  background-color: #9a0007;
+  background-color: #500000;
 }
