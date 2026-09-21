@@ -21,11 +21,26 @@ app.use('/api/alumnos', alumnoRoutes);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {
+
   try {
+
     await pool.query('SELECT NOW()');
-    console.log(`Conexión exitosa a PostgreSQL (Base de datos: ${process.env.DB_NAME})`);
-    console.log(`Servidor backend seguro corriendo en http://localhost:${PORT}`);
+
+    console.log(
+      `Conexión exitosa a PostgreSQL`
+    );
+
+    console.log(
+      `Servidor backend corriendo en http://localhost:${PORT}`
+    );
+
   } catch (error) {
-    console.error('Error al conectar con PostgreSQL:', error.message);
+
+    console.error(
+      'Error al conectar con PostgreSQL:',
+      error.message
+    );
+
   }
+
 });

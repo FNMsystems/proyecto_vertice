@@ -1,4 +1,3 @@
-/* RESETEO BÁSICO Y FUENTE */
 * {
   box-sizing: border-box;
   margin: 0;
@@ -6,126 +5,494 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
-/* CONTENEDOR PRINCIPAL CON FONDO SUAVIZADO */
+
 .dashboard-container {
   min-height: 100vh;
+
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
   background-attachment: fixed;
-  /* Capa blanca semi-transparente para suavizar la imagen de fondo */
+
   background-blend-mode: overlay;
-  background-color: rgba(255, 255, 255, 0.88);
+  background-color: rgba(255, 255, 255, 0.90);
+
   display: flex;
   flex-direction: column;
 }
 
-/* ENCABEZADO INSTITUCIONAL */
+
 .dashboard-header {
-  background-color: #6b0014; /* Rojo vino principal */
+  background-color: #6b0014;
   color: #ffffff;
+
   padding: 15px 30px;
+
   display: flex;
   align-items: center;
+
   justify-content: space-between;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-  border-bottom: 3px solid #4a000e;
+
+  box-shadow:
+    0 4px 12px rgba(0, 0, 0, 0.15);
+
+  border-bottom:
+    3px solid #4a000e;
 }
+
 
 .logo-header {
   height: 55px;
   width: auto;
+
   object-fit: contain;
-  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.2));
+
+  filter:
+    drop-shadow(
+      0 2px 4px rgba(0, 0, 0, 0.2)
+    );
 }
 
-.dashboard-header h1 {
+
+.header-title {
+  text-align: center;
+  flex: 1;
+}
+
+
+.header-title h1 {
   font-size: 1.4rem;
   font-weight: 600;
-  letter-spacing: 0.5px;
-  margin: 0 20px;
-  text-align: center;
-  flex-grow: 1;
 }
+
+
+.header-title span {
+  font-size: 0.85rem;
+  opacity: 0.85;
+}
+
 
 .user-info {
   display: flex;
   align-items: center;
+
   gap: 15px;
+
   font-size: 0.95rem;
 }
 
+
 .btn-logout {
   background-color: transparent;
+
   color: #ffffff;
-  border: 1.5px solid rgba(255, 255, 255, 0.7);
+
+  border:
+    1.5px solid rgba(255, 255, 255, 0.7);
+
   padding: 8px 16px;
+
   border-radius: 6px;
+
   cursor: pointer;
+
   font-weight: 600;
+
   transition: all 0.3s ease;
 }
+
 
 .btn-logout:hover {
   background-color: #ffffff;
   color: #6b0014;
 }
 
-/* CONTENIDO Y TARJETAS */
+
 .dashboard-content {
-  max-width: 1200px;
-  width: 90%;
+  max-width: 1250px;
+
+  width: 92%;
+
   margin: 30px auto;
+
   flex: 1;
 }
 
+
+.welcome-card {
+  background: #ffffff;
+
+  border-radius: 12px;
+
+  padding: 25px;
+
+  margin-bottom: 25px;
+
+  box-shadow:
+    0 8px 24px rgba(107, 0, 20, 0.08);
+
+  border:
+    1px solid #f0e6e8;
+}
+
+
+.welcome-card h2 {
+  color: #6b0014;
+
+  font-size: 1.5rem;
+
+  margin-bottom: 8px;
+}
+
+
+.welcome-card p {
+  color: #666666;
+}
+
+
 .section-card {
   background: #ffffff;
-  border-radius: 10px;
+
+  border-radius: 12px;
+
   padding: 25px;
-  box-shadow: 0 8px 24px rgba(107, 0, 20, 0.08); /* Sombra tenue roja */
-  border: 1px solid #f0e6e8;
+
+  box-shadow:
+    0 8px 24px rgba(107, 0, 20, 0.08);
+
+  border:
+    1px solid #f0e6e8;
 }
 
-.section-card h2 {
+
+.section-title {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  margin-bottom: 25px;
+
+  padding-bottom: 15px;
+
+  border-bottom:
+    2px solid #f3d5db;
+}
+
+
+.section-title h2 {
   color: #6b0014;
-  font-size: 1.25rem;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 2px solid #f3d5db;
+
+  font-size: 1.35rem;
+
+  margin-bottom: 5px;
 }
 
-/* TABLA DE ALUMNOS Y NOTAS */
-.tabla-datos {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 10px;
-  background-color: #ffffff;
-}
 
-.tabla-datos th {
-  background-color: #80001c; /* Rojo vino secundario */
-  color: #ffffff;
-  text-align: left;
-  padding: 12px 16px;
+.section-title p {
+  color: #777777;
+
   font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
 }
 
-.tabla-datos td {
-  padding: 12px 16px;
-  border-bottom: 1px solid #f3e6e8;
-  color: #333333;
-  font-size: 0.95rem;
-}
 
-.tabla-datos tbody tr:hover {
-  background-color: #faf0f2; /* Destacado suave rosáceo */
-}
+.course-count {
+  background: #f8e8ec;
 
-/* Estilo adicional si quieres destacar promedios */
-.tabla-datos td:nth-child(5) {
-  font-weight: 600;
   color: #6b0014;
+
+  padding: 8px 14px;
+
+  border-radius: 20px;
+
+  font-weight: 600;
+
+  font-size: 0.9rem;
+}
+
+
+.cursos-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(auto-fill, minmax(320px, 1fr));
+
+  gap: 22px;
+}
+
+
+.curso-card {
+  border:
+    1px solid #eadcdf;
+
+  border-radius: 12px;
+
+  padding: 22px;
+
+  background: #ffffff;
+
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
+
+  display: flex;
+
+  flex-direction: column;
+}
+
+
+.curso-card:hover {
+  transform: translateY(-3px);
+
+  box-shadow:
+    0 10px 25px rgba(107, 0, 20, 0.12);
+}
+
+
+.curso-jefatura {
+  border:
+    2px solid #8a1730;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fff9fa 0%,
+      #ffffff 100%
+    );
+}
+
+
+.curso-card-header {
+  margin-bottom: 18px;
+}
+
+
+.curso-card-header h3 {
+  color: #6b0014;
+
+  font-size: 1.35rem;
+
+  margin-bottom: 8px;
+}
+
+
+.badge-jefe {
+  display: inline-block;
+
+  background: #6b0014;
+
+  color: #ffffff;
+
+  padding: 6px 10px;
+
+  border-radius: 6px;
+
+  font-size: 0.78rem;
+
+  font-weight: 600;
+}
+
+
+.asignaturas-container {
+  margin-bottom: 20px;
+}
+
+
+.asignaturas-container h4 {
+  color: #555555;
+
+  font-size: 0.9rem;
+
+  margin-bottom: 10px;
+}
+
+
+.asignaturas-list {
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 8px;
+}
+
+
+.asignatura-item {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 10px 12px;
+
+  background: #faf7f8;
+
+  border-radius: 7px;
+
+  border:
+    1px solid #f0e6e8;
+
+  color: #333333;
+
+  font-size: 0.9rem;
+}
+
+
+.badge-edicion {
+  color: #287548;
+
+  background: #eaf6ee;
+
+  padding: 4px 7px;
+
+  border-radius: 5px;
+
+  font-size: 0.7rem;
+
+  white-space: nowrap;
+}
+
+
+.btn-ingresar-curso {
+  margin-top: auto;
+
+  width: 100%;
+
+  border: none;
+
+  background: #6b0014;
+
+  color: #ffffff;
+
+  padding: 11px 15px;
+
+  border-radius: 7px;
+
+  cursor: pointer;
+
+  font-weight: 600;
+
+  transition:
+    background 0.2s ease;
+}
+
+
+.btn-ingresar-curso:hover {
+  background: #4a000e;
+}
+
+
+.loading-container {
+  min-height: 100vh;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  color: #6b0014;
+}
+
+
+.error-card {
+  background: #fff5f5;
+
+  border:
+    1px solid #e2a5a5;
+
+  border-radius: 10px;
+
+  padding: 25px;
+
+  color: #7d1c1c;
+}
+
+
+.error-card h3 {
+  margin-bottom: 8px;
+}
+
+
+.error-card p {
+  margin-bottom: 15px;
+}
+
+
+.btn-reintentar {
+  background: #6b0014;
+
+  color: white;
+
+  border: none;
+
+  padding: 9px 15px;
+
+  border-radius: 6px;
+
+  cursor: pointer;
+}
+
+
+.empty-state {
+  text-align: center;
+
+  padding: 45px 20px;
+
+  color: #666666;
+}
+
+
+.empty-state h3 {
+  color: #6b0014;
+
+  margin-bottom: 8px;
+}
+
+
+@media (max-width: 850px) {
+
+  .dashboard-header {
+    flex-wrap: wrap;
+
+    gap: 15px;
+  }
+
+  .header-title {
+    order: 3;
+
+    width: 100%;
+  }
+
+  .user-info {
+    margin-left: auto;
+  }
+
+}
+
+
+@media (max-width: 600px) {
+
+  .dashboard-content {
+    width: 95%;
+
+    margin: 20px auto;
+  }
+
+  .section-card,
+  .welcome-card {
+    padding: 18px;
+  }
+
+  .cursos-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .user-info span {
+    display: none;
+  }
+
 }
