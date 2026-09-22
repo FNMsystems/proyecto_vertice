@@ -6,6 +6,10 @@ import pool from './config/db.js';
 import authRoutes from './routes/authRoutes.js';
 import personalRoutes from './routes/personalRoutes.js';
 import alumnoRoutes from './routes/alumnoRoutes.js';
+import docenteRoutes from './routes/docenteRoutes.js';
+import notaRoutes from "./routes/notaRoutes.js";
+import anotacionRoutes from "./routes/anotacionRoutes.js";
+import asistenciaRoutes from "./routes/asistenciaRoutes.js";
 
 dotenv.config();
 
@@ -17,7 +21,10 @@ app.use(express.json());
 app.use('/api/auth', authRoutes);
 app.use('/api/personal', personalRoutes);
 app.use('/api/alumnos', alumnoRoutes);
-
+app.use('/api/docentes', docenteRoutes);
+app.use("/api/notas", notaRoutes);
+app.use("/api/anotaciones", anotacionRoutes);
+app.use("/api/asistencia", asistenciaRoutes);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {

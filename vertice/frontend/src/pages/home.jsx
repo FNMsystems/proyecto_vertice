@@ -8,11 +8,10 @@ import "./home.css";
 
 function Home() {
   const navigate = useNavigate();
-  // Estado para controlar la vista: 'MENU', 'FUNCIONARIOS', 'APODERADOS'
+
   const [tipoAcceso, setTipoAcceso] = useState('MENU');
 
-  // Estados del formulario de login
-  const [identificador, setIdentificador] = useState(''); // Email o RUT
+  const [identificador, setIdentificador] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState('');
 
@@ -34,23 +33,50 @@ function Home() {
       const res = await loginService(identificador, password);
       const user = res.usuario;
 
-      // Redirección al Dashboard correspondiente
-      if (tipoAcceso === 'APODERADOS' || user?.rol === 'apoderado') {
+      console.log('Usuario autenticado:', user);
+
+      const rol = String(user?.rol || '').toUpperCase();
+
+    
+      if (rol === 'APODERADO') {
         navigate('/apoderado');
-      } else if (user?.rol === 'director') {
-        navigate('/director_dashboard');
-      } else if (user?.rol === 'profesor') {
-        navigate('/profesores_dashboard');
-      } else if (user?.rol === 'inspectoria') {
-        navigate('/inspectoria_dashboard');
-      } else if (user?.rol === 'utp') {
-        navigate('/utp_dashboard');
-      } else if (user?.rol === 'secretaria') {
-        navigate('/secretaria_dashboard');
-      } else {
-        navigate('/apoderado');
+        return;
       }
+
+      if (rol === 'DOCENTE' || rol === 'PROFESOR') {
+        navigate('/profesores_dashboard');
+        return;
+      }
+
+      if (rol === 'DIRECTOR' || rol === 'ADMIN') {
+        navigate('/director_dashboard');
+        return;
+      }
+
+      if (
+        rol === 'INSPECTOR' ||
+        rol === 'INSPECTOR_GENERAL'
+      ) {
+        navigate('/inspectoria_dashboard');
+        return;
+      }
+
+      if (rol === 'UTP') {
+        navigate('/utp_dashboard');
+        return;
+      }
+
+      if (rol === 'SECRETARIA') {
+        navigate('/secretaria_dashboard');
+        return;
+      }
+
+      setError(
+        `El usuario inició sesión, pero su rol "${user?.rol || 'SIN ROL'}" no tiene un portal configurado.`
+      );
+
     } catch (err) {
+      console.error('Error al iniciar sesión:', err);
       setError(err.message || 'Error al iniciar sesión');
     }
   };
@@ -65,6 +91,7 @@ function Home() {
   return (
     <main className="home-page" style={backgroundStyle}>
       <section className="home-card" aria-labelledby="school-name">
+
         <img
           className="home-card__logo"
           src={logoColegio}
@@ -72,9 +99,12 @@ function Home() {
         />
 
         {tipoAcceso === 'MENU' ? (
-          /* VISTA PRINCIPAL CON TUS BOTONES ORIGINALES */
+
           <>
-            <h1 id="school-name" className="home-card__title">
+            <h1
+              id="school-name"
+              className="home-card__title"
+            >
               Colegio Orden de San Jorge
             </h1>
 
@@ -84,48 +114,99 @@ function Home() {
               Seleccione el tipo de usuario para ingresar
             </p>
 
-            <nav className="home-card__buttons" aria-label="Tipos de usuario">
+            <nav
+              className="home-card__buttons"
+              aria-label="Tipos de usuario"
+            >
               <BotonAcceso
                 text="Funcionarios"
-                onClick={() => setTipoAcceso('FUNCIONARIOS')}
+                onClick={() =>
+                  setTipoAcceso('FUNCIONARIOS')
+                }
               />
 
               <BotonAcceso
                 text="Apoderados"
-                onClick={() => setTipoAcceso('APODERADOS')}
+                onClick={() =>
+                  setTipoAcceso('APODERADOS')
+                }
               />
             </nav>
           </>
+
         ) : (
-          /* FORMULARIO DE ACCESO (FUNCIONARIOS O APODERADOS) */
+
           <>
-            <h2 className="home-card__title" style={{ fontSize: '1.5rem', marginTop: '10px' }}>
-              Acceso {tipoAcceso === 'FUNCIONARIOS' ? 'Funcionarios' : 'Apoderados'}
+            <h2
+              className="home-card__title"
+              style={{
+                fontSize: '1.5rem',
+                marginTop: '10px'
+              }}
+            >
+              Acceso{' '}
+              {tipoAcceso === 'FUNCIONARIOS'
+                ? 'Funcionarios'
+                : 'Apoderados'}
             </h2>
-            <p className="home-card__description" style={{ marginBottom: '20px' }}>
+
+            <p
+              className="home-card__description"
+              style={{ marginBottom: '20px' }}
+            >
               Ingrese sus datos para continuar
             </p>
 
             {error && (
-              <p style={{ color: 'red', fontSize: '0.85rem', marginBottom: '10px' }}>
+              <p
+                style={{
+                  color: 'red',
+                  fontSize: '0.85rem',
+                  marginBottom: '10px'
+                }}
+              >
                 {error}
               </p>
             )}
 
-            <form onSubmit={handleLogin} style={{ width: '100%', textAlign: 'left' }}>
+            <form
+              onSubmit={handleLogin}
+              style={{
+                width: '100%',
+                textAlign: 'left'
+              }}
+            >
+
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>
-                  {tipoAcceso === 'FUNCIONARIOS' ? 'Correo institucional' : 'RUT del Apoderado'}
+
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    marginBottom: '5px'
+                  }}
+                >
+                  {tipoAcceso === 'FUNCIONARIOS'
+                    ? 'Correo institucional'
+                    : 'RUT del Apoderado'}
                 </label>
+
                 <input
-                  type={tipoAcceso === 'FUNCIONARIOS' ? 'email' : 'text'}
+                  type={
+                    tipoAcceso === 'FUNCIONARIOS'
+                      ? 'email'
+                      : 'text'
+                  }
                   placeholder={
                     tipoAcceso === 'FUNCIONARIOS'
                       ? 'nombre@ordendesanjorge.cl'
                       : '12.345.678-9'
                   }
                   value={identificador}
-                  onChange={(e) => setIdentificador(e.target.value)}
+                  onChange={(e) =>
+                    setIdentificador(e.target.value)
+                  }
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -135,17 +216,29 @@ function Home() {
                   }}
                   required
                 />
+
               </div>
 
               <div style={{ marginBottom: '15px' }}>
-                <label style={{ display: 'block', fontSize: '0.85rem', fontWeight: 'bold', marginBottom: '5px' }}>
+
+                <label
+                  style={{
+                    display: 'block',
+                    fontSize: '0.85rem',
+                    fontWeight: 'bold',
+                    marginBottom: '5px'
+                  }}
+                >
                   Contraseña
                 </label>
+
                 <input
                   type="password"
                   placeholder="••••••••"
                   value={password}
-                  onChange={(e) => setPassword(e.target.value)}
+                  onChange={(e) =>
+                    setPassword(e.target.value)
+                  }
                   style={{
                     width: '100%',
                     padding: '10px',
@@ -155,6 +248,7 @@ function Home() {
                   }}
                   required
                 />
+
               </div>
 
               <button
@@ -173,6 +267,7 @@ function Home() {
               >
                 Ingresar
               </button>
+
             </form>
 
             <button
@@ -188,10 +283,13 @@ function Home() {
                 fontWeight: 'bold'
               }}
             >
-              ← Volver al inicio
+              ← Volver
             </button>
+
           </>
+
         )}
+
       </section>
     </main>
   );

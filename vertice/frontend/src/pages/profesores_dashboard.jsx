@@ -80,16 +80,9 @@ export default function ProfesoresDashboard() {
 
 
   const nombreDocente =
-    docente
-      ? [
-          docente.nombres,
-          docente.apellido_paterno,
-          docente.apellido_materno
-        ]
-          .filter(Boolean)
-          .join(' ')
-      : usuario?.nombre || 'Docente';
-
+    docente?.nombre ||
+    usuario?.nombre ||
+    'Docente';
 
   if (cargando) {
 
@@ -265,10 +258,9 @@ export default function ProfesoresDashboard() {
                     <article
                       key={curso.id}
                       className={
-                        `curso-card ${
-                          curso.esProfesorJefe
-                            ? 'curso-jefatura'
-                            : ''
+                        `curso-card ${curso.esProfesorJefe
+                          ? 'curso-jefatura'
+                          : ''
                         }`
                       }
                     >
@@ -332,11 +324,9 @@ export default function ProfesoresDashboard() {
 
 
                       <button
-                        className="btn-ingresar-curso"
+                        type="button"
                         onClick={() =>
-                          navigate(
-                            `/profesores_dashboard/curso/${curso.id}`
-                          )
+                          navigate(`/profesores/cursos/${curso.id}`)
                         }
                       >
                         Ingresar al curso

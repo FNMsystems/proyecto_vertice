@@ -10,6 +10,7 @@ import ProfesoresDashboard from "./pages/profesores_dashboard.jsx";
 import InspectoriaDashboard from "./pages/inspectoria_dashboard.jsx";
 import UtpDashboard from "./pages/utp_dashboard.jsx";
 import SecretariaDashboard from "./pages/secretaria_dashboard.jsx";
+import ProfesorCurso from "./pages/profesor_curso.jsx";
 
 function App() {
   return (
@@ -29,6 +30,7 @@ function App() {
       <Route path="/inspectoria_dashboard" element={<InspectoriaDashboard />} />
       <Route path="/utp_dashboard" element={<UtpDashboard />} />
       <Route path="/secretaria_dashboard" element={<SecretariaDashboard />} />
+      <Route path="/profesores/cursos/:cursoId" element={<ProfesorCurso />}/>
 
       {/* Redirección por defecto */}
       <Route path="*" element={<Navigate to="/" replace />} />
