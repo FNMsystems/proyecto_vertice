@@ -25,6 +25,7 @@ app.use('/api/docentes', docenteRoutes);
 app.use("/api/notas", notaRoutes);
 app.use("/api/anotaciones", anotacionRoutes);
 app.use("/api/asistencia", asistenciaRoutes);
+
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {

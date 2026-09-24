@@ -2,7 +2,10 @@ import { Router } from 'express';
 
 import {
   getMiDashboard,
-  getCursoDocente
+  getCursoDocente,
+  getInformacionAlumnoDocente,
+  getAsistenciaCurso,
+  guardarAsistenciaCurso
 } from '../controllers/docenteController.js';
 
 import {
@@ -25,5 +28,27 @@ router.get(
   esDocente,
   getCursoDocente
 );
+
+router.get(
+  '/me/alumnos/:alumnoId/informacion',
+  verificarToken,
+  esDocente,
+  getInformacionAlumnoDocente
+);
+
+router.get(
+  '/me/cursos/:cursoId/asistencia',
+  verificarToken,
+  esDocente,
+  getAsistenciaCurso
+);
+
+router.post(
+  '/me/cursos/:cursoId/asistencia',
+  verificarToken,
+  esDocente,
+  guardarAsistenciaCurso
+);
+
 
 export default router;
