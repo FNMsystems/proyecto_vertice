@@ -1,6 +1,6 @@
 import { query } from '../config/db.js';
 
-export const buscarPersonaPorCorreo = async (correo) => {
+export const buscarPersonaPorCorreo = async (identificador) => {
 
   const docenteQuery = `
     SELECT
@@ -12,10 +12,11 @@ export const buscarPersonaPorCorreo = async (correo) => {
       correo,
       telefono,
       especialidad,
+      rol,
       activo,
       password_hash,
       debe_cambiar_password,
-      'DOCENTE' AS rol
+      'DOCENTE' AS tipo_persona
     FROM docentes
     WHERE LOWER(correo) = LOWER($1)
       AND activo = TRUE
@@ -24,17 +25,12 @@ export const buscarPersonaPorCorreo = async (correo) => {
 
   const docenteResult = await query(
     docenteQuery,
-    [correo]
+    [identificador]
   );
 
-
   if (docenteResult.rows.length > 0) {
-
     return docenteResult.rows[0];
-
   }
-
-
 
   const apoderadoQuery = `
     SELECT
@@ -48,38 +44,37 @@ export const buscarPersonaPorCorreo = async (correo) => {
       nacionalidad,
       password_hash,
       debe_cambiar_password,
-      'APODERADO' AS rol
+      'APODERADO' AS rol,
+      'APODERADO' AS tipo_persona
     FROM apoderados
     WHERE LOWER(correo) = LOWER($1)
+       OR REPLACE(REPLACE(UPPER(rut), '.', ''), '-', '') =
+          REPLACE(REPLACE(UPPER($1), '.', ''), '-', '')
     LIMIT 1;
   `;
 
   const apoderadoResult = await query(
     apoderadoQuery,
-    [correo]
+    [identificador]
   );
 
-
   if (apoderadoResult.rows.length > 0) {
-
     return apoderadoResult.rows[0];
-
   }
-
 
   return null;
 };
-
-
 
 export const buscarPersonaPorId = async (
   id,
   rol
 ) => {
 
-
-
-  if (rol === 'DOCENTE') {
+  if (
+    rol === 'DOCENTE' ||
+    rol === 'INSPECTOR_GENERAL' ||
+    rol === 'INSPECTOR'
+  ) {
 
     const { rows } = await query(
       `
@@ -97,7 +92,6 @@ export const buscarPersonaPorId = async (
 
     return rows[0] || null;
   }
-
 
   if (rol === 'APODERADO') {
 
@@ -117,7 +111,6 @@ export const buscarPersonaPorId = async (
     return rows[0] || null;
   }
 
-
   return null;
 };
 
@@ -127,7 +120,11 @@ export const actualizarPassword = async (
   passwordHash
 ) => {
 
-  if (rol === 'DOCENTE') {
+  if (
+    rol === 'DOCENTE' ||
+    rol === 'INSPECTOR_GENERAL' ||
+    rol === 'INSPECTOR'
+  ) {
 
     const { rows } = await query(
       `
@@ -144,7 +141,6 @@ export const actualizarPassword = async (
 
     return rows[0] || null;
   }
-
 
   if (rol === 'APODERADO') {
 
@@ -163,7 +159,6 @@ export const actualizarPassword = async (
 
     return rows[0] || null;
   }
-
 
   return null;
 };

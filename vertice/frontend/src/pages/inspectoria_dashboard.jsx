@@ -1,154 +1,702 @@
-import React, { useState, useEffect } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { mockData } from '../mockData.js';
-import { logoutService, getUsuarioActual } from '../services/authService.js';
-import logoColegio from "../img/logo_institucional.png";
-import fondoInstitucional from "../img/fondo_institucional.jpeg";
-import "./inspectoria_dashboard.css"; 
+import {
+  logoutService,
+  getUsuarioActual
+} from '../services/authService.js';
+import {
+  validarRetiroQR,
+  confirmarRetiro
+} from '../services/inspectoriaService.js';
+import logoColegio from '../img/logo_institucional.png';
+import fondoInstitucional from '../img/fondo_institucional.jpeg';
+import './inspectoria_dashboard.css';
 
 export default function InspectoriaDashboard() {
   const navigate = useNavigate();
   const usuario = getUsuarioActual();
-  const [alumnosList, setAlumnosList] = useState([]);
-  const [retirosList, setRetirosList] = useState([]);
-  const [cargando, setCargando] = useState(true);
 
-  useEffect(() => {
-    // Carga de alumnos y retiros desde mockData.js
-    if (mockData) {
-      setAlumnosList(mockData.alumnos || []);
-      setRetirosList(mockData.retirosQR || []);
-    }
-    setCargando(false);
-  }, []);
+  const scannerRef = useRef(null);
+  const scannerContainerRef = useRef(null);
+
+  const [codigoQR, setCodigoQR] = useState('');
+  const [retiro, setRetiro] = useState(null);
+
+  const [cargando, setCargando] = useState(false);
+  const [confirmando, setConfirmando] = useState(false);
+
+  const [mensaje, setMensaje] = useState('');
+  const [error, setError] = useState('');
+
+  const [observacion, setObservacion] =
+    useState('');
+
+  const [scannerActivo, setScannerActivo] =
+    useState(false);
+
+  const [scannerDisponible, setScannerDisponible] =
+    useState(true);
+
+  const [confirmado, setConfirmado] =
+    useState(false);
 
   const handleLogout = () => {
     logoutService();
     navigate('/');
   };
 
-  const procesarRetiro = (codigoQR) => {
-    setRetirosList((prev) =>
-      prev.map((r) =>
-        r.codigoQR === codigoQR ? { ...r, estado: 'completado' } : r
-      )
-    );
+  const limpiarMensajes = () => {
+    setError('');
+    setMensaje('');
   };
 
+  const validarCodigo = async (
+    codigo = codigoQR
+  ) => {
+    const codigoLimpio =
+      String(codigo || '').trim();
+
+    if (!codigoLimpio) {
+      setError(
+        'Debe ingresar o escanear un código QR.'
+      );
+      return;
+    }
+
+    try {
+      setCargando(true);
+      limpiarMensajes();
+      detenerScanner();
+
+      const resultado =
+        await validarRetiroQR(
+          codigoLimpio
+        );
+
+      setRetiro(resultado);
+      setConfirmado(false);
+      setObservacion('');
+      setCodigoQR(codigoLimpio);
+
+      setMensaje(
+        'Código QR válido. Verifique físicamente la identidad de la persona antes de autorizar el retiro.'
+      );
+    } catch (error) {
+      console.error(
+        'Error validando QR:',
+        error
+      );
+
+      setRetiro(null);
+
+      setError(
+        error.message ||
+        'El código QR no es válido.'
+      );
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const confirmar = async () => {
+    if (!retiro?.retiro?.id) {
+      setError(
+        'No existe una solicitud válida para confirmar.'
+      );
+      return;
+    }
+
+    if (!retiro?.alumno?.id) {
+      setError(
+        'No se encontró el alumno asociado al retiro.'
+      );
+      return;
+    }
+
+    if (!retiro?.alumno?.cursoId) {
+      setError(
+        'No se encontró el curso asociado al retiro.'
+      );
+      return;
+    }
+
+    const confirmarFisicamente =
+      window.confirm(
+        'Confirme que verificó físicamente la identidad de la persona autorizada y que los datos coinciden.'
+      );
+
+    if (!confirmarFisicamente) {
+      return;
+    }
+
+    try {
+      setConfirmando(true);
+      limpiarMensajes();
+
+      await confirmarRetiro({
+        solicitudId:
+          retiro.retiro.id,
+        alumnoId:
+          retiro.alumno.id,
+        cursoId:
+          retiro.alumno.cursoId,
+        motivo:
+          retiro.retiro.motivo,
+        observacion:
+          observacion.trim() ||
+          retiro.retiro.observacion ||
+          ''
+      });
+
+      setConfirmado(true);
+
+      setMensaje(
+        'Retiro autorizado y registrado correctamente. El código QR ya no puede volver a utilizarse.'
+      );
+    } catch (error) {
+      console.error(
+        'Error confirmando retiro:',
+        error
+      );
+
+      setError(
+        error.message ||
+        'No se pudo confirmar el retiro.'
+      );
+    } finally {
+      setConfirmando(false);
+    }
+  };
+
+  const nuevoRetiro = () => {
+    detenerScanner();
+
+    setCodigoQR('');
+    setRetiro(null);
+    setObservacion('');
+    setConfirmado(false);
+    setError('');
+    setMensaje('');
+  };
+
+  const iniciarScanner = async () => {
+    try {
+      limpiarMensajes();
+
+      if (scannerRef.current) {
+        return;
+      }
+
+      if (
+        !scannerContainerRef.current
+      ) {
+        return;
+      }
+
+      const modulo =
+        await import('html5-qrcode');
+
+      const Html5Qrcode =
+        modulo.Html5Qrcode;
+
+      const scanner =
+        new Html5Qrcode(
+          'qr-reader'
+        );
+
+      scannerRef.current = scanner;
+
+      await scanner.start(
+        {
+          facingMode: 'environment'
+        },
+        {
+          fps: 10,
+          qrbox: {
+            width: 250,
+            height: 250
+          }
+        },
+        (decodedText) => {
+          setCodigoQR(decodedText);
+          validarCodigo(decodedText);
+        },
+        () => {}
+      );
+
+      setScannerActivo(true);
+    } catch (error) {
+      console.error(
+        'Error iniciando scanner:',
+        error
+      );
+
+      scannerRef.current = null;
+      setScannerActivo(false);
+
+      setScannerDisponible(false);
+
+      setError(
+        'No se pudo iniciar la cámara. Puede ingresar el código QR manualmente.'
+      );
+    }
+  };
+
+  const detenerScanner = async () => {
+    if (!scannerRef.current) {
+      setScannerActivo(false);
+      return;
+    }
+
+    try {
+      await scannerRef.current.stop();
+      await scannerRef.current.clear();
+    } catch (error) {
+      console.error(
+        'Error deteniendo scanner:',
+        error
+      );
+    }
+
+    scannerRef.current = null;
+    setScannerActivo(false);
+  };
+
+  useEffect(() => {
+    return () => {
+      detenerScanner();
+    };
+  }, []);
+
   return (
-    <div className="dashboard-container" style={{ backgroundImage: `url(${fondoInstitucional})` }}>
-      <header className="dashboard-header">
-        <img src={logoColegio} alt="Logo Colegio" className="logo-header" />
-        <h1>Panel de Inspectoría - Colegio Orden de San Jorge</h1>
-        <div className="user-info">
-          <span>Inspector: <strong>{usuario?.nombre || 'Juan Pérez'}</strong></span>
-          <button onClick={handleLogout} className="btn-logout">Cerrar Sesión</button>
+    <div
+      className="inspectoria-page"
+      style={{
+        backgroundImage: `url(${fondoInstitucional})`
+      }}
+    >
+      <header className="inspectoria-header">
+        <div className="inspectoria-brand">
+          <img
+            src={logoColegio}
+            alt="Logo institucional"
+            className="inspectoria-logo"
+          />
+
+          <div>
+            <h1>
+              Inspectoría
+            </h1>
+
+            <p>
+              Control y autorización de retiros
+            </p>
+          </div>
+        </div>
+
+        <div className="inspectoria-user">
+          <div className="inspectoria-user-info">
+            <strong>
+              {usuario?.nombre ||
+                'Inspectoría'}
+            </strong>
+
+            <span>
+              {usuario?.rut || ''}
+            </span>
+          </div>
+
+          <button
+            className="inspectoria-logout"
+            onClick={handleLogout}
+          >
+            Cerrar sesión
+          </button>
         </div>
       </header>
 
-      <main className="dashboard-content">
-        {/* SECCIÓN DE SOLICITUDES DE RETIRO QR */}
-        <section className="section-card" style={{ marginBottom: '20px' }}>
-          <h2>Solicitudes de Retiro de Alumnos (Código QR)</h2>
-          {cargando ? (
-            <p>Cargando registros...</p>
-          ) : retirosList.length === 0 ? (
-            <p>No hay solicitudes de retiro pendientes.</p>
-          ) : (
-            <table className="tabla-datos">
-              <thead>
-                <tr>
-                  <th>Código QR</th>
-                  <th>Alumno</th>
-                  <th>Curso</th>
-                  <th>Apoderado</th>
-                  <th>RUT Apoderado</th>
-                  <th>Estado</th>
-                  <th>Acción</th>
-                </tr>
-              </thead>
-              <tbody>
-                {retirosList.map((ret, idx) => (
-                  <tr key={idx}>
-                    <td><code>{ret.codigoQR}</code></td>
-                    <td>{`${ret.alumno_nombre} ${ret.alumno_apellido}`}</td>
-                    <td>{ret.curso}</td>
-                    <td>{`${ret.apoderado_nombre} ${ret.apoderado_apellido}`}</td>
-                    <td>{ret.apoderado_rut}</td>
-                    <td>
-                      <span style={{
-                        padding: '4px 8px',
-                        borderRadius: '4px',
-                        fontWeight: 'bold',
-                        backgroundColor: ret.estado === 'pendiente' ? '#fff3cd' : '#d4edda',
-                        color: ret.estado === 'pendiente' ? '#856404' : '#155724'
-                      }}>
-                        {ret.estado.toUpperCase()}
-                      </span>
-                    </td>
-                    <td>
-                      {ret.estado === 'pendiente' ? (
-                        <button
-                          onClick={() => procesarRetiro(ret.codigoQR)}
-                          style={{
-                            backgroundColor: '#800000',
-                            color: '#fff',
-                            border: 'none',
-                            padding: '6px 12px',
-                            borderRadius: '4px',
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Autorizar Retiro
-                        </button>
-                      ) : (
-                        <span style={{ color: 'gray' }}>Autorizado</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
-        </section>
+      <main className="inspectoria-main">
+        <section className="inspectoria-card">
+          <div className="inspectoria-card-header">
+            <div>
+              <h2>
+                Validar retiro mediante QR
+              </h2>
 
-        {/* SECCIÓN DE ASISTENCIA GENERAL DE ALUMNOS */}
-        <section className="section-card">
-          <h2>Control de Asistencia General</h2>
-          {cargando ? (
-            <p>Cargando información...</p>
-          ) : (
-            <table className="tabla-datos">
-              <thead>
-                <tr>
-                  <th>RUT</th>
-                  <th>Alumno</th>
-                  <th>Curso</th>
-                  <th>% Asistencia</th>
-                  <th>Estado / Alerta</th>
-                </tr>
-              </thead>
-              <tbody>
-                {alumnosList.map((alum) => (
-                  <tr key={alum.id}>
-                    <td>{alum.rut}</td>
-                    <td>{`${alum.nombre} ${alum.apellido}`}</td>
-                    <td>{alum.curso}</td>
-                    <td>{alum.asistenciaPorcentaje}%</td>
-                    <td>
-                      {alum.asistenciaPorcentaje < 85 ? (
-                        <span style={{ color: 'red', fontWeight: 'bold' }}>
-                          ⚠️ Riesgo por asistencia baja
-                        </span>
-                      ) : (
-                        <span style={{ color: 'green' }}>Normal</span>
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          )}
+              <p>
+                Escanee el código presentado
+                por el apoderado o ingrese el
+                código manualmente.
+              </p>
+            </div>
+
+            <div className="security-badge">
+              QR seguro
+            </div>
+          </div>
+
+          <div className="inspectoria-content">
+            {!retiro && (
+              <>
+                <div className="scanner-section">
+                  <div className="scanner-title">
+                    <h3>
+                      Escáner QR
+                    </h3>
+
+                    <span>
+                      El código debe estar vigente.
+                    </span>
+                  </div>
+
+                  <div
+                    id="qr-reader"
+                    ref={scannerContainerRef}
+                    className={
+                      scannerActivo
+                        ? 'qr-reader activo'
+                        : 'qr-reader'
+                    }
+                  ></div>
+
+                  <div className="scanner-actions">
+                    {!scannerActivo ? (
+                      scannerDisponible && (
+                        <button
+                          className="btn-inspectoria-primary"
+                          onClick={
+                            iniciarScanner
+                          }
+                        >
+                          Activar cámara
+                        </button>
+                      )
+                    ) : (
+                      <button
+                        className="btn-inspectoria-secondary"
+                        onClick={
+                          detenerScanner
+                        }
+                      >
+                        Detener cámara
+                      </button>
+                    )}
+                  </div>
+                </div>
+
+                <div className="separador">
+                  <span>
+                    O INGRESE EL CÓDIGO
+                  </span>
+                </div>
+
+                <div className="manual-section">
+                  <label>
+                    Código QR
+                  </label>
+
+                  <input
+                    type="text"
+                    value={codigoQR}
+                    onChange={(e) =>
+                      setCodigoQR(
+                        e.target.value
+                      )
+                    }
+                    onKeyDown={(e) => {
+                      if (
+                        e.key === 'Enter'
+                      ) {
+                        validarCodigo();
+                      }
+                    }}
+                    placeholder="Ingrese el código UUID del QR"
+                  />
+
+                  <button
+                    className="btn-inspectoria-primary"
+                    onClick={() =>
+                      validarCodigo()
+                    }
+                    disabled={cargando}
+                  >
+                    {cargando
+                      ? 'Validando...'
+                      : 'Validar código'}
+                  </button>
+                </div>
+              </>
+            )}
+
+            {mensaje && (
+              <div className="inspectoria-alert success">
+                {mensaje}
+              </div>
+            )}
+
+            {error && (
+              <div className="inspectoria-alert error">
+                {error}
+              </div>
+            )}
+
+            {retiro && (
+              <div className="retiro-validado">
+                <div className="retiro-status">
+                  <div className="status-icon">
+                    ✓
+                  </div>
+
+                  <div>
+                    <strong>
+                      Solicitud válida
+                    </strong>
+
+                    <span>
+                      Verifique la identidad
+                      antes de confirmar.
+                    </span>
+                  </div>
+                </div>
+
+                <div className="datos-grid">
+                  <div className="datos-card">
+                    <div className="datos-card-title">
+                      Alumno
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        Nombre completo
+                      </span>
+
+                      <strong>
+                        {
+                          retiro.alumno
+                            ?.nombre
+                        }
+                      </strong>
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        RUT
+                      </span>
+
+                      <strong>
+                        {
+                          retiro.alumno
+                            ?.rut
+                        }
+                      </strong>
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        Curso
+                      </span>
+
+                      <strong>
+                        {
+                          retiro.alumno
+                            ?.curso
+                        }
+                      </strong>
+                    </div>
+                  </div>
+
+                  <div className="datos-card">
+                    <div className="datos-card-title">
+                      Persona autorizada
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        Nombre completo
+                      </span>
+
+                      <strong>
+                        {
+                          retiro
+                            .personaAutorizada
+                            ?.nombre
+                        }
+                      </strong>
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        RUT
+                      </span>
+
+                      <strong>
+                        {
+                          retiro
+                            .personaAutorizada
+                            ?.rut
+                        }
+                      </strong>
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        Parentesco
+                      </span>
+
+                      <strong>
+                        {
+                          retiro
+                            .personaAutorizada
+                            ?.parentesco ||
+                          '-'
+                        }
+                      </strong>
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        Teléfono
+                      </span>
+
+                      <strong>
+                        {
+                          retiro
+                            .personaAutorizada
+                            ?.telefono ||
+                          '-'
+                        }
+                      </strong>
+                    </div>
+
+                    <div className="dato">
+                      <span>
+                        N.º autorización
+                      </span>
+
+                      <strong>
+                        {
+                          retiro
+                            .personaAutorizada
+                            ?.numeroAutorizacion ||
+                          '-'
+                        }
+                      </strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="motivo-card">
+                  <span>
+                    Motivo del retiro
+                  </span>
+
+                  <strong>
+                    {
+                      retiro.retiro
+                        ?.motivo
+                    }
+                  </strong>
+
+                  {retiro.retiro
+                    ?.observacion && (
+                    <p>
+                      {
+                        retiro.retiro
+                          .observacion
+                      }
+                    </p>
+                  )}
+                </div>
+
+                {!confirmado && (
+                  <div className="confirmacion-section">
+                    <label>
+                      Observación de Inspectoría
+                    </label>
+
+                    <textarea
+                      value={observacion}
+                      onChange={(e) =>
+                        setObservacion(
+                          e.target.value
+                        )
+                      }
+                      rows="4"
+                      placeholder="Registre aquí una observación si corresponde."
+                    />
+
+                    <div className="verificacion-box">
+                      <strong>
+                        Antes de confirmar
+                      </strong>
+
+                      <p>
+                        Verifique presencialmente
+                        que la persona que realiza
+                        el retiro coincide con los
+                        datos de la solicitud y con
+                        la persona autorizada.
+                      </p>
+                    </div>
+
+                    <button
+                      className="btn-confirmar-retiro"
+                      onClick={
+                        confirmar
+                      }
+                      disabled={
+                        confirmando
+                      }
+                    >
+                      {confirmando
+                        ? 'Registrando retiro...'
+                        : 'Confirmar y autorizar retiro'}
+                    </button>
+                  </div>
+                )}
+
+                {confirmado && (
+                  <div className="retiro-confirmado">
+                    <div className="confirmado-icon">
+                      ✓
+                    </div>
+
+                    <h3>
+                      Retiro registrado
+                    </h3>
+
+                    <p>
+                      El retiro fue autorizado
+                      correctamente y el código
+                      QR quedó inutilizado.
+                    </p>
+
+                    <button
+                      className="btn-inspectoria-primary"
+                      onClick={
+                        nuevoRetiro
+                      }
+                    >
+                      Validar otro retiro
+                    </button>
+                  </div>
+                )}
+
+                {!confirmado && (
+                  <div className="retiro-actions">
+                    <button
+                      className="btn-inspectoria-secondary"
+                      onClick={
+                        nuevoRetiro
+                      }
+                    >
+                      Cancelar
+                    </button>
+                  </div>
+                )}
+              </div>
+            )}
+          </div>
         </section>
       </main>
     </div>

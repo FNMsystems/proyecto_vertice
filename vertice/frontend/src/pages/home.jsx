@@ -35,38 +35,48 @@ function Home() {
 
       console.log('Usuario autenticado:', user);
 
-      const rol = String(user?.rol || '').toUpperCase();
+      const rol = String(user?.rol || '')
+        .trim()
+        .toUpperCase();
 
-    
+      const rolNormalizado = rol
+        .replace(/\s+/g, '_');
+
       if (rol === 'APODERADO') {
         navigate('/apoderado');
         return;
       }
 
-      if (rol === 'DOCENTE' || rol === 'PROFESOR') {
+      if (
+        rolNormalizado === 'DOCENTE' ||
+        rolNormalizado === 'PROFESOR'
+      ) {
         navigate('/profesores_dashboard');
         return;
       }
 
-      if (rol === 'DIRECTOR' || rol === 'ADMIN') {
+      if (
+        rolNormalizado === 'DIRECTOR' ||
+        rolNormalizado === 'ADMIN'
+      ) {
         navigate('/director_dashboard');
         return;
       }
 
       if (
-        rol === 'INSPECTOR' ||
-        rol === 'INSPECTOR_GENERAL'
+        rolNormalizado === 'INSPECTOR' ||
+        rolNormalizado === 'INSPECTOR_GENERAL'
       ) {
         navigate('/inspectoria_dashboard');
         return;
       }
 
-      if (rol === 'UTP') {
+      if (rolNormalizado === 'UTP') {
         navigate('/utp_dashboard');
         return;
       }
 
-      if (rol === 'SECRETARIA') {
+      if (rolNormalizado === 'SECRETARIA') {
         navigate('/secretaria_dashboard');
         return;
       }

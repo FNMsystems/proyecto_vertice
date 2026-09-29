@@ -10,6 +10,8 @@ import docenteRoutes from './routes/docenteRoutes.js';
 import notaRoutes from "./routes/notaRoutes.js";
 import anotacionRoutes from "./routes/anotacionRoutes.js";
 import asistenciaRoutes from "./routes/asistenciaRoutes.js";
+import inspectoriaRoutes from './routes/inspectoriaRoutes.js';
+import apoderadoRoutes from './routes/apoderadoRoutes.js';
 
 dotenv.config();
 
@@ -25,6 +27,8 @@ app.use('/api/docentes', docenteRoutes);
 app.use("/api/notas", notaRoutes);
 app.use("/api/anotaciones", anotacionRoutes);
 app.use("/api/asistencia", asistenciaRoutes);
+app.use('/api/inspectoria', inspectoriaRoutes);
+app.use('/api/apoderados', apoderadoRoutes);
 
 const PORT = process.env.PORT || 3000;
 

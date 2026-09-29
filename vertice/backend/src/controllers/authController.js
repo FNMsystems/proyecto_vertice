@@ -7,7 +7,6 @@ import {
   actualizarPassword
 } from '../models/authModel.js';
 
-
 export const login = async (req, res) => {
 
   try {
@@ -16,7 +15,6 @@ export const login = async (req, res) => {
       email,
       password
     } = req.body;
-
 
     if (!email || !password) {
 
@@ -29,7 +27,7 @@ export const login = async (req, res) => {
 
     const persona =
       await buscarPersonaPorCorreo(email);
-
+   
 
     if (!persona) {
 
@@ -40,7 +38,6 @@ export const login = async (req, res) => {
 
     }
 
-
     if (!persona.password_hash) {
 
       return res.status(401).json({
@@ -50,13 +47,11 @@ export const login = async (req, res) => {
 
     }
 
-
     const passwordCorrecta =
       await bcrypt.compare(
         password,
         persona.password_hash
       );
-
 
     if (!passwordCorrecta) {
 
@@ -67,11 +62,9 @@ export const login = async (req, res) => {
 
     }
 
-
     let nombre;
 
-
-    if (persona.rol === 'DOCENTE') {
+    if (persona.tipo_persona === 'DOCENTE') {
 
       nombre = [
         persona.nombres,
@@ -88,7 +81,6 @@ export const login = async (req, res) => {
 
     }
 
-
     const payload = {
 
       id: persona.id,
@@ -101,11 +93,16 @@ export const login = async (req, res) => {
 
       rol: persona.rol,
 
+      tipo_persona:
+        persona.tipo_persona,
+
+      especialidad:
+        persona.especialidad || null,
+
       debe_cambiar_password:
         persona.debe_cambiar_password
 
     };
-
 
     const token = jwt.sign(
       payload,
@@ -114,7 +111,6 @@ export const login = async (req, res) => {
         expiresIn: '8h'
       }
     );
-
 
     return res.json({
 
@@ -132,13 +128,18 @@ export const login = async (req, res) => {
 
         rol: persona.rol,
 
+        tipo_persona:
+          persona.tipo_persona,
+
+        especialidad:
+          persona.especialidad || null,
+
         debe_cambiar_password:
           persona.debe_cambiar_password
 
       }
 
     });
-
 
   } catch (error) {
 
@@ -156,7 +157,6 @@ export const login = async (req, res) => {
 
 };
 
-
 export const cambiarPassword = async (
   req,
   res
@@ -169,7 +169,6 @@ export const cambiarPassword = async (
       passwordNueva
     } = req.body;
 
-
     if (
       !passwordActual ||
       !passwordNueva
@@ -181,7 +180,6 @@ export const cambiarPassword = async (
       });
 
     }
-
 
     if (passwordNueva.length < 8) {
 
@@ -198,7 +196,6 @@ export const cambiarPassword = async (
         req.usuario.rol
       );
 
-
     if (!persona) {
 
       return res.status(404).json({
@@ -208,13 +205,11 @@ export const cambiarPassword = async (
 
     }
 
-
     const passwordCorrecta =
       await bcrypt.compare(
         passwordActual,
         persona.password_hash
       );
-
 
     if (!passwordCorrecta) {
 
@@ -231,15 +226,12 @@ export const cambiarPassword = async (
         10
       );
 
-
-
     const actualizado =
       await actualizarPassword(
         req.usuario.id,
         req.usuario.rol,
         nuevoHash
       );
-
 
     if (!actualizado) {
 
@@ -254,7 +246,6 @@ export const cambiarPassword = async (
       mensaje:
         'Contraseña actualizada correctamente.'
     });
-
 
   } catch (error) {
 
