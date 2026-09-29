@@ -8,6 +8,11 @@ import {
   validarRetiroQR,
   confirmarRetiro
 } from '../services/inspectoriaService.js';
+import {
+  obtenerCursosInspector,
+  obtenerAlumnosCurso,
+  registrarRetraso
+} from '../services/retrasoService.js';
 import logoColegio from '../img/logo_institucional.png';
 import fondoInstitucional from '../img/fondo_institucional.jpeg';
 import './inspectoria_dashboard.css';
@@ -40,6 +45,45 @@ export default function InspectoriaDashboard() {
   const [confirmado, setConfirmado] =
     useState(false);
 
+  const [cursos, setCursos] =
+    useState([]);
+
+  const [alumnos, setAlumnos] =
+    useState([]);
+
+  const [cursoSeleccionado, setCursoSeleccionado] =
+    useState('');
+
+  const [alumnoSeleccionado, setAlumnoSeleccionado] =
+    useState('');
+
+  const [fechaAtraso, setFechaAtraso] =
+    useState('');
+
+  const [horaLlegada, setHoraLlegada] =
+    useState('');
+
+  const [motivoAtraso, setMotivoAtraso] =
+    useState('');
+
+  const [observacionAtraso, setObservacionAtraso] =
+    useState('');
+
+  const [cargandoCursos, setCargandoCursos] =
+    useState(false);
+
+  const [cargandoAlumnos, setCargandoAlumnos] =
+    useState(false);
+
+  const [registrandoAtraso, setRegistrandoAtraso] =
+    useState(false);
+
+  const [mensajeAtraso, setMensajeAtraso] =
+    useState('');
+
+  const [errorAtraso, setErrorAtraso] =
+    useState('');
+
   const handleLogout = () => {
     logoutService();
     navigate('/');
@@ -49,6 +93,161 @@ export default function InspectoriaDashboard() {
     setError('');
     setMensaje('');
   };
+
+  const limpiarMensajesAtraso = () => {
+    setErrorAtraso('');
+    setMensajeAtraso('');
+  };
+
+  const cargarCursos = async () => {
+    try {
+      setCargandoCursos(true);
+      limpiarMensajesAtraso();
+
+      const resultado =
+        await obtenerCursosInspector();
+
+      setCursos(
+        resultado?.cursos || []
+      );
+    } catch (error) {
+      console.error(
+        'Error cargando cursos:',
+        error
+      );
+
+      setErrorAtraso(
+        error.message ||
+        'No se pudieron cargar los cursos.'
+      );
+    } finally {
+      setCargandoCursos(false);
+    }
+  };
+
+  const seleccionarCurso = async (
+    cursoId
+  ) => {
+    setCursoSeleccionado(cursoId);
+    setAlumnoSeleccionado('');
+    setAlumnos([]);
+    limpiarMensajesAtraso();
+
+    if (!cursoId) {
+      return;
+    }
+
+    try {
+      setCargandoAlumnos(true);
+
+      const resultado =
+        await obtenerAlumnosCurso(
+          cursoId
+        );
+
+      setAlumnos(
+        resultado?.alumnos || []
+      );
+    } catch (error) {
+      console.error(
+        'Error cargando alumnos:',
+        error
+      );
+
+      setErrorAtraso(
+        error.message ||
+        'No se pudieron cargar los alumnos.'
+      );
+    } finally {
+      setCargandoAlumnos(false);
+    }
+  };
+
+  const registrarAtrasoFormulario =
+    async () => {
+      limpiarMensajesAtraso();
+
+      if (!cursoSeleccionado) {
+        setErrorAtraso(
+          'Debe seleccionar un curso.'
+        );
+        return;
+      }
+
+      if (!alumnoSeleccionado) {
+        setErrorAtraso(
+          'Debe seleccionar un alumno.'
+        );
+        return;
+      }
+
+      if (!fechaAtraso) {
+        setErrorAtraso(
+          'Debe indicar la fecha del atraso.'
+        );
+        return;
+      }
+
+      if (!horaLlegada) {
+        setErrorAtraso(
+          'Debe indicar la hora de llegada.'
+        );
+        return;
+      }
+
+      try {
+        setRegistrandoAtraso(true);
+
+        const resultado =
+          await registrarRetraso({
+            alumnoId:
+              alumnoSeleccionado,
+            cursoId:
+              cursoSeleccionado,
+            fecha:
+              fechaAtraso,
+            horaLlegada:
+              horaLlegada,
+            motivo:
+              motivoAtraso.trim(),
+            observacion:
+              observacionAtraso.trim()
+          });
+
+        setMensajeAtraso(
+          resultado?.mensaje ||
+          'Atraso registrado correctamente.'
+        );
+
+        setAlumnoSeleccionado('');
+        setMotivoAtraso('');
+        setObservacionAtraso('');
+
+        setHoraLlegada(
+          new Date()
+            .toLocaleTimeString(
+              'es-CL',
+              {
+                hour: '2-digit',
+                minute: '2-digit',
+                hour12: false
+              }
+            )
+        );
+      } catch (error) {
+        console.error(
+          'Error registrando atraso:',
+          error
+        );
+
+        setErrorAtraso(
+          error.message ||
+          'No se pudo registrar el atraso.'
+        );
+      } finally {
+        setRegistrandoAtraso(false);
+      }
+    };
 
   const validarCodigo = async (
     codigo = codigoQR
@@ -263,6 +462,27 @@ export default function InspectoriaDashboard() {
   };
 
   useEffect(() => {
+    const hoy =
+      new Date()
+        .toISOString()
+        .split('T')[0];
+
+    const hora =
+      new Date()
+        .toLocaleTimeString(
+          'es-CL',
+          {
+            hour: '2-digit',
+            minute: '2-digit',
+            hour12: false
+          }
+        );
+
+    setFechaAtraso(hoy);
+    setHoraLlegada(hora);
+
+    cargarCursos();
+
     return () => {
       detenerScanner();
     };
@@ -696,6 +916,219 @@ export default function InspectoriaDashboard() {
                 )}
               </div>
             )}
+
+            <section className="atraso-section">
+              <div className="atraso-header">
+                <div>
+                  <h2>
+                    Registrar atraso
+                  </h2>
+
+                  <p>
+                    Seleccione el curso y luego
+                    el alumno que llegó atrasado.
+                  </p>
+                </div>
+
+                <div className="atraso-badge">
+                  Inspectoría
+                </div>
+              </div>
+
+              <div className="atraso-form">
+                <div className="atraso-field">
+                  <label>
+                    Curso
+                  </label>
+
+                  <select
+                    value={
+                      cursoSeleccionado
+                    }
+                    onChange={(e) =>
+                      seleccionarCurso(
+                        e.target.value
+                      )
+                    }
+                    disabled={
+                      cargandoCursos
+                    }
+                  >
+                    <option value="">
+                      {cargandoCursos
+                        ? 'Cargando cursos...'
+                        : 'Seleccione un curso'}
+                    </option>
+
+                    {cursos.map(
+                      (curso) => (
+                        <option
+                          key={
+                            curso.id
+                          }
+                          value={
+                            curso.id
+                          }
+                        >
+                          {curso.nombre}
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+
+                <div className="atraso-field">
+                  <label>
+                    Alumno
+                  </label>
+
+                  <select
+                    value={
+                      alumnoSeleccionado
+                    }
+                    onChange={(e) =>
+                      setAlumnoSeleccionado(
+                        e.target.value
+                      )
+                    }
+                    disabled={
+                      !cursoSeleccionado ||
+                      cargandoAlumnos
+                    }
+                  >
+                    <option value="">
+                      {!cursoSeleccionado
+                        ? 'Primero seleccione un curso'
+                        : cargandoAlumnos
+                        ? 'Cargando alumnos...'
+                        : alumnos.length === 0
+                        ? 'No hay alumnos disponibles'
+                        : 'Seleccione un alumno'}
+                    </option>
+
+                    {alumnos.map(
+                      (alumno) => (
+                        <option
+                          key={
+                            alumno.id
+                          }
+                          value={
+                            alumno.id
+                          }
+                        >
+                          {
+                            alumno.nombre_completo
+                          }
+                        </option>
+                      )
+                    )}
+                  </select>
+                </div>
+
+                <div className="atraso-datos">
+                  <div className="atraso-field">
+                    <label>
+                      Fecha
+                    </label>
+
+                    <input
+                      type="date"
+                      value={
+                        fechaAtraso
+                      }
+                      onChange={(e) =>
+                        setFechaAtraso(
+                          e.target.value
+                        )
+                      }
+                    />
+                  </div>
+
+                  <div className="atraso-field">
+                    <label>
+                      Hora de llegada
+                    </label>
+
+                    <input
+                      type="time"
+                      value={
+                        horaLlegada
+                      }
+                      onChange={(e) =>
+                        setHoraLlegada(
+                          e.target.value
+                        )
+                      }
+                    />
+                  </div>
+                </div>
+
+                <div className="atraso-field">
+                  <label>
+                    Motivo
+                  </label>
+
+                  <input
+                    type="text"
+                    value={
+                      motivoAtraso
+                    }
+                    onChange={(e) =>
+                      setMotivoAtraso(
+                        e.target.value
+                      )
+                    }
+                    placeholder="Ej.: Problemas de locomoción"
+                  />
+                </div>
+
+                <div className="atraso-field">
+                  <label>
+                    Observación
+                  </label>
+
+                  <textarea
+                    value={
+                      observacionAtraso
+                    }
+                    onChange={(e) =>
+                      setObservacionAtraso(
+                        e.target.value
+                      )
+                    }
+                    rows="4"
+                    placeholder="Ingrese una observación si corresponde."
+                  />
+                </div>
+
+                {mensajeAtraso && (
+                  <div className="inspectoria-alert success">
+                    {mensajeAtraso}
+                  </div>
+                )}
+
+                {errorAtraso && (
+                  <div className="inspectoria-alert error">
+                    {errorAtraso}
+                  </div>
+                )}
+
+                <button
+                  type="button"
+                  className="btn-registrar-atraso"
+                  onClick={
+                    registrarAtrasoFormulario
+                  }
+                  disabled={
+                    registrandoAtraso
+                  }
+                >
+                  {registrandoAtraso
+                    ? 'Registrando atraso...'
+                    : 'Registrar atraso'}
+                </button>
+              </div>
+            </section>
           </div>
         </section>
       </main>

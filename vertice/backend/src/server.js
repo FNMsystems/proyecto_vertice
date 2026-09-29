@@ -12,6 +12,7 @@ import anotacionRoutes from "./routes/anotacionRoutes.js";
 import asistenciaRoutes from "./routes/asistenciaRoutes.js";
 import inspectoriaRoutes from './routes/inspectoriaRoutes.js';
 import apoderadoRoutes from './routes/apoderadoRoutes.js';
+import retrasoRoutes from './routes/retrasoRoutes.js';
 
 dotenv.config();
 
@@ -29,6 +30,7 @@ app.use("/api/anotaciones", anotacionRoutes);
 app.use("/api/asistencia", asistenciaRoutes);
 app.use('/api/inspectoria', inspectoriaRoutes);
 app.use('/api/apoderados', apoderadoRoutes);
+app.use('/api/retrasos', retrasoRoutes);
 
 const PORT = process.env.PORT || 3000;
 

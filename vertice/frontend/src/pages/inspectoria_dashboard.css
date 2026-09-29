@@ -589,3 +589,139 @@
     text-align: left;
   }
 }
+
+.atraso-section {
+  max-width: 900px;
+  margin: 45px auto 0;
+  padding: 0;
+  border: 1px solid #eaecf0;
+  border-radius: 14px;
+  background: white;
+  overflow: hidden;
+}
+
+.atraso-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+  padding: 22px 24px;
+  background: linear-gradient(
+    135deg,
+    #800020,
+    #a00028
+  );
+  color: white;
+}
+
+.atraso-header h2 {
+  margin: 0 0 6px;
+  font-size: 21px;
+}
+
+.atraso-header p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 13px;
+}
+
+.atraso-badge {
+  padding: 8px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.4);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.12);
+  color: white;
+  font-size: 12px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.atraso-form {
+  padding: 25px;
+}
+
+.atraso-field {
+  margin-bottom: 18px;
+}
+
+.atraso-field label {
+  display: block;
+  margin-bottom: 7px;
+  color: #344054;
+  font-size: 13px;
+  font-weight: 700;
+}
+
+.atraso-field select,
+.atraso-field input,
+.atraso-field textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #d0d5dd;
+  border-radius: 8px;
+  outline: none;
+  color: #344054;
+  background: white;
+  font-family: inherit;
+  font-size: 13px;
+}
+
+.atraso-field select:focus,
+.atraso-field input:focus,
+.atraso-field textarea:focus {
+  border-color: #800020;
+  box-shadow: 0 0 0 3px rgba(128, 0, 32, 0.08);
+}
+
+.atraso-field select:disabled {
+  background: #f2f4f7;
+  color: #98a2b3;
+  cursor: not-allowed;
+}
+
+.atraso-datos {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+.atraso-datos .atraso-field {
+  margin-bottom: 18px;
+}
+
+.btn-registrar-atraso {
+  width: 100%;
+  padding: 13px 18px;
+  border: 0;
+  border-radius: 8px;
+  background: #800020;
+  color: white;
+  font-size: 14px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.btn-registrar-atraso:hover {
+  background: #650019;
+}
+
+.btn-registrar-atraso:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 600px) {
+  .atraso-header {
+    flex-direction: column;
+  }
+
+  .atraso-form {
+    padding: 18px;
+  }
+
+  .atraso-datos {
+    grid-template-columns: 1fr;
+    gap: 0;
+  }
+}

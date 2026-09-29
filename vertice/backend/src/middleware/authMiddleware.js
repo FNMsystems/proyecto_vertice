@@ -110,3 +110,21 @@ export const esDirector = (
 
   next();
 };
+
+export const esInspector = (req, res, next) => {
+  const rol = String(req.usuario?.rol || '')
+    .trim()
+    .toUpperCase()
+    .replace(/\s+/g, '_');
+
+  if (
+    rol !== 'INSPECTOR' &&
+    rol !== 'INSPECTOR_GENERAL'
+  ) {
+    return res.status(403).json({
+      error: 'Acceso denegado. Solo Inspectoría puede realizar esta acción.'
+    });
+  }
+
+  next();
+};
