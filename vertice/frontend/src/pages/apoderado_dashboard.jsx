@@ -113,29 +113,29 @@ function ApoderadoDashboard({ apoderadoRut }) {
 
         const alumnosFormateados = Array.isArray(dataAlumnos)
           ? dataAlumnos.map((alumno) => ({
-              ...alumno,
-              nombre: alumno.nombres,
-              apellido: [
-                alumno.apellido_paterno,
-                alumno.apellido_materno
-              ]
-                .filter(Boolean)
-                .join(' '),
-              nombreCompleto: [
-                alumno.nombres,
-                alumno.apellido_paterno,
-                alumno.apellido_materno
-              ]
-                .filter(Boolean)
-                .join(' '),
-              asignaturas: [],
-              anotaciones: [],
-              asistencia: [],
-              comunicaciones: [],
-              pie: null,
-              asistenciaPorcentaje: null,
-              riesgoRepitencia: null
-            }))
+            ...alumno,
+            nombre: alumno.nombres,
+            apellido: [
+              alumno.apellido_paterno,
+              alumno.apellido_materno
+            ]
+              .filter(Boolean)
+              .join(' '),
+            nombreCompleto: [
+              alumno.nombres,
+              alumno.apellido_paterno,
+              alumno.apellido_materno
+            ]
+              .filter(Boolean)
+              .join(' '),
+            asignaturas: [],
+            anotaciones: [],
+            asistencia: [],
+            comunicaciones: [],
+            pie: null,
+            asistenciaPorcentaje: null,
+            riesgoRepitencia: null
+          }))
           : [];
 
         setAlumnos(alumnosFormateados);
@@ -644,45 +644,40 @@ function ApoderadoDashboard({ apoderadoRut }) {
 
             <nav className="tabs-navigation">
               <button
-                className={`tab-btn ${
-                  tab === 'notas' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'notas' ? 'active' : ''
+                  }`}
                 onClick={() => setTab('notas')}
               >
                 Notas y Asignaturas
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'anotaciones' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'anotaciones' ? 'active' : ''
+                  }`}
                 onClick={() => setTab('anotaciones')}
               >
                 Anotaciones
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'asistencia' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'asistencia' ? 'active' : ''
+                  }`}
                 onClick={() => setTab('asistencia')}
               >
                 Asistencia
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'justificativo' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'justificativo' ? 'active' : ''
+                  }`}
                 onClick={() => setTab('justificativo')}
               >
                 Subir Justificativo
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'qr' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'qr' ? 'active' : ''
+                  }`}
                 onClick={() => {
                   setTab('qr');
                   cargarPersonasRetiro();
@@ -692,9 +687,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'certificados' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'certificados' ? 'active' : ''
+                  }`}
                 onClick={() =>
                   setTab('certificados')
                 }
@@ -703,11 +697,10 @@ function ApoderadoDashboard({ apoderadoRut }) {
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'comunicaciones'
+                className={`tab-btn ${tab === 'comunicaciones'
                     ? 'active'
                     : ''
-                }`}
+                  }`}
                 onClick={() =>
                   setTab('comunicaciones')
                 }
@@ -716,9 +709,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
               </button>
 
               <button
-                className={`tab-btn ${
-                  tab === 'pie' ? 'active' : ''
-                }`}
+                className={`tab-btn ${tab === 'pie' ? 'active' : ''
+                  }`}
                 onClick={() => setTab('pie')}
               >
                 Apoyo Multidisciplinario
@@ -748,23 +740,45 @@ function ApoderadoDashboard({ apoderadoRut }) {
                             <tr
                               key={a.asignatura_id}
                             >
-                              <td>{a.nombre}</td>
+                              <td>
+                                <button
+                                  type="button"
+                                  className="asignatura-apoderado-btn"
+                                  onClick={() => {
+                                    const docente =
+                                      a.docente_nombre ||
+                                      'Docente no registrado';
+
+                                    const correo =
+                                      a.docente_correo ||
+                                      'Correo no registrado';
+
+                                    alert(
+                                      `Asignatura: ${a.nombre}\n\n` +
+                                      `Docente: ${docente}\n` +
+                                      `Correo: ${correo}`
+                                    );
+                                  }}
+                                >
+                                  {a.nombre}
+                                </button>
+                              </td>
 
                               <td>
                                 {Array.isArray(a.notas)
                                   ? a.notas
-                                      .filter(
-                                        (n) =>
-                                          n !== null &&
-                                          n !== undefined
-                                      )
-                                      .join(' · ')
+                                    .filter(
+                                      (n) =>
+                                        n !== null &&
+                                        n !== undefined
+                                    )
+                                    .join(' · ')
                                   : '-'}
                               </td>
 
                               <td>
                                 {a.promedio !== null &&
-                                a.promedio !== undefined
+                                  a.promedio !== undefined
                                   ? a.promedio
                                   : '-'}
                               </td>
@@ -852,7 +866,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                       Porcentaje de Asistencia Anual:
                     </strong>{' '}
                     {alumnoSeleccionado.asistenciaPorcentaje !==
-                    null
+                      null
                       ? `${alumnoSeleccionado.asistenciaPorcentaje}%`
                       : 'Sin datos'}
                   </p>
@@ -1113,79 +1127,79 @@ function ApoderadoDashboard({ apoderadoRut }) {
 
                       {solicitudQR?.solicitud
                         ?.codigo_qr && (
-                        <div className="qr-generado">
-                          <h4>
-                            Código QR generado
-                          </h4>
+                          <div className="qr-generado">
+                            <h4>
+                              Código QR generado
+                            </h4>
 
-                          <div className="qr-code-box">
-                            <QRCodeSVG
-                              value={
-                                solicitudQR
-                                  .solicitud
-                                  .codigo_qr
+                            <div className="qr-code-box">
+                              <QRCodeSVG
+                                value={
+                                  solicitudQR
+                                    .solicitud
+                                    .codigo_qr
+                                }
+                                size={240}
+                                level="H"
+                                includeMargin={true}
+                              />
+                            </div>
+
+                            <p>
+                              <strong>
+                                Alumno:
+                              </strong>{' '}
+                              {
+                                solicitudQR.alumno
+                                  ?.nombre
                               }
-                              size={240}
-                              level="H"
-                              includeMargin={true}
-                            />
-                          </div>
+                            </p>
 
-                          <p>
-                            <strong>
-                              Alumno:
-                            </strong>{' '}
-                            {
-                              solicitudQR.alumno
-                                ?.nombre
-                            }
-                          </p>
+                            <p>
+                              <strong>
+                                Curso:
+                              </strong>{' '}
+                              {
+                                solicitudQR.curso
+                                  ?.curso_nombre
+                              }
+                            </p>
 
-                          <p>
-                            <strong>
-                              Curso:
-                            </strong>{' '}
-                            {
-                              solicitudQR.curso
-                                ?.curso_nombre
-                            }
-                          </p>
+                            <p>
+                              <strong>
+                                Persona autorizada:
+                              </strong>{' '}
+                              {
+                                solicitudQR
+                                  .personaAutorizada
+                                  ?.nombre_completo
+                              }
+                            </p>
 
-                          <p>
-                            <strong>
-                              Persona autorizada:
-                            </strong>{' '}
-                            {
-                              solicitudQR
-                                .personaAutorizada
-                                ?.nombre_completo
-                            }
-                          </p>
-
-                          <p className="qr-expiracion">
-                            <strong>
-                              Válido hasta:
-                            </strong>{' '}
-                            {solicitudQR.solicitud
-                              ?.fecha_expiracion
-                              ? new Date(
+                            <p className="qr-expiracion">
+                              <strong>
+                                Válido hasta:
+                              </strong>{' '}
+                              {solicitudQR.solicitud
+                                ?.fecha_expiracion
+                                ? new Date(
                                   solicitudQR
                                     .solicitud
                                     .fecha_expiracion
                                 ).toLocaleString(
                                   'es-CL'
                                 )
-                              : '-'}
-                          </p>
+                                : '-'}
+                            </p>
 
-                          <p className="qr-ayuda">
-                            Este código debe ser presentado
-                            en Inspectoría. La generación del
-                            QR no reemplaza la verificación
-                            de identidad y autorización.
-                          </p>
-                        </div>
-                      )}
+                            <p className="qr-ayuda">
+                              Este código debe ser presentado
+                              en Inspectoría. La generación del
+                              QR no reemplaza la verificación
+                              de identidad y autorización.
+                            </p>
+                          </div>
+                        )}
                     </>
                   )}
                 </div>

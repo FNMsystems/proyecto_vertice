@@ -85,7 +85,67 @@ export const getMiDashboard = async (req, res) => {
         id: fila.asignatura_id,
         codigo: fila.asignatura_codigo,
         nombre: fila.asignatura_nombre,
+        docenteId: docenteId,
+        docente: [
+          docente.nombres,
+          docente.apellido_paterno,
+          docente.apellido_materno,
+        ]
+          .filter(Boolean)
+          .join(" "),
+        correoDocente: docente.correo,
+        puedeGestionar: true,
       });
+    }
+
+    const cursosIniciales = Array.from(cursosMap.values());
+
+    for (const curso of cursosIniciales) {
+      if (!curso.esProfesorJefe) {
+        continue;
+      }
+
+      const asignaturasCursoResult = await query(
+        `
+          SELECT
+            a.id AS asignatura_id,
+            a.codigo AS asignatura_codigo,
+            a.nombre AS asignatura_nombre,
+            d.id AS docente_id,
+            CONCAT(
+              d.nombres,
+              ' ',
+              d.apellido_paterno,
+              CASE
+                WHEN d.apellido_materno IS NOT NULL
+                  AND TRIM(d.apellido_materno) <> ''
+                THEN ' ' || d.apellido_materno
+                ELSE ''
+              END
+            ) AS docente_nombre,
+            d.correo AS docente_correo
+          FROM docente_curso dc
+          INNER JOIN asignaturas a
+            ON a.id = dc.asignatura_id
+          LEFT JOIN docentes d
+            ON d.id = dc.docente_id
+          WHERE dc.curso_id = $1
+            AND dc.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+            AND a.activo = TRUE
+          ORDER BY a.nombre;
+        `,
+        [curso.id],
+      );
+
+      curso.asignaturas = asignaturasCursoResult.rows.map((asignatura) => ({
+        id: asignatura.asignatura_id,
+        codigo: asignatura.asignatura_codigo,
+        nombre: asignatura.asignatura_nombre,
+        docenteId: asignatura.docente_id,
+        docente: asignatura.docente_nombre,
+        correoDocente: asignatura.docente_correo,
+        puedeGestionar: String(asignatura.docente_id) === String(docenteId),
+      }));
     }
 
     return res.json({
@@ -103,7 +163,7 @@ export const getMiDashboard = async (req, res) => {
         telefono: docente.telefono,
         especialidad: docente.especialidad,
       },
-      cursos: Array.from(cursosMap.values()),
+      cursos: cursosIniciales,
     });
   } catch (error) {
     console.error("Error al obtener dashboard del docente:", error);
@@ -219,21 +279,34 @@ export const getCursoDocente = async (req, res) => {
 
     const asignaturasResult = await query(
       `
-        SELECT
-          a.id,
-          a.codigo,
-          a.nombre,
-          dc.es_profesor_jefe
-        FROM docente_curso dc
-        INNER JOIN asignaturas a
-          ON a.id = dc.asignatura_id
-        WHERE dc.docente_id = $1
-          AND dc.curso_id = $2
-          AND dc.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
-          AND a.activo = TRUE
-        ORDER BY a.nombre;
-      `,
-      [docenteId, cursoId],
+    SELECT
+      a.id,
+      a.codigo,
+      a.nombre,
+      d.id AS docente_id,
+      CONCAT(
+        d.nombres,
+        ' ',
+        d.apellido_paterno,
+        CASE
+          WHEN d.apellido_materno IS NOT NULL
+            AND TRIM(d.apellido_materno) <> ''
+          THEN ' ' || d.apellido_materno
+          ELSE ''
+        END
+      ) AS docente_nombre,
+      d.correo AS docente_correo
+    FROM docente_curso dc
+    INNER JOIN asignaturas a
+      ON a.id = dc.asignatura_id
+    LEFT JOIN docentes d
+      ON d.id = dc.docente_id
+    WHERE dc.curso_id = $1
+      AND dc.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+      AND a.activo = TRUE
+    ORDER BY a.nombre;
+  `,
+      [cursoId],
     );
 
     const alumnosResult = await query(
@@ -301,7 +374,10 @@ export const getCursoDocente = async (req, res) => {
         id: asignatura.id,
         codigo: asignatura.codigo,
         nombre: asignatura.nombre,
-        esProfesorJefe: Boolean(asignatura.es_profesor_jefe),
+        docenteId: asignatura.docente_id,
+        docente: asignatura.docente_nombre,
+        correoDocente: asignatura.docente_correo,
+        puedeGestionar: String(asignatura.docente_id) === String(docenteId),
       })),
 
       horario,
@@ -418,17 +494,12 @@ export const getInformacionAlumnoDocente = async (req, res) => {
           telefono: apoderado.telefono,
           correo: apoderado.correo,
           parentesco: apoderado.parentesco,
-          esApoderadoPrincipal: Boolean(
-            apoderado.es_apoderado_principal
-          ),
+          esApoderadoPrincipal: Boolean(apoderado.es_apoderado_principal),
         })),
       },
     });
   } catch (error) {
-    console.error(
-      "Error al obtener información del alumno:",
-      error,
-    );
+    console.error("Error al obtener información del alumno:", error);
 
     return res.status(500).json({
       error: "Error al obtener la información del alumno.",
@@ -441,9 +512,7 @@ export const getAsistenciaCurso = async (req, res) => {
     const docenteId = req.usuario.id;
     const { cursoId } = req.params;
 
-    const fecha =
-      req.query.fecha ||
-      new Date().toISOString().slice(0, 10);
+    const fecha = req.query.fecha || new Date().toISOString().slice(0, 10);
 
     if (!cursoId) {
       return res.status(400).json({
@@ -525,10 +594,7 @@ export const getAsistenciaCurso = async (req, res) => {
       })),
     });
   } catch (error) {
-    console.error(
-      "Error al obtener asistencia del curso:",
-      error,
-    );
+    console.error("Error al obtener asistencia del curso:", error);
 
     return res.status(500).json({
       error: "Error al obtener la asistencia.",
@@ -541,10 +607,7 @@ export const guardarAsistenciaCurso = async (req, res) => {
     const docenteId = req.usuario.id;
     const { cursoId } = req.params;
 
-    const {
-      fecha,
-      registros,
-    } = req.body;
+    const { fecha, registros } = req.body;
 
     if (!cursoId) {
       return res.status(400).json({
@@ -601,8 +664,7 @@ export const guardarAsistenciaCurso = async (req, res) => {
 
       if (!estadosPermitidos.includes(registro.estado)) {
         return res.status(400).json({
-          error:
-            `Estado de asistencia inválido: ${registro.estado}`,
+          error: `Estado de asistencia inválido: ${registro.estado}`,
         });
       }
 
@@ -615,16 +677,12 @@ export const guardarAsistenciaCurso = async (req, res) => {
             AND anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
           LIMIT 1;
         `,
-        [
-          registro.alumnoId,
-          cursoId,
-        ],
+        [registro.alumnoId, cursoId],
       );
 
       if (alumnoResult.rows.length === 0) {
         return res.status(400).json({
-          error:
-            "Uno de los alumnos no pertenece a este curso.",
+          error: "Uno de los alumnos no pertenece a este curso.",
         });
       }
     }
@@ -639,11 +697,7 @@ export const guardarAsistenciaCurso = async (req, res) => {
             AND fecha = $3
           LIMIT 1;
         `,
-        [
-          registro.alumnoId,
-          cursoId,
-          fecha,
-        ],
+        [registro.alumnoId, cursoId, fecha],
       );
 
       if (existenteResult.rows.length > 0) {
@@ -701,10 +755,7 @@ export const guardarAsistenciaCurso = async (req, res) => {
       cantidad: registros.length,
     });
   } catch (error) {
-    console.error(
-      "ERROR REAL AL GUARDAR ASISTENCIA:",
-      error,
-    );
+    console.error("ERROR REAL AL GUARDAR ASISTENCIA:", error);
 
     return res.status(500).json({
       error: "Error al guardar la asistencia.",

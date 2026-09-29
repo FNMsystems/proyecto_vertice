@@ -513,3 +513,19 @@ textarea.form-input {
     min-height: 260px;
   }
 }
+
+.asignatura-apoderado-btn {
+  background: none;
+  border: none;
+  padding: 0;
+  margin: 0;
+  color: #800020;
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+}
+
+.asignatura-apoderado-btn:hover {
+  text-decoration: underline;
+}
