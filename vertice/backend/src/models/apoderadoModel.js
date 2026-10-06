@@ -45,7 +45,7 @@ export const getAlumnosPorApoderadoModel = async (apoderadoId) => {
       ON a.id = aa.alumno_id
     LEFT JOIN matriculas m
       ON m.alumno_id = a.id
-      AND m.anio = 2026
+      AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
     LEFT JOIN cursos c
       ON c.id = m.curso_id
     WHERE aa.apoderado_id = $1
@@ -89,6 +89,10 @@ export const getDetalleAlumnoModel = async (alumnoId) => {
             'correo', NULLIF(TRIM(d.correo), ''),
             'rut', d.rut
           )
+          ORDER BY
+            d.apellido_paterno,
+            d.apellido_materno,
+            d.nombres
         ) FILTER (
           WHERE d.id IS NOT NULL
             AND COALESCE(d.rut, '') NOT LIKE 'PEND-%'
@@ -146,7 +150,8 @@ export const getDetalleAlumnoModel = async (alumnoId) => {
      AND cal.curso_id = m.curso_id
      AND cal.asignatura_id = asig.id
      AND cal.anio = m.anio
-    ORDER BY asig.nombre
+    ORDER BY
+      asig.nombre
   `;
 
   const anotacionesQuery = `
@@ -175,13 +180,18 @@ export const getDetalleAlumnoModel = async (alumnoId) => {
       observacion
     FROM asistencia
     WHERE alumno_id = $1
-    ORDER BY fecha DESC
+    ORDER BY
+      fecha DESC
   `;
 
-  const [asignaturas, anotaciones, asistencia] = await Promise.all([
+  const [
+    asignaturas,
+    anotaciones,
+    asistencia
+  ] = await Promise.all([
     pool.query(asignaturasQuery, [alumnoId]),
     pool.query(anotacionesQuery, [alumnoId]),
-    pool.query(asistenciaQuery, [alumnoId]),
+    pool.query(asistenciaQuery, [alumnoId])
   ]);
 
   return {
@@ -196,15 +206,12 @@ export const getDetalleAlumnoModel = async (alumnoId) => {
         asignatura_id: asignatura.asignatura_id,
         nombre: asignatura.nombre,
         codigo: asignatura.codigo,
-
         docente_id: primerDocente?.id || null,
         docente_nombre: primerDocente?.nombre || null,
         docente_correo: primerDocente?.correo || null,
-
         docentes,
-
         notas: asignatura.notas || [],
-        promedio: asignatura.promedio,
+        promedio: asignatura.promedio
       };
     }),
 
@@ -214,13 +221,13 @@ export const getDetalleAlumnoModel = async (alumnoId) => {
 
     comunicaciones: [],
 
-    pie: null,
+    pie: null
   };
 };
 
 export const getPersonasAutorizadasRetiroModel = async (
   alumnoId,
-  apoderadoId,
+  apoderadoId
 ) => {
   const query = `
     SELECT
@@ -258,7 +265,10 @@ export const getPersonasAutorizadasRetiroModel = async (
       p.nombre_completo
   `;
 
-  const result = await pool.query(query, [alumnoId, apoderadoId]);
+  const result = await pool.query(query, [
+    alumnoId,
+    apoderadoId
+  ]);
 
   return result.rows;
 };
@@ -268,7 +278,7 @@ export const crearJustificativoModel = async (
   fechaInicio,
   fechaFin,
   motivo,
-  archivoPdf,
+  archivoPdf
 ) => {
   const query = `
     INSERT INTO justificativos (
@@ -304,7 +314,7 @@ export const crearJustificativoModel = async (
     fechaInicio,
     fechaFin || null,
     motivo,
-    archivoPdf || null,
+    archivoPdf || null
   ]);
 
   return result.rows[0];

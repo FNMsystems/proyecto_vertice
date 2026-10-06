@@ -13,6 +13,7 @@ import asistenciaRoutes from "./routes/asistenciaRoutes.js";
 import inspectoriaRoutes from './routes/inspectoriaRoutes.js';
 import apoderadoRoutes from './routes/apoderadoRoutes.js';
 import retrasoRoutes from './routes/retrasoRoutes.js';
+import directorRoutes from './routes/directorRoutes.js';
 
 dotenv.config();
 
@@ -31,30 +32,17 @@ app.use("/api/asistencia", asistenciaRoutes);
 app.use('/api/inspectoria', inspectoriaRoutes);
 app.use('/api/apoderados', apoderadoRoutes);
 app.use('/api/retrasos', retrasoRoutes);
+app.use('/api/director', directorRoutes);
 
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, async () => {
-
   try {
-
     await pool.query('SELECT NOW()');
 
-    console.log(
-      `Conexión exitosa a PostgreSQL`
-    );
-
-    console.log(
-      `Servidor backend corriendo en http://localhost:${PORT}`
-    );
-
+    console.log('Conexión exitosa a PostgreSQL');
+    console.log(`Servidor backend corriendo en http://localhost:${PORT}`);
   } catch (error) {
-
-    console.error(
-      'Error al conectar con PostgreSQL:',
-      error.message
-    );
-
+    console.error('Error al conectar con PostgreSQL:', error.message);
   }
-
 });
