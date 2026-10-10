@@ -582,10 +582,10 @@ export default function DirectorDashboard() {
         actuales.map((item) =>
           item.id === justificativo.id
             ? {
-                ...item,
-                estado,
-                observacion
-              }
+              ...item,
+              estado,
+              observacion
+            }
             : item
         )
       );
@@ -603,59 +603,59 @@ export default function DirectorDashboard() {
 
   const tarjetasResumen = resumen
     ? [
-        {
-          titulo: 'Alumnos',
-          valor: resumen.alumnos,
-          icono: '👨‍🎓',
-          clase: 'blue'
-        },
-        {
-          titulo: 'Docentes activos',
-          valor: resumen.docentes,
-          icono: '👨‍🏫',
-          clase: 'green'
-        },
-        {
-          titulo: 'Cursos',
-          valor: resumen.cursos,
-          icono: '🏫',
-          clase: 'purple'
-        },
-        {
-          titulo: 'Matrículas activas',
-          valor: resumen.matriculas,
-          icono: '📝',
-          clase: 'orange'
-        },
-        {
-          titulo: 'Asistencia',
-          valor: `${resumen.asistencia?.porcentaje || 0}%`,
-          icono: '📅',
-          clase: asistenciaColor(
-            resumen.asistencia?.porcentaje || 0
-          )
-        },
-        {
-          titulo: 'Promedio general',
-          valor: resumen.notas?.promedio || 0,
-          icono: '📈',
-          clase: promedioColor(
-            resumen.notas?.promedio || 0
-          )
-        },
-        {
-          titulo: 'Justificativos pendientes',
-          valor: resumen.justificativos_pendientes,
-          icono: '📄',
-          clase: 'yellow'
-        },
-        {
-          titulo: 'Atrasos',
-          valor: resumen.atrasos,
-          icono: '⏰',
-          clase: 'red'
-        }
-      ]
+      {
+        titulo: 'Alumnos',
+        valor: resumen.alumnos,
+        icono: '👨‍🎓',
+        clase: 'blue'
+      },
+      {
+        titulo: 'Docentes activos',
+        valor: resumen.docentes,
+        icono: '👨‍🏫',
+        clase: 'green'
+      },
+      {
+        titulo: 'Cursos',
+        valor: resumen.cursos,
+        icono: '🏫',
+        clase: 'purple'
+      },
+      {
+        titulo: 'Matrículas activas',
+        valor: resumen.matriculas,
+        icono: '📝',
+        clase: 'orange'
+      },
+      {
+        titulo: 'Asistencia',
+        valor: `${resumen.asistencia?.porcentaje || 0}%`,
+        icono: '📅',
+        clase: asistenciaColor(
+          resumen.asistencia?.porcentaje || 0
+        )
+      },
+      {
+        titulo: 'Promedio general',
+        valor: resumen.notas?.promedio || 0,
+        icono: '📈',
+        clase: promedioColor(
+          resumen.notas?.promedio || 0
+        )
+      },
+      {
+        titulo: 'Justificativos pendientes',
+        valor: resumen.justificativos_pendientes,
+        icono: '📄',
+        clase: 'yellow'
+      },
+      {
+        titulo: 'Atrasos',
+        valor: resumen.atrasos,
+        icono: '⏰',
+        clase: 'red'
+      }
+    ]
     : [];
 
   return (
@@ -922,7 +922,7 @@ export default function DirectorDashboard() {
                               <span
                                 className={
                                   alumno.matricula_estado ===
-                                  'ACTIVA'
+                                    'ACTIVA'
                                     ? 'status active'
                                     : 'status inactive'
                                 }
@@ -946,17 +946,17 @@ export default function DirectorDashboard() {
 
                                 {alumno.matricula_estado ===
                                   'ACTIVA' && (
-                                  <button
-                                    className="btn-small danger"
-                                    onClick={() =>
-                                      ejecutarDesvinculacionAlumno(
-                                        alumno
-                                      )
-                                    }
-                                  >
-                                    Retirar
-                                  </button>
-                                )}
+                                    <button
+                                      className="btn-small danger"
+                                      onClick={() =>
+                                        ejecutarDesvinculacionAlumno(
+                                          alumno
+                                        )
+                                      }
+                                    >
+                                      Retirar
+                                    </button>
+                                  )}
                               </div>
                             </td>
                           </tr>
@@ -1719,142 +1719,142 @@ export default function DirectorDashboard() {
 
               {(modal === 'nuevo-docente' ||
                 modal === 'editar-docente') && (
-                <form
-                  className="modal-form"
-                  onSubmit={
-                    modal === 'nuevo-docente'
-                      ? guardarDocente
-                      : guardarEdicionDocente
-                  }
-                >
-                  <div className="form-section-title">
-                    Información personal
-                  </div>
+                  <form
+                    className="modal-form"
+                    onSubmit={
+                      modal === 'nuevo-docente'
+                        ? guardarDocente
+                        : guardarEdicionDocente
+                    }
+                  >
+                    <div className="form-section-title">
+                      Información personal
+                    </div>
 
-                  <div className="form-grid">
-                    <label>
-                      RUT
-                      <input
-                        required
-                        value={formDocente.rut}
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            rut: e.target.value
-                          })
-                        }
-                      />
-                    </label>
+                    <div className="form-grid">
+                      <label>
+                        RUT
+                        <input
+                          required
+                          value={formDocente.rut}
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              rut: e.target.value
+                            })
+                          }
+                        />
+                      </label>
 
-                    <label>
-                      Nombres
-                      <input
-                        required
-                        value={formDocente.nombres}
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            nombres: e.target.value
-                          })
-                        }
-                      />
-                    </label>
+                      <label>
+                        Nombres
+                        <input
+                          required
+                          value={formDocente.nombres}
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              nombres: e.target.value
+                            })
+                          }
+                        />
+                      </label>
 
-                    <label>
-                      Apellido paterno
-                      <input
-                        value={
-                          formDocente.apellido_paterno
-                        }
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            apellido_paterno:
-                              e.target.value
-                          })
-                        }
-                      />
-                    </label>
+                      <label>
+                        Apellido paterno
+                        <input
+                          value={
+                            formDocente.apellido_paterno
+                          }
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              apellido_paterno:
+                                e.target.value
+                            })
+                          }
+                        />
+                      </label>
 
-                    <label>
-                      Apellido materno
-                      <input
-                        value={
-                          formDocente.apellido_materno
-                        }
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            apellido_materno:
-                              e.target.value
-                          })
-                        }
-                      />
-                    </label>
+                      <label>
+                        Apellido materno
+                        <input
+                          value={
+                            formDocente.apellido_materno
+                          }
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              apellido_materno:
+                                e.target.value
+                            })
+                          }
+                        />
+                      </label>
 
-                    <label>
-                      Correo
-                      <input
-                        type="email"
-                        value={formDocente.correo}
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            correo: e.target.value
-                          })
-                        }
-                      />
-                    </label>
+                      <label>
+                        Correo
+                        <input
+                          type="email"
+                          value={formDocente.correo}
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              correo: e.target.value
+                            })
+                          }
+                        />
+                      </label>
 
-                    <label>
-                      Teléfono
-                      <input
-                        value={formDocente.telefono}
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            telefono: e.target.value
-                          })
-                        }
-                      />
-                    </label>
+                      <label>
+                        Teléfono
+                        <input
+                          value={formDocente.telefono}
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              telefono: e.target.value
+                            })
+                          }
+                        />
+                      </label>
 
-                    <label className="form-full">
-                      Especialidad
-                      <input
-                        value={formDocente.especialidad}
-                        onChange={(e) =>
-                          setFormDocente({
-                            ...formDocente,
-                            especialidad:
-                              e.target.value
-                          })
-                        }
-                      />
-                    </label>
-                  </div>
+                      <label className="form-full">
+                        Especialidad
+                        <input
+                          value={formDocente.especialidad}
+                          onChange={(e) =>
+                            setFormDocente({
+                              ...formDocente,
+                              especialidad:
+                                e.target.value
+                            })
+                          }
+                        />
+                      </label>
+                    </div>
 
-                  <div className="modal-actions">
-                    <button
-                      type="button"
-                      className="btn-secondary"
-                      onClick={cerrarModal}
-                    >
-                      Cancelar
-                    </button>
+                    <div className="modal-actions">
+                      <button
+                        type="button"
+                        className="btn-secondary"
+                        onClick={cerrarModal}
+                      >
+                        Cancelar
+                      </button>
 
-                    <button
-                      type="submit"
-                      className="btn-primary"
-                      disabled={guardando}
-                    >
-                      {guardando
-                        ? 'Guardando...'
-                        : 'Guardar docente'}
-                    </button>
-                  </div>
-                </form>
-              )}
+                      <button
+                        type="submit"
+                        className="btn-primary"
+                        disabled={guardando}
+                      >
+                        {guardando
+                          ? 'Guardando...'
+                          : 'Guardar docente'}
+                      </button>
+                    </div>
+                  </form>
+                )}
 
               {modal === 'nueva-asignacion' && (
                 <form
@@ -2033,6 +2033,86 @@ export default function DirectorDashboard() {
     </div>
   );
 }
+
+
+function AsignacionesDocenteAgrupadas({ asignaciones = [] }) {
+  const cursosAgrupados = Object.values(
+    asignaciones.reduce((grupos, asignacion) => {
+      const cursoId = asignacion.curso_id;
+
+      if (!grupos[cursoId]) {
+        grupos[cursoId] = {
+          curso_id: cursoId,
+          curso: asignacion.curso,
+          jornada: asignacion.jornada,
+          es_profesor_jefe: false,
+          asignaturas: []
+        };
+      }
+
+      const grupo = grupos[cursoId];
+
+      grupo.es_profesor_jefe =
+        grupo.es_profesor_jefe ||
+        Boolean(asignacion.es_profesor_jefe);
+
+      const yaExiste = grupo.asignaturas.some(
+        (item) => item.asignatura_id === asignacion.asignatura_id
+      );
+
+      if (!yaExiste) {
+        grupo.asignaturas.push({
+          asignatura_id: asignacion.asignatura_id,
+          asignatura: asignacion.asignatura,
+          asignatura_codigo: asignacion.asignatura_codigo
+        });
+      }
+
+      return grupos;
+    }, {})
+  );
+
+  if (cursosAgrupados.length === 0) {
+    return <p>Este docente no tiene asignaciones para este año.</p>;
+  }
+
+  return (
+    <div className="cursos-docente-agrupados">
+      {cursosAgrupados.map((curso) => (
+        <section
+          key={curso.curso_id}
+          className="curso-docente-card"
+        >
+          <div className="curso-docente-card-header">
+            <div>
+              <h4>{curso.curso}</h4>
+              {curso.jornada && (
+                <p>Jornada: {curso.jornada}</p>
+              )}
+            </div>
+
+            {curso.es_profesor_jefe && (
+              <span className="badge-profesor-jefe">
+                Profesor jefe
+              </span>
+            )}
+          </div>
+
+          <h5>Asignaturas que imparte</h5>
+
+          <ul>
+            {curso.asignaturas.map((asignatura) => (
+              <li key={asignatura.asignatura_id}>
+                {asignatura.asignatura}
+              </li>
+            ))}
+          </ul>
+        </section>
+      ))}
+    </div>
+  );
+}
+
 
 function AlumnoModal({ detalle }) {
   const alumno = detalle.alumno;
@@ -2274,8 +2354,11 @@ function AlumnoModal({ detalle }) {
   );
 }
 
+
 function DocenteModal({ detalle, onEditar }) {
   const docente = detalle.docente;
+  const asignaciones = detalle.asignaciones ?? [];
+  const desvinculaciones = detalle.desvinculaciones ?? [];
 
   return (
     <div className="detail-content">
@@ -2302,75 +2385,43 @@ function DocenteModal({ detalle, onEditar }) {
           label="Correo"
           value={docente.correo}
         />
+
         <DetailItem
           label="Teléfono"
           value={docente.telefono}
         />
+
         <DetailItem
           label="Especialidad"
           value={docente.especialidad}
         />
+
         <DetailItem
           label="Estado"
-          value={
-            docente.activo
-              ? 'ACTIVO'
-              : 'DESVINCULADO'
-          }
+          value={docente.activo ? 'ACTIVO' : 'DESVINCULADO'}
         />
       </div>
 
-      <DetailSection title="Asignaciones académicas">
-        {detalle.asignaciones.length === 0 ? (
-          <EmptyDetail text="No tiene asignaciones para este año." />
-        ) : (
-          <div className="detail-table-wrapper">
-            <table className="detail-table">
-              <thead>
-                <tr>
-                  <th>Curso</th>
-                  <th>Asignatura</th>
-                  <th>Profesor jefe</th>
-                </tr>
-              </thead>
-
-              <tbody>
-                {detalle.asignaciones.map((item) => (
-                  <tr key={item.id}>
-                    <td>{item.curso}</td>
-                    <td>{item.asignatura}</td>
-                    <td>
-                      {item.es_profesor_jefe ? (
-                        <span className="badge-chief">
-                          Sí
-                        </span>
-                      ) : (
-                        'No'
-                      )}
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+      <DetailSection title="Cursos y asignaturas">
+        <AsignacionesDocenteAgrupadas
+          asignaciones={asignaciones}
+        />
       </DetailSection>
 
       <DetailSection title="Historial de desvinculación">
-        {detalle.desvinculaciones.length === 0 ? (
+        {desvinculaciones.length === 0 ? (
           <EmptyDetail text="No existen desvinculaciones registradas." />
         ) : (
-          detalle.desvinculaciones.map((item) => (
+          desvinculaciones.map((item) => (
             <div
               className="annotation-item"
               key={item.id}
             >
               <div className="annotation-header">
                 <strong>{item.motivo}</strong>
+
                 <span>
-                  {formatearFecha(
-                    item.fecha_desvinculacion
-                  )}
+                  {formatearFecha(item.fecha_desvinculacion)}
                 </span>
               </div>
 
@@ -2384,6 +2435,8 @@ function DocenteModal({ detalle, onEditar }) {
     </div>
   );
 }
+
+
 
 function CursoModal({ detalle }) {
   return (

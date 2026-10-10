@@ -119,7 +119,7 @@ export const esInspector = (req, res, next) => {
 
   if (
     rol !== 'INSPECTOR' &&
-    rol !== 'INSPECTOR_GENERAL'
+    rol !== 'INSPECTORA'
   ) {
     return res.status(403).json({
       error: 'Acceso denegado. Solo Inspectoría puede realizar esta acción.'
