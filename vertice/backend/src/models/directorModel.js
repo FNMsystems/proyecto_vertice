@@ -1159,3 +1159,186 @@ export const actualizarEstadoJustificativoDirectorModel = async (
 
   return result.rows[0] || null;
 };
+
+
+/**
+ * Retiros agrupados por año calendario.
+ * Permite construir el gráfico histórico de retiros.
+ */
+export const obtenerRetirosPorAnioDirectorModel = async (anio = 2026) => {
+  const result = await query(`
+    SELECT
+      EXTRACT(YEAR FROM fecha_retiro)::INTEGER AS anio,
+      COUNT(*)::INTEGER AS total
+    FROM retiros_estudiante
+    WHERE fecha_retiro >= make_date($1 - 4, 1, 1)
+      AND fecha_retiro < make_date($1 + 1, 1, 1)
+    GROUP BY EXTRACT(YEAR FROM fecha_retiro)
+    ORDER BY anio
+  `, [anio]);
+
+  return result.rows.map((row) => ({
+    anio: Number(row.anio),
+    total: Number(row.total || 0)
+  }));
+};
+
+/**
+ * Atrasos por día para el año escolar seleccionado.
+ */
+export const obtenerAtrasosPorDiaDirectorModel = async (anio = 2026) => {
+  const result = await query(`
+    SELECT
+      r.fecha::DATE AS fecha,
+      COUNT(*)::INTEGER AS total
+    FROM retrasos r
+    INNER JOIN cursos c
+      ON c.id = r.curso_id
+    WHERE c.anio = $1
+    GROUP BY r.fecha::DATE
+    ORDER BY r.fecha::DATE
+  `, [anio]);
+
+  return result.rows.map((row) => ({
+    fecha: row.fecha,
+    total: Number(row.total || 0)
+  }));
+};
+
+/**
+ * Seguimiento académico orientativo por alumno y matrícula.
+ * No determina oficialmente la promoción o repitencia.
+ */
+export const obtenerRiesgoAcademicoDirectorModel = async (anio = 2026) => {
+  const result = await query(`
+    WITH notas_alumno AS (
+      SELECT
+        n.alumno_id,
+        n.curso_id,
+        n.anio,
+        ROUND(AVG(n.nota), 2) AS promedio,
+        COUNT(n.id)::INTEGER AS cantidad_notas
+      FROM notas n
+      WHERE n.anio = $1
+        AND n.nota IS NOT NULL
+      GROUP BY n.alumno_id, n.curso_id, n.anio
+    ),
+    asistencia_alumno AS (
+      SELECT
+        asi.alumno_id,
+        asi.curso_id,
+        COUNT(*)::INTEGER AS total_registros,
+        COUNT(*) FILTER (
+          WHERE UPPER(TRIM(asi.estado))
+            IN ('PRESENTE', 'ASISTIO', 'P')
+        )::INTEGER AS presentes,
+        COUNT(*) FILTER (
+          WHERE UPPER(TRIM(asi.estado))
+            IN ('AUSENTE', 'INASISTENTE', 'A')
+        )::INTEGER AS ausentes
+      FROM asistencia asi
+      INNER JOIN cursos c
+        ON c.id = asi.curso_id
+      WHERE c.anio = $1
+      GROUP BY asi.alumno_id, asi.curso_id
+    ),
+    datos AS (
+      SELECT
+        a.id AS alumno_id,
+        a.rut,
+        a.nombres,
+        a.apellido_paterno,
+        a.apellido_materno,
+        m.id AS matricula_id,
+        m.estado AS matricula_estado,
+        m.ha_repetido,
+        c.id AS curso_id,
+        c.nombre AS curso,
+        na.promedio,
+        COALESCE(na.cantidad_notas, 0)::INTEGER AS cantidad_notas,
+        COALESCE(aa.total_registros, 0)::INTEGER AS total_asistencia,
+        COALESCE(aa.presentes, 0)::INTEGER AS presentes,
+        COALESCE(aa.ausentes, 0)::INTEGER AS ausentes,
+        CASE
+          WHEN COALESCE(aa.total_registros, 0) > 0
+          THEN ROUND(
+            aa.presentes::NUMERIC * 100 / aa.total_registros,
+            2
+          )
+          ELSE NULL
+        END AS porcentaje_asistencia
+      FROM matriculas m
+      INNER JOIN alumnos a
+        ON a.id = m.alumno_id
+      INNER JOIN cursos c
+        ON c.id = m.curso_id
+      LEFT JOIN notas_alumno na
+        ON na.alumno_id = a.id
+        AND na.curso_id = c.id
+        AND na.anio = m.anio
+      LEFT JOIN asistencia_alumno aa
+        ON aa.alumno_id = a.id
+        AND aa.curso_id = c.id
+      WHERE m.anio = $1
+        AND UPPER(TRIM(COALESCE(m.estado, ''))) = 'ACTIVA'
+    )
+    SELECT
+      *,
+      CASE
+        WHEN promedio IS NULL AND porcentaje_asistencia IS NULL
+          THEN 'SIN DATOS'
+        WHEN promedio < 4.0
+          OR porcentaje_asistencia < 80
+          THEN 'RIESGO ALTO'
+        WHEN promedio < 4.5
+          OR porcentaje_asistencia < 85
+          THEN 'RIESGO'
+        WHEN promedio < 5.0
+          OR porcentaje_asistencia < 90
+          THEN 'ATENCION'
+        ELSE 'SIN ALERTA'
+      END AS nivel_alerta
+    FROM datos
+    ORDER BY apellido_paterno, apellido_materno, nombres
+  `, [anio]);
+
+  return result.rows.map((row) => ({
+    ...row,
+    promedio: row.promedio === null ? null : Number(row.promedio),
+    porcentaje_asistencia:
+      row.porcentaje_asistencia === null
+        ? null
+        : Number(row.porcentaje_asistencia),
+    cantidad_notas: Number(row.cantidad_notas || 0),
+    total_asistencia: Number(row.total_asistencia || 0),
+    presentes: Number(row.presentes || 0),
+    ausentes: Number(row.ausentes || 0)
+  }));
+};
+
+
+export const obtenerMatriculasAnioDirectorModel = async (anio = 2027) => {
+  const result = await query(`
+    SELECT
+      UPPER(TRIM(COALESCE(estado, 'SIN ESTADO'))) AS estado,
+      COUNT(*)::INTEGER AS total
+    FROM matriculas
+    WHERE anio = $1
+    GROUP BY UPPER(TRIM(COALESCE(estado, 'SIN ESTADO')))
+    ORDER BY estado
+  `, [anio]);
+
+  const estados = result.rows.map((row) => ({
+    estado: row.estado,
+    total: Number(row.total || 0)
+  }));
+
+  return {
+    anio,
+    total_registradas: estados.reduce((suma, item) => suma + item.total, 0),
+    por_estado: estados,
+    confirmadas: null,
+    mensaje:
+      'La base de datos no tiene un campo específico para confirmar matrículas.'
+  };
+};

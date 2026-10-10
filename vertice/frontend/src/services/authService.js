@@ -1,7 +1,7 @@
-const API_URL =
-  'http://localhost:3000/api/auth';
+ /** const API_URL =
+ 'http://localhost:3000/api/auth';**/
 
-/**  const API_URL = 'https://0hvj9hvv-3000.brs.devtunnels.ms/api/auth';**/
+const API_URL = 'https://0hvj9hvv-3000.brs.devtunnels.ms/api/auth';
 
 export const loginService = async (
   email,

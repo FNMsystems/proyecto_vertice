@@ -22,8 +22,13 @@ import {
   obtenerHorariosDirectorModel,
   obtenerAnotacionesDirectorModel,
   desvincularAlumnoDirectorModel,
-  actualizarEstadoJustificativoDirectorModel
+  actualizarEstadoJustificativoDirectorModel,
+  obtenerRetirosPorAnioDirectorModel,
+  obtenerAtrasosPorDiaDirectorModel,
+  obtenerRiesgoAcademicoDirectorModel,
+  obtenerMatriculasAnioDirectorModel
 } from '../models/directorModel.js';
+
 
 const obtenerAnio = (req) => {
   const anio = Number(req.query.anio || req.body?.anio || 2026);
@@ -549,6 +554,63 @@ export const actualizarJustificativoDirector = async (req, res) => {
     console.error('Error actualizando justificativo:', error);
     res.status(500).json({
       error: 'No se pudo actualizar el justificativo.'
+    });
+  }
+};
+
+
+export const getRetirosPorAnioDirector = async (req, res) => {
+  try {
+    const data = await obtenerRetirosPorAnioDirectorModel(obtenerAnio(req));
+    res.json(data);
+  } catch (error) {
+    console.error('Error obteniendo retiros por año:', error);
+    res.status(500).json({
+      error: 'No se pudieron obtener los retiros por año.'
+    });
+  }
+};
+
+export const getAtrasosPorDiaDirector = async (req, res) => {
+  try {
+    const data = await obtenerAtrasosPorDiaDirectorModel(obtenerAnio(req));
+    res.json(data);
+  } catch (error) {
+    console.error('Error obteniendo atrasos por día:', error);
+    res.status(500).json({
+      error: 'No se pudieron obtener los atrasos por día.'
+    });
+  }
+};
+
+export const getRiesgoAcademicoDirector = async (req, res) => {
+  try {
+    const data = await obtenerRiesgoAcademicoDirectorModel(obtenerAnio(req));
+    res.json(data);
+  } catch (error) {
+    console.error('Error obteniendo alertas académicas:', error);
+    res.status(500).json({
+      error: 'No se pudieron obtener las alertas académicas.'
+    });
+  }
+};
+
+export const getMatriculasAnioDirector = async (req, res) => {
+  try {
+    const anio = Number(req.query.anio || 2027);
+
+    if (!Number.isInteger(anio) || anio < 2000 || anio > 2100) {
+      return res.status(400).json({
+        error: 'El año solicitado no es válido.'
+      });
+    }
+
+    const data = await obtenerMatriculasAnioDirectorModel(anio);
+    res.json(data);
+  } catch (error) {
+    console.error('Error obteniendo matrículas del año:', error);
+    res.status(500).json({
+      error: 'No se pudieron obtener las matrículas del año solicitado.'
     });
   }
 };

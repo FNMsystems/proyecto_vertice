@@ -64,8 +64,9 @@ function Home() {
       }
 
       if (
-        rolNormalizado === 'INSPECTOR' ||
-        rolNormalizado === 'INSPECTOR_GENERAL'
+        rolNormalizado === 'INSPECTORA' ||
+        rolNormalizado === 'INSPECTORIA' ||
+        rolNormalizado === 'INSPECTOR'
       ) {
         navigate('/inspectoria_dashboard');
         return;

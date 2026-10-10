@@ -205,3 +205,15 @@ export const getPersonal = getDocentesDirector;
 export const registrarFuncionario = crearDocente;
 
 export const desvincularFuncionario = desvincularDocente;
+
+export const getRetirosPorAnioDirector = async (anio = 2026) =>
+  fetchConAuth(`${API}/estadisticas/retiros-por-anio?anio=${anio}`);
+
+export const getAtrasosPorDiaDirector = async (anio = 2026) =>
+  fetchConAuth(`${API}/estadisticas/atrasos-por-dia?anio=${anio}`);
+
+export const getRiesgoAcademicoDirector = async (anio = 2026) =>
+  fetchConAuth(`${API}/estadisticas/riesgo-academico?anio=${anio}`);
+
+export const getMatriculasAnioDirector = async (anio = 2027) =>
+  fetchConAuth(`${API}/matriculas-anio?anio=${anio}`);

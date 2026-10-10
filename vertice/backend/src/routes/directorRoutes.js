@@ -24,7 +24,11 @@ import {
   getHorariosDirector,
   getAnotacionesDirector,
   desvincularAlumnoDirector,
-  actualizarJustificativoDirector
+  actualizarJustificativoDirector,
+  getRetirosPorAnioDirector,
+  getAtrasosPorDiaDirector,
+  getRiesgoAcademicoDirector,
+  getMatriculasAnioDirector
 } from '../controllers/directorController.js';
 
 import {
@@ -49,6 +53,10 @@ router.post('/docentes', crearDocenteDirector);
 router.put('/docentes/:id', actualizarDocenteDirector);
 router.put('/docentes/:id/desvincular', desvincularDocenteDirector);
 router.put('/docentes/:id/reactivar', reactivarDocenteDirector);
+router.get('/estadisticas/retiros-por-anio', getRetirosPorAnioDirector);
+router.get('/estadisticas/atrasos-por-dia', getAtrasosPorDiaDirector);
+router.get('/estadisticas/riesgo-academico', getRiesgoAcademicoDirector);
+router.get('/matriculas-anio', getMatriculasAnioDirector);
 
 router.get('/cursos', getCursosDirector);
 router.get('/cursos/:id', getDetalleCursoDirector);
