@@ -1,5 +1,8 @@
 /**const API_URL = 'http://localhost:3000/api';**/
+
 const API_URL = 'https://0hvj9hvv-3000.brs.devtunnels.ms/api';
+
+export { API_URL };
 
 export const fetchConAuth = async (endpoint, options = {}) => {
   const token = localStorage.getItem('token');
@@ -34,17 +37,13 @@ export const fetchConAuth = async (endpoint, options = {}) => {
     localStorage.removeItem('token');
     localStorage.removeItem('usuario');
     window.location.href = '/';
-    throw new Error(
-      'Sesión expirada o no autorizada'
-    );
+    throw new Error('Sesión expirada o no autorizada');
   }
 
   const data = await response.json();
 
   if (!response.ok) {
-    throw new Error(
-      data.error || 'Error en la petición'
-    );
+    throw new Error(data.error || 'Error en la petición');
   }
 
   return data;

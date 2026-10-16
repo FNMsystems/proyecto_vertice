@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import logoColegio from "../img/logo_institucional.png";
 import "./secretaria_dashboard.css";
-import { fetchConAuth } from "../services/apiService.js";
+import { fetchConAuth, API_URL } from "../services/apiService.js";
 
 
 const extraerLista = (respuesta, claves = []) => {
@@ -48,6 +48,18 @@ function SecretariaDashboard() {
 
 
   const [busquedaEstudiante, setBusquedaEstudiante] = useState('');
+  const [cursoFiltroEstudiante, setCursoFiltroEstudiante] = useState('');
+  const [listaRetiros, setListaRetiros] = useState([]);
+  const [cargandoRetiros, setCargandoRetiros] = useState(false);
+  const [fechaFiltroRetiro, setFechaFiltroRetiro] = useState('');
+  const [cursoFiltroRetiro, setCursoFiltroRetiro] = useState('');
+  const [busquedaRetiro, setBusquedaRetiro] = useState('');
+  const [actualizandoJustificativo, setActualizandoJustificativo] = useState(null);
+  const [pdfSeleccionado, setPdfSeleccionado] = useState(null);
+  const [retiroInspector, setRetiroInspector] = useState(null);
+  const [observacionConfirmacionRetiro, setObservacionConfirmacionRetiro] = useState('');
+  const [confirmandoRetiro, setConfirmandoRetiro] = useState(false);
+  const [retiroConfirmado, setRetiroConfirmado] = useState(false);
   const [listaEstudiantes, setListaEstudiantes] = useState([]);
   const [cargandoEstudiantes, setCargandoEstudiantes] = useState(false);
   const [estudianteSeleccionado, setEstudianteSeleccionado] = useState(null);
@@ -118,6 +130,7 @@ function SecretariaDashboard() {
   useEffect(() => {
     if (tab === 'estudiantes') {
       obtenerEstudiantesBD();
+      obtenerCursosBD();
     } else if (tab === 'justificativos') {
       obtenerJustificativosBD();
     } else if (tab === 'matricula') {
@@ -125,6 +138,7 @@ function SecretariaDashboard() {
       obtenerCursosBD();
     } else if (tab === 'qr') {
       obtenerCursosBD();
+      obtenerRetirosBD();
     }
   }, [tab]);
 
@@ -149,6 +163,42 @@ function SecretariaDashboard() {
     } catch (err) {
       console.error('Error al obtener cursos:', err);
       setListaCursos([]);
+    }
+  };
+
+  const obtenerRetirosBD = async () => {
+    try {
+      setCargandoRetiros(true);
+      const res = await fetchConAuth('/secretaria/retiros-recientes');
+      setListaRetiros(extraerLista(res, ['retiros', 'data', 'resultado']));
+    } catch (err) {
+      console.error('Error al obtener historial de retiros:', err);
+      setListaRetiros([]);
+      setErrorQR(err.message || 'No se pudo cargar el historial de retiros.');
+    } finally {
+      setCargandoRetiros(false);
+    }
+  };
+
+  const cambiarEstadoJustificativo = async (item, estado) => {
+    if (!item?.id) {
+      alert('El justificativo no tiene un identificador válido.');
+      return;
+    }
+    const estadoActual = String(item.estado || 'PENDIENTE').toUpperCase();
+    if (estadoActual === 'APROBADO' || estadoActual === 'RECHAZADO') return;
+    try {
+      setActualizandoJustificativo(item.id);
+      await fetchConAuth(`/secretaria/justificativos/${encodeURIComponent(item.id)}/estado`, {
+        method: 'PATCH',
+        body: JSON.stringify({ estado })
+      });
+      await obtenerJustificativosBD();
+    } catch (err) {
+      console.error('Error actualizando justificativo:', err);
+      alert(err.message || 'No se pudo actualizar el justificativo.');
+    } finally {
+      setActualizandoJustificativo(null);
     }
   };
 
@@ -288,7 +338,7 @@ function SecretariaDashboard() {
             return;
           }
           setCodigoBusqueda(codigo);
-          setMensajeCamara('Código detectado. Consultando el retiro...');
+          setMensajeCamara('Código detectado. Validando retiro...');
           await detenerCamaraQR();
           await handleConsultarQR(null, codigo);
         },
@@ -319,18 +369,60 @@ function SecretariaDashboard() {
       setExitoQR('');
       setPaseEncontrado(null);
 
-      const data = await fetchConAuth(`/secretaria/validar-qr/${encodeURIComponent(codigo)}`);
+      const data = await fetchConAuth('/inspectoria/validar-qr', {
+        method: 'POST',
+        body: JSON.stringify({ codigoQR: codigo })
+      });
 
-      if (!data || data.error) {
-        throw new Error(data?.error || 'No se encontró información para el código especificado.');
+      if (!data?.retiro || !data?.alumno) {
+        throw new Error(data?.error || 'No se encontró una solicitud de retiro pendiente para este QR.');
       }
-      setPaseEncontrado(data);
+      setRetiroInspector(data);
+      setRetiroConfirmado(false);
+      setObservacionConfirmacionRetiro(data.retiro.observacion || '');
+      setPaseEncontrado(null);
     } catch (err) {
       console.error('Error consultando QR:', err);
       setErrorQR(err.message || 'No se encontró un registro con ese ID.');
     } finally {
       setCargandoQR(false);
     }
+  };
+
+  const confirmarRetiroInspectoria = async () => {
+    if (!retiroInspector?.retiro?.id || !retiroInspector?.alumno?.id || !retiroInspector?.alumno?.cursoId) {
+      setErrorQR('Faltan datos de la solicitud para confirmar el retiro.');
+      return;
+    }
+    try {
+      setConfirmandoRetiro(true);
+      setErrorQR('');
+      await fetchConAuth('/inspectoria/confirmar-retiro', {
+        method: 'POST',
+        body: JSON.stringify({
+          solicitudId: retiroInspector.retiro.id,
+          alumnoId: retiroInspector.alumno.id,
+          cursoId: retiroInspector.alumno.cursoId,
+          motivo: retiroInspector.retiro.motivo,
+          observacion: observacionConfirmacionRetiro
+        })
+      });
+      setRetiroConfirmado(true);
+      await obtenerRetirosBD();
+    } catch (err) {
+      setErrorQR(err.message || 'No se pudo confirmar el retiro.');
+    } finally {
+      setConfirmandoRetiro(false);
+    }
+  };
+
+  const nuevoRetiroInspectoria = () => {
+    setRetiroInspector(null);
+    setRetiroConfirmado(false);
+    setCodigoBusqueda('');
+    setObservacionConfirmacionRetiro('');
+    setErrorQR('');
+    setExitoQR('');
   };
 
   useEffect(() => {
@@ -492,10 +584,11 @@ function SecretariaDashboard() {
 
 
     return (
-      rutAlumno.includes(terminoLimpio) ||
+      (rutAlumno.includes(terminoLimpio) ||
       rutApoderado.includes(terminoLimpio) ||
       nombreAlumno.includes(terminoLimpio) ||
-      nombreApoderado.includes(terminoLimpio)
+      nombreApoderado.includes(terminoLimpio)) &&
+      (!cursoFiltroEstudiante || String(item.curso || item.nombre_curso || '').trim() === cursoFiltroEstudiante)
     );
   });
 
@@ -580,113 +673,64 @@ function SecretariaDashboard() {
                 <div className="sec-card-header-burgundy">
                   <div className="sec-card-topbar">
                     <div>
-                      <h3>Consulta Histórica de Pase / Registro</h3>
-                      <p>Revise o corrobore el estado de un retiro registrado previamente ingresando el ID del pase.</p>
+                      <h3>Historial de retiros</h3>
+                      <p>Filtre por fecha y luego busque por estudiante o curso. No necesita consultar el identificador QR.</p>
                     </div>
-                    <span className="sec-badge-tag">Historial / Auditoría</span>
+                    <span className="sec-badge-tag">Historial</span>
                   </div>
-
-
                   <div className="sec-card-body">
-                    <form onSubmit={handleConsultarQR} style={{ display: 'flex', gap: '10px' }}>
-                      <input
-                        type="text"
-                        className="sec-input-full"
-                        placeholder="Ingrese o pegue el ID del pase (ej: 0adbce04-...)"
-                        value={codigoBusqueda}
-                        onChange={(e) => setCodigoBusqueda(e.target.value)}
-                        style={{ flex: 1 }}
-                        autoFocus
-                      />
-                      <button
-                        type="submit"
-                        disabled={cargandoQR}
-                        className="sec-btn-outline"
-                        style={{ backgroundColor: '#800020', color: '#fff', border: 'none', padding: '0 22px', fontWeight: 'bold' }}
-                      >
-                        {cargandoQR ? 'Consultando...' : 'Consultar'}
-                      </button>
-                    </form>
-
-
-                    {errorQR && <p style={{ color: '#d9534f', fontWeight: 'bold', marginTop: '12px' }}>{errorQR}</p>}
-                    {exitoQR && (
-                      <div className="sec-ficha-modal" style={{ backgroundColor: '#eef9f6', borderColor: '#c3e6cb', color: '#155724' }}>
-                        <strong>¡Éxito!</strong> {exitoQR}
+                    <div className="sec-filter-row">
+                      <div className="sec-form-group">
+                        <label>Fecha del retiro</label>
+                        <input className="sec-input-full" type="date" value={fechaFiltroRetiro} onChange={(e) => setFechaFiltroRetiro(e.target.value)} />
+                      </div>
+                      <div className="sec-form-group">
+                        <label>Curso</label>
+                        <select className="sec-input-full" value={cursoFiltroRetiro} onChange={(e) => setCursoFiltroRetiro(e.target.value)}>
+                          <option value="">Todos los cursos</option>
+                          {listaCursos.map((curso) => <option key={curso.id} value={curso.nombre}>{curso.nombre}</option>)}
+                        </select>
+                      </div>
+                      <div className="sec-form-group">
+                        <label>Estudiante</label>
+                        <input className="sec-input-full" type="search" placeholder="Nombre o RUT" value={busquedaRetiro} onChange={(e) => setBusquedaRetiro(e.target.value)} />
+                      </div>
+                    </div>
+                    {cargandoRetiros ? <p>Cargando historial de retiros...</p> : (
+                      <div style={{ overflowX: 'auto' }}>
+                        <table className="sec-table">
+                          <thead><tr><th>Fecha</th><th>Estudiante</th><th>Curso</th><th>Motivo</th><th>Observación</th></tr></thead>
+                          <tbody>
+                            {listaRetiros.filter((r) => {
+                              const fecha = String(r.fecha_retiro_iso || r.fecha_retiro || '').slice(0, 10);
+                              const nombre = `${r.alumno_nombre || r.alumno_nombres || ''} ${r.alumno_paterno || ''}`.toLowerCase();
+                              const rut = String(r.alumno_rut || '').toLowerCase();
+                              const curso = String(r.curso_nombre || r.curso || '');
+                              const termino = busquedaRetiro.trim().toLowerCase();
+                              return (!fechaFiltroRetiro || fecha === fechaFiltroRetiro) &&
+                                (!cursoFiltroRetiro || curso === cursoFiltroRetiro) &&
+                                (!termino || nombre.includes(termino) || rut.includes(termino));
+                            }).map((r) => (
+                              <tr key={r.id}>
+                                <td>{r.fecha_retiro_iso || r.fecha_retiro || '-'}</td>
+                                <td>{r.alumno_nombre || `${r.alumno_nombres || ''} ${r.alumno_paterno || ''}`.trim() || '-'}</td>
+                                <td>{r.curso_nombre || r.curso || '-'}</td>
+                                <td>{r.motivo || '-'}</td>
+                                <td>{r.observacion || '-'}</td>
+                              </tr>
+                            ))}
+                            {!listaRetiros.some((r) => {
+                              const fecha = String(r.fecha_retiro_iso || r.fecha_retiro || '').slice(0, 10);
+                              const nombre = `${r.alumno_nombre || r.alumno_nombres || ''} ${r.alumno_paterno || ''}`.toLowerCase();
+                              const rut = String(r.alumno_rut || '').toLowerCase();
+                              const curso = String(r.curso_nombre || r.curso || '');
+                              const termino = busquedaRetiro.trim().toLowerCase();
+                              return (!fechaFiltroRetiro || fecha === fechaFiltroRetiro) && (!cursoFiltroRetiro || curso === cursoFiltroRetiro) && (!termino || nombre.includes(termino) || rut.includes(termino));
+                            }) && <tr><td colSpan="5" style={{ textAlign: 'center', padding: 18 }}>No hay retiros que coincidan con los filtros.</td></tr>}
+                          </tbody>
+                        </table>
                       </div>
                     )}
-
-
-                    {paseEncontrado && (
-                      <div className="sec-ficha-modal" style={{ marginTop: '16px', borderLeft: '4px solid #800020', background: '#fff' }}>
-                        <div className="sec-ficha-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8f9fa', padding: '10px 15px', borderBottom: '1px solid #dee2e6' }}>
-                          <h4 style={{ margin: 0, color: '#800020' }}>Detalle del Pase de Retiro</h4>
-                          <span style={{ fontSize: '12px', background: '#fee2e2', padding: '4px 8px', borderRadius: '4px', color: '#991b1b', fontWeight: 'bold' }}>
-                            ID: {paseEncontrado.id}
-                          </span>
-                        </div>
-
-
-                        <div className="sec-ficha-grid" style={{ marginTop: '15px', padding: '0 15px' }}>
-                          <div>
-                            <p><strong>Estudiante:</strong> {paseEncontrado.alumno_nombre}</p>
-                            <p><strong>RUT Estudiante:</strong> {paseEncontrado.alumno_rut}</p>
-                            <p><strong>Curso:</strong> {paseEncontrado.curso}</p>
-                            <p><strong>Fecha Programada:</strong> {paseEncontrado.fecha_retiro}</p>
-                          </div>
-                          <div>
-                            <p>
-                              <strong>Retirado por:</strong>{' '}
-                              <span style={{ background: '#fee2e2', color: '#991b1b', padding: '2px 6px', borderRadius: '4px', fontWeight: 'bold' }}>
-                                {paseEncontrado.retira_persona}
-                              </span>
-                            </p>
-                            <p><strong>RUT que Retira:</strong> {paseEncontrado.retira_rut}</p>
-                            <p><strong>Autorizado por:</strong> {paseEncontrado.autorizado_por || 'Inspectoría General'}</p>
-                            <p><strong>Motivo:</strong> {paseEncontrado.motivo}</p>
-                          </div>
-                        </div>
-
-
-                        {paseEncontrado.observacion && (
-                          <div style={{ padding: '0 15px' }}>
-                            <p style={{ background: '#fef2f2', padding: '10px', borderRadius: '4px', border: '1px solid #fecaca', marginTop: '10px', color: '#7f1d1d' }}>
-                              <strong>Observación:</strong> {paseEncontrado.observacion}
-                            </p>
-                          </div>
-                        )}
-
-
-                        <div style={{ padding: '15px' }}>
-                          <button
-                            type="button"
-                            className="sec-btn-outline"
-                            style={{
-                              backgroundColor: '#800020',
-                              color: '#fff',
-                              borderColor: '#800020',
-                              marginTop: '15px',
-                              cursor: 'pointer',
-                              padding: '8px 16px',
-                              borderRadius: '4px',
-                              fontWeight: 'bold'
-                            }}
-                            onClick={() => {
-                              setExitoQR(
-                                `Consulta finalizada: Se corroboró la información de retiro del alumno/a ${paseEncontrado.alumno_nombre} realizada por ${paseEncontrado.retira_persona}.`
-                              );
-                              setPaseEncontrado(null);
-                              setCodigoBusqueda('');
-                            }}
-                          >
-                            Entendido / Cerrar Consulta
-                          </button>
-                        </div>
-                      </div>
-                    )}
-
-
-
                   </div>
                 </div>
 
@@ -704,18 +748,17 @@ function SecretariaDashboard() {
                     <h4 style={{ margin: '0 0 4px 0', color: '#333' }}>Escáner QR</h4>
                     <p style={{ margin: '0 0 16px 0', color: '#777', fontSize: '0.85rem' }}>El código debe estar vigente.</p>
 
-                    <div className="sec-scanner-box" style={{ minHeight: '240px', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden', background: '#111', borderRadius: '10px', marginBottom: '12px', padding: '8px' }}>
-                      <div
-                        id="qr-reader"
-                        ref={scannerContainerRef}
-                        style={{ width: '100%', maxWidth: '480px', minHeight: '220px', color: '#fff' }}
-                      />
-                      {!camaraActiva && (
-                        <span style={{ color: '#fff', padding: '12px', textAlign: 'center' }}>
-                          {mensajeCamara || 'La cámara está apagada.'}
-                        </span>
-                      )}
-                    </div>
+                    <div
+                      id="qr-reader"
+                      ref={scannerContainerRef}
+                      className={camaraActiva ? 'sec-qr-reader activo' : 'sec-qr-reader'}
+                      aria-label="Lector de código QR"
+                    />
+                    {!camaraActiva && (
+                      <p className="sec-qr-camera-message" role="status">
+                        {mensajeCamara || 'La cámara está apagada.'}
+                      </p>
+                    )}
 
                     <button
                       type="button"
@@ -757,6 +800,38 @@ function SecretariaDashboard() {
                         {cargandoQR ? 'Validando...' : 'Validar código'}
                       </button>
                     </form>
+
+                    {errorQR && <div className="sec-ficha-modal sec-alert-error" role="alert">{errorQR}</div>}
+
+                    {retiroInspector && (
+                      <div className="sec-ficha-modal" style={{ textAlign: 'left' }}>
+                        {retiroConfirmado ? (
+                          <>
+                            <h3 style={{ color: '#155724' }}>Retiro registrado correctamente</h3>
+                            <p>La solicitud fue confirmada y el código QR quedó inutilizado.</p>
+                            <button type="button" className="sec-btn-burgundy-full" onClick={nuevoRetiroInspectoria}>Validar otro retiro</button>
+                          </>
+                        ) : (
+                          <>
+                            <h3 style={{ color: '#800020', marginTop: 0 }}>Verificación del retiro</h3>
+                            <p><strong>Estudiante:</strong> {retiroInspector.alumno.nombre || '-'}</p>
+                            <p><strong>RUT:</strong> {retiroInspector.alumno.rut || '-'}</p>
+                            <p><strong>Curso:</strong> {retiroInspector.alumno.curso || '-'}</p>
+                            <p><strong>Persona autorizada:</strong> {retiroInspector.personaAutorizada?.nombre || '-'}</p>
+                            <p><strong>RUT persona autorizada:</strong> {retiroInspector.personaAutorizada?.rut || '-'}</p>
+                            <p><strong>Motivo:</strong> {retiroInspector.retiro.motivo || '-'}</p>
+                            <div className="sec-form-group">
+                              <label>Observación de retiro</label>
+                              <textarea className="sec-input-full" rows="3" value={observacionConfirmacionRetiro} onChange={(e) => setObservacionConfirmacionRetiro(e.target.value)} />
+                            </div>
+                            <button type="button" className="sec-btn-burgundy-full" disabled={confirmandoRetiro} onClick={confirmarRetiroInspectoria}>
+                              {confirmandoRetiro ? 'Confirmando...' : 'Confirmar y autorizar retiro'}
+                            </button>
+                            <button type="button" className="sec-btn-outline" style={{ marginTop: 10 }} onClick={nuevoRetiroInspectoria}>Cancelar / Validar otro QR</button>
+                          </>
+                        )}
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -1402,7 +1477,7 @@ function SecretariaDashboard() {
                 <div className="sec-divider"></div>
 
 
-                <div className="sec-search-container">
+                <div className="sec-search-container sec-filter-row">
                   <input
                     type="text"
                     className="sec-search-input"
@@ -1411,6 +1486,17 @@ function SecretariaDashboard() {
                     onChange={(e) => setBusquedaEstudiante(e.target.value)}
                     autoFocus
                   />
+                  <select
+                    className="sec-search-input"
+                    value={cursoFiltroEstudiante}
+                    onChange={(e) => setCursoFiltroEstudiante(e.target.value)}
+                    aria-label="Filtrar estudiantes y apoderados por curso"
+                  >
+                    <option value="">Todos los cursos</option>
+                    {listaCursos.map((curso) => (
+                      <option key={curso.id} value={curso.nombre}>{curso.nombre}</option>
+                    ))}
+                  </select>
                 </div>
 
 
@@ -1534,6 +1620,7 @@ function SecretariaDashboard() {
               <th>Motivo</th>
               <th>Estado</th>
               <th style={{ textAlign: 'center' }}>Documento</th>
+              <th style={{ textAlign: 'center' }}>Acciones</th>
             </tr>
           </thead>
           <tbody>
@@ -1560,12 +1647,12 @@ function SecretariaDashboard() {
                   const nombreArchivo = rutaRelativa.split('/').pop();
 
                   if (rutaRelativa.startsWith('uploads/')) {
-                    urlFinal = `http://localhost:3000/${rutaRelativa
+                    urlFinal = `${API_URL.slice(0, API_URL.lastIndexOf('/api'))}/${rutaRelativa
                       .split('/')
                       .map(encodeURIComponent)
                       .join('/')}`;
                   } else if (nombreArchivo) {
-                    urlFinal = `http://localhost:3000/uploads/justificativos/${encodeURIComponent(nombreArchivo)}`;
+                    urlFinal = `${API_URL.slice(0, API_URL.lastIndexOf('/api'))}/uploads/justificativos/${encodeURIComponent(nombreArchivo)}`;
                   }
                 }
               }
@@ -1619,38 +1706,13 @@ function SecretariaDashboard() {
                   </td>
                   <td style={{ textAlign: 'center' }}>
                     {urlFinal ? (
-                      <a
-                        href={urlFinal}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        onClick={(e) => {
-                          if (
-                            !/^https?:\/\//i.test(urlFinal) &&
-                            !urlFinal.startsWith('data:')
-                          ) {
-                            e.preventDefault();
-                            alert(
-                              'No se puede determinar una dirección válida para el documento.'
-                            );
-                          }
-                        }}
-                        style={{
-                          display: 'inline-flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          gap: '6px',
-                          padding: '7px 12px',
-                          backgroundColor: '#800020',
-                          color: '#fff',
-                          borderRadius: '4px',
-                          textDecoration: 'none',
-                          fontSize: '0.85rem',
-                          fontWeight: '600',
-                          whiteSpace: 'nowrap',
-                        }}
+                      <button
+                        type="button"
+                        onClick={() => setPdfSeleccionado({ url: urlFinal, nombre: nombreEstudiante })}
+                        style={{ display: 'inline-flex', alignItems: 'center', justifyContent: 'center', gap: '6px', padding: '7px 12px', backgroundColor: '#800020', color: '#fff', border: 0, borderRadius: '4px', cursor: 'pointer', fontSize: '0.85rem', fontWeight: '600', whiteSpace: 'nowrap' }}
                       >
                         📄 Ver PDF
-                      </a>
+                      </button>
                     ) : (
                       <span
                         style={{
@@ -1661,6 +1723,18 @@ function SecretariaDashboard() {
                         Sin archivo
                       </span>
                     )}
+                  </td>
+                  <td style={{ textAlign: 'center', minWidth: 180 }}>
+                    {estado !== 'APROBADO' && estado !== 'RECHAZADO' ? (
+                      <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap' }}>
+                        <button type="button" className="sec-btn-outline" disabled={actualizandoJustificativo === item.id} onClick={() => cambiarEstadoJustificativo(item, 'APROBADO')}>
+                          {actualizandoJustificativo === item.id ? 'Guardando...' : '✓ Aprobar'}
+                        </button>
+                        <button type="button" className="sec-btn-outline" disabled={actualizandoJustificativo === item.id} onClick={() => cambiarEstadoJustificativo(item, 'RECHAZADO')}>
+                          ✕ Rechazar
+                        </button>
+                      </div>
+                    ) : <span style={{ color: '#777' }}>Solicitud resuelta</span>}
                   </td>
                 </tr>
               );
@@ -1673,6 +1747,18 @@ function SecretariaDashboard() {
 )}
 
 
+            {pdfSeleccionado && (
+              <div className="sec-pdf-overlay" role="dialog" aria-modal="true" aria-label="Vista previa del justificativo PDF">
+                <div className="sec-pdf-modal">
+                  <div className="sec-pdf-header">
+                    <strong>Justificativo de {pdfSeleccionado.nombre}</strong>
+                    <button type="button" className="sec-btn-outline" onClick={() => setPdfSeleccionado(null)}>Cerrar ✕</button>
+                  </div>
+                  <iframe title="Documento justificativo PDF" src={pdfSeleccionado.url} className="sec-pdf-frame" />
+                </div>
+              </div>
+            )}
+
           </main>
         </div>
       </div>
@@ -1681,5 +1767,3 @@ function SecretariaDashboard() {
 }
 
 export default SecretariaDashboard;
-
-
