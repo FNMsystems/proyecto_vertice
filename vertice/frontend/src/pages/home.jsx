@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import BotonAcceso from "../components/boton_acceso";
 import { loginService } from '../services/authService.js';
-import logoColegio from "../img/logo_institucional.png";
+import logoColegio from "../img/logo_Institucional.png";
 import fondoColegio from "../img/home_fondo.jpeg";
 import "./home.css";
 

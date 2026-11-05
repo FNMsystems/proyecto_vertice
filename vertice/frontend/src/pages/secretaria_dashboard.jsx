@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import logoColegio from "../img/logo_institucional.png";
+import logoColegio from "../img/logo_Institucional.png";
 import "./secretaria_dashboard.css";
 import { fetchConAuth, API_URL } from "../services/apiService.js";
 
