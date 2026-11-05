@@ -10,7 +10,7 @@ import {
   obtenerMiDashboardDocente
 } from '../services/docenteService.js';
 
-import logoColegio from '../img/logo_institucional.png';
+import logoColegio from '../img/logo_Institucional.png';
 import fondoInstitucional from '../img/fondo_institucional.jpeg';
 
 import './profesores_dashboard.css';
