@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { loginService } from '../services/authService.js';
-import logoColegio from '../img/logo_institucional.png';
+import logoColegio from '../img/logo_Institucional.png';
 import fondoColegio from '../img/home_fondo.jpeg';
 import './login.css';
 
