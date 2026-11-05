@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import logoColegio from "../img/logo_institucional.png";
+import logoColegio from "../img/logo_Institucional.png";
 import fondoColegio from "../img/home_fondo.jpeg";
 import "./apoderado_dashboard.css";
 import { fetchConAuth } from "../services/apiService.js";

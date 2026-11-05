@@ -13,8 +13,8 @@ import {
   obtenerAlumnosCurso,
   registrarRetraso
 } from '../services/retrasoService.js';
-import logoColegio from '../img/logo_institucional.png';
-import fondoInstitucional from '../img/fondo_Institucional.jpeg';
+import logoColegio from '../img/logo_Institucional.png';
+import fondoInstitucional from '../img/fondo_institucional.jpeg';
 import './inspectoria_dashboard.css';
 
 export default function InspectoriaDashboard() {
