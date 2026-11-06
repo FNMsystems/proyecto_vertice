@@ -40,10 +40,32 @@ export const fetchConAuth = async (endpoint, options = {}) => {
     throw new Error('Sesión expirada o no autorizada');
   }
 
-  const data = await response.json();
+  let data = {};
+
+  try {
+    data = await response.json();
+  } catch {
+    data = {};
+  }
 
   if (!response.ok) {
-    throw new Error(data.error || 'Error en la petición');
+    const mensaje =
+      data.mensaje ||
+      data.error ||
+      data.message ||
+      `Error HTTP ${response.status}`;
+
+    const error = new Error(mensaje);
+    error.status = response.status;
+    error.data = data;
+
+    console.error('Error en petición API:', {
+      endpoint,
+      status: response.status,
+      respuesta: data
+    });
+
+    throw error;
   }
 
   return data;
