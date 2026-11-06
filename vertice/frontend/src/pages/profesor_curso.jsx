@@ -7,13 +7,8 @@ import {
   guardarAsistenciaCurso
 } from '../services/docenteService.js';
 
-import {
-  fetchConAuth
-} from '../services/apiService.js';
-
-import {
-  logoutService
-} from '../services/authService.js';
+import { fetchConAuth } from '../services/apiService.js';
+import { logoutService } from '../services/authService.js';
 
 import './profesor_curso.css';
 
@@ -26,48 +21,40 @@ export default function ProfesorCurso() {
   const [asignaturas, setAsignaturas] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [horario, setHorario] = useState([]);
+
   const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState('');
   const [informacionAlumno, setInformacionAlumno] = useState(null);
   const [cargandoInformacionAlumno, setCargandoInformacionAlumno] = useState(false);
 
   const [pestana, setPestana] = useState('alumnos');
-
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
 
   const [notas, setNotas] = useState([]);
   const [asignaturaNotas, setAsignaturaNotas] = useState('');
+  const [periodoNotas, setPeriodoNotas] = useState('1');
   const [cargandoNotas, setCargandoNotas] = useState(false);
 
-  const [mostrarFormularioNota, setMostrarFormularioNota] =
-    useState(false);
+  const [mostrarNuevaEvaluacion, setMostrarNuevaEvaluacion] = useState(false);
+  const [guardandoEvaluacion, setGuardandoEvaluacion] = useState(false);
 
-  const [notaForm, setNotaForm] = useState({
-    alumnoId: '',
-    asignaturaId: '',
-    periodo: '',
+  const [edicionesNotas, setEdicionesNotas] = useState({});
+
+  const [nuevaEvaluacion, setNuevaEvaluacion] = useState({
     tipoEvaluacion: '',
-    nota: '',
     porcentaje: '',
-    fecha: '',
+    fecha: obtenerFechaActual(),
     observacion: ''
   });
 
-
-  const [fechaAsistencia, setFechaAsistencia] =
-    useState(obtenerFechaActual());
-
+  const [fechaAsistencia, setFechaAsistencia] = useState(obtenerFechaActual());
   const [asistencia, setAsistencia] = useState([]);
-  const [cargandoAsistencia, setCargandoAsistencia] =
-    useState(false);
-
+  const [cargandoAsistencia, setCargandoAsistencia] = useState(false);
 
   const [anotaciones, setAnotaciones] = useState([]);
-  const [cargandoAnotaciones, setCargandoAnotaciones] =
-    useState(false);
+  const [cargandoAnotaciones, setCargandoAnotaciones] = useState(false);
 
-  const [mostrarFormularioAnotacion, setMostrarFormularioAnotacion] =
-    useState(false);
+  const [mostrarFormularioAnotacion, setMostrarFormularioAnotacion] = useState(false);
 
   const [anotacionForm, setAnotacionForm] = useState({
     alumnoId: '',
@@ -82,25 +69,18 @@ export default function ProfesorCurso() {
   }, [cursoId]);
 
   const cargarCurso = async () => {
-
     try {
-
       setCargando(true);
       setError(null);
 
-      const data =
-        await obtenerCursoDocente(cursoId);
+      const data = await obtenerCursoDocente(cursoId);
 
       setCurso(data.curso);
       setAsignaturas(data.asignaturas || []);
       setAlumnos(data.alumnos || []);
 
     } catch (error) {
-
-      console.error(
-        'Error cargando curso:',
-        error
-      );
+      console.error('Error cargando curso:', error);
 
       setError(
         error.message ||
@@ -108,23 +88,17 @@ export default function ProfesorCurso() {
       );
 
     } finally {
-
       setCargando(false);
-
     }
   };
 
-
   useEffect(() => {
-
     if (pestana === 'informacion-alumno' && alumnoSeleccionadoId) {
       cargarInformacionAlumno(alumnoSeleccionadoId);
     }
-
   }, [pestana, alumnoSeleccionadoId]);
 
   const cargarInformacionAlumno = async (alumnoId) => {
-
     try {
       setCargandoInformacionAlumno(true);
 
@@ -137,56 +111,39 @@ export default function ProfesorCurso() {
     } catch (error) {
       console.error('Error cargando información del alumno:', error);
       setInformacionAlumno(null);
-      alert(error.message || 'No se pudo cargar la información del alumno.');
+
+      alert(
+        error.message ||
+        'No se pudo cargar la información del alumno.'
+      );
+
     } finally {
       setCargandoInformacionAlumno(false);
     }
   };
 
   useEffect(() => {
-
-    if (
-      pestana === 'notas' &&
-      cursoId
-    ) {
+    if (pestana === 'notas' && cursoId) {
       cargarNotas();
     }
-
-  }, [
-    pestana,
-    cursoId,
-    asignaturaNotas
-  ]);
+  }, [pestana, cursoId, asignaturaNotas]);
 
   const cargarNotas = async () => {
-
     try {
-
       setCargandoNotas(true);
 
-      let url =
-        `/notas/curso/${cursoId}`;
+      let url = `/notas/curso/${cursoId}`;
 
       if (asignaturaNotas) {
-        url +=
-          `?asignaturaId=${encodeURIComponent(
-            asignaturaNotas
-          )}`;
+        url += `?asignaturaId=${encodeURIComponent(asignaturaNotas)}`;
       }
 
-      const data =
-        await fetchConAuth(url);
+      const data = await fetchConAuth(url);
 
-      setNotas(
-        data.notas || []
-      );
+      setNotas(data.notas || []);
 
     } catch (error) {
-
-      console.error(
-        'Error cargando notas:',
-        error
-      );
+      console.error('Error cargando notas:', error);
 
       alert(
         error.message ||
@@ -194,127 +151,304 @@ export default function ProfesorCurso() {
       );
 
     } finally {
-
       setCargandoNotas(false);
-
     }
   };
 
-  const crearNota = async (event) => {
+  const evaluacionesAgrupadas = useMemo(() => {
+    const agrupadas = new Map();
 
-    event.preventDefault();
-
-    try {
-
-      if (!notaForm.alumnoId) {
-        alert('Selecciona un alumno.');
-        return;
-      }
-
-      if (!notaForm.asignaturaId) {
-        alert('Selecciona una asignatura.');
-        return;
+    const notasFiltradas = notas.filter((nota) => {
+      if (String(nota.periodo) !== String(periodoNotas)) {
+        return false;
       }
 
       if (
-        notaForm.nota === '' ||
-        notaForm.nota === null
+        asignaturaNotas &&
+        String(nota.asignaturaId) !== String(asignaturaNotas)
       ) {
-        alert('Ingresa la nota.');
-        return;
+        return false;
       }
 
-      const data =
-        await fetchConAuth('/notas', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            alumnoId: notaForm.alumnoId,
-            cursoId,
-            asignaturaId: notaForm.asignaturaId,
-            periodo: notaForm.periodo || null,
-            tipoEvaluacion:
-              notaForm.tipoEvaluacion || null,
-            nota: Number(notaForm.nota),
-            porcentaje:
-              notaForm.porcentaje === ''
-                ? null
-                : Number(notaForm.porcentaje),
-            fecha:
-              notaForm.fecha || null,
-            observacion:
-              notaForm.observacion || null
-          })
+      return true;
+    });
+
+    notasFiltradas.forEach((nota) => {
+      const fecha = nota.fecha
+        ? String(nota.fecha).slice(0, 10)
+        : '';
+
+      const clave = JSON.stringify([
+        nota.periodo,
+        nota.tipoEvaluacion,
+        Number(nota.porcentaje),
+        fecha
+      ]);
+
+      if (!agrupadas.has(clave)) {
+        agrupadas.set(clave, {
+          clave,
+          periodo: nota.periodo,
+          tipoEvaluacion: nota.tipoEvaluacion || 'Evaluación sin nombre',
+          porcentaje: Number(nota.porcentaje || 0),
+          fecha,
+          observacion: nota.observacion || '',
+          notas: {}
         });
+      }
 
-      alert(
-        data.mensaje ||
-        'Nota registrada correctamente.'
-      );
+      agrupadas.get(clave).notas[nota.alumnoId] = nota;
+    });
 
-      setNotaForm({
-        alumnoId: '',
-        asignaturaId: '',
-        periodo: '',
-        tipoEvaluacion: '',
-        nota: '',
-        porcentaje: '',
-        fecha: '',
-        observacion: ''
+    return Array.from(agrupadas.values()).sort((a, b) => {
+      return (a.fecha || '').localeCompare(b.fecha || '');
+    });
+
+  }, [notas, periodoNotas, asignaturaNotas]);
+
+  const alumnosOrdenados = useMemo(() => {
+    return [...alumnos].sort((a, b) =>
+      String(a.nombre || '').localeCompare(
+        String(b.nombre || ''),
+        'es',
+        { sensitivity: 'base' }
+      )
+    );
+  }, [alumnos]);
+
+  const porcentajePeriodo = useMemo(() => {
+    return evaluacionesAgrupadas.reduce(
+      (total, evaluacion) => total + Number(evaluacion.porcentaje || 0),
+      0
+    );
+  }, [evaluacionesAgrupadas]);
+
+  const calcularPromedioAlumno = (alumnoId) => {
+    let sumaPonderada = 0;
+    let porcentajeIngresado = 0;
+
+    evaluacionesAgrupadas.forEach((evaluacion) => {
+      const registro = evaluacion.notas[alumnoId];
+
+      const claveCelda = `${evaluacion.clave}_${alumnoId}`;
+      const valorEditado = edicionesNotas[claveCelda];
+
+      const valorNota = valorEditado !== undefined
+        ? valorEditado
+        : registro?.nota;
+
+      if (
+        valorNota !== null &&
+        valorNota !== undefined &&
+        valorNota !== ''
+      ) {
+        const nota = Number(valorNota);
+        const porcentaje = Number(evaluacion.porcentaje || 0);
+
+        if (
+          Number.isFinite(nota) &&
+          nota >= 1 &&
+          nota <= 7 &&
+          porcentaje > 0
+        ) {
+          sumaPonderada += nota * porcentaje;
+          porcentajeIngresado += porcentaje;
+        }
+      }
+    });
+
+    if (porcentajeIngresado === 0) {
+      return null;
+    }
+
+    return {
+      promedio: sumaPonderada / porcentajeIngresado,
+      porcentajeIngresado,
+      porcentajePendiente: Math.max(0, 100 - porcentajeIngresado),
+      definitivo: porcentajeIngresado >= 99.9999
+    };
+  };
+
+  const cambiarNotaGrilla = (claveEvaluacion, alumnoId, valor) => {
+    const claveCelda = `${claveEvaluacion}_${alumnoId}`;
+
+    setEdicionesNotas((actual) => ({
+      ...actual,
+      [claveCelda]: valor
+    }));
+  };
+
+  const guardarEvaluacionMasiva = async (evaluacion) => {
+    if (!asignaturaNotas) {
+      alert('Primero debes seleccionar una asignatura.');
+      return false;
+    }
+
+    if (!alumnos.length) {
+      alert('No se encontraron alumnos para este curso.');
+      return false;
+    }
+
+    if (!evaluacion.tipoEvaluacion || !evaluacion.porcentaje) {
+      alert('La evaluación no tiene nombre o ponderación.');
+      return false;
+    }
+
+    const listaAlumnos = alumnos.map((alumno) => {
+      const claveCelda = `${evaluacion.clave}_${alumno.id}`;
+      const registroExistente = evaluacion.notas?.[alumno.id];
+
+      const valorEditado = edicionesNotas[claveCelda];
+
+      const nota = valorEditado !== undefined
+        ? valorEditado
+        : (registroExistente?.nota ?? null);
+
+      return {
+        alumnoId: alumno.id,
+        nota: nota === '' || nota === null || nota === undefined
+          ? null
+          : Number(nota)
+      };
+    });
+
+    const invalidas = listaAlumnos.filter((alumno) =>
+      alumno.nota !== null &&
+      (
+        !Number.isFinite(alumno.nota) ||
+        alumno.nota < 1 ||
+        alumno.nota > 7
+      )
+    );
+
+    if (invalidas.length > 0) {
+      alert('Hay notas inválidas. Deben estar entre 1,0 y 7,0.');
+      return false;
+    }
+
+    try {
+      setGuardandoEvaluacion(true);
+
+      const data = await fetchConAuth('/notas/masivas', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({
+          cursoId,
+          asignaturaId: asignaturaNotas,
+          periodo: periodoNotas,
+          tipoEvaluacion: evaluacion.tipoEvaluacion,
+          porcentaje: Number(evaluacion.porcentaje),
+          fecha: evaluacion.fecha || null,
+          observacion: evaluacion.observacion || '',
+          alumnos: listaAlumnos
+        })
       });
 
-      setMostrarFormularioNota(false);
+      alert(data.mensaje || 'Evaluación guardada correctamente.');
+
+      setEdicionesNotas({});
 
       await cargarNotas();
 
-    } catch (error) {
+      return true;
 
-      console.error(
-        'Error creando nota:',
-        error
-      );
+    } catch (error) {
+      console.error('Error guardando evaluación:', error);
 
       alert(
         error.message ||
-        'No se pudo registrar la nota.'
+        'No fue posible guardar la evaluación.'
       );
+
+      return false;
+
+    } finally {
+      setGuardandoEvaluacion(false);
     }
   };
 
-  const eliminarNota = async (notaId) => {
+  const crearNuevaEvaluacion = async (event) => {
+    event.preventDefault();
 
-    const confirmar =
-      window.confirm(
-        '¿Seguro que deseas eliminar esta nota?'
-      );
+    const nombre = nuevaEvaluacion.tipoEvaluacion.trim();
+    const porcentaje = Number(nuevaEvaluacion.porcentaje);
+
+    if (!asignaturaNotas) {
+      alert('Selecciona primero la asignatura.');
+      return;
+    }
+
+    if (!nombre) {
+      alert('Debes ingresar el nombre de la evaluación.');
+      return;
+    }
+
+    if (nombre.length > 100) {
+      alert('El nombre no puede superar los 100 caracteres.');
+      return;
+    }
+
+    if (
+      !Number.isFinite(porcentaje) ||
+      porcentaje <= 0 ||
+      porcentaje > 100
+    ) {
+      alert('La ponderación debe ser mayor que 0 y no superar el 100%.');
+      return;
+    }
+
+    if (!nuevaEvaluacion.fecha) {
+      alert('Debes seleccionar la fecha de la evaluación.');
+      return;
+    }
+
+    const evaluacion = {
+      clave: 'nueva',
+      tipoEvaluacion: nombre,
+      porcentaje,
+      fecha: nuevaEvaluacion.fecha,
+      observacion: nuevaEvaluacion.observacion,
+      notas: {}
+    };
+
+    const guardado = await guardarEvaluacionMasiva(evaluacion);
+
+    if (guardado) {
+      setMostrarNuevaEvaluacion(false);
+
+      setNuevaEvaluacion({
+        tipoEvaluacion: '',
+        porcentaje: '',
+        fecha: obtenerFechaActual(),
+        observacion: ''
+      });
+    }
+  };
+
+
+  const eliminarNota = async (notaId) => {
+    const confirmar = window.confirm(
+      '¿Seguro que deseas eliminar esta nota?'
+    );
 
     if (!confirmar) return;
 
     try {
-
-      const data =
-        await fetchConAuth(
-          `/notas/${notaId}`,
-          {
-            method: 'DELETE'
-          }
-        );
-
-      alert(
-        data.mensaje ||
-        'Nota eliminada correctamente.'
+      const data = await fetchConAuth(
+        `/notas/${notaId}`,
+        {
+          method: 'DELETE'
+        }
       );
+
+      alert(data.mensaje || 'Nota eliminada correctamente.');
 
       await cargarNotas();
 
     } catch (error) {
-
-      console.error(
-        'Error eliminando nota:',
-        error
-      );
+      console.error('Error eliminando nota:', error);
 
       alert(
         error.message ||
@@ -324,7 +458,6 @@ export default function ProfesorCurso() {
   };
 
   useEffect(() => {
-
     if (
       pestana === 'asistencia' &&
       cursoId &&
@@ -332,17 +465,10 @@ export default function ProfesorCurso() {
     ) {
       cargarAsistencia();
     }
-
-  }, [
-    pestana,
-    cursoId,
-    fechaAsistencia
-  ]);
+  }, [pestana, cursoId, fechaAsistencia]);
 
   const cargarAsistencia = async () => {
-
     try {
-
       setCargandoAsistencia(true);
 
       const data = await obtenerAsistenciaCurso(
@@ -350,16 +476,10 @@ export default function ProfesorCurso() {
         fechaAsistencia
       );
 
-      setAsistencia(
-        data.alumnos || []
-      );
+      setAsistencia(data.alumnos || []);
 
     } catch (error) {
-
-      console.error(
-        'Error cargando asistencia:',
-        error
-      );
+      console.error('Error cargando asistencia:', error);
 
       alert(
         error.message ||
@@ -367,9 +487,7 @@ export default function ProfesorCurso() {
       );
 
     } finally {
-
       setCargandoAsistencia(false);
-
     }
   };
 
@@ -378,9 +496,7 @@ export default function ProfesorCurso() {
     estado,
     observacion = ''
   ) => {
-
     try {
-
       await guardarAsistenciaCurso(
         cursoId,
         fechaAsistencia,
@@ -410,11 +526,7 @@ export default function ProfesorCurso() {
       });
 
     } catch (error) {
-
-      console.error(
-        'Error guardando asistencia:',
-        error
-      );
+      console.error('Error guardando asistencia:', error);
 
       alert(
         error.message ||
@@ -424,51 +536,51 @@ export default function ProfesorCurso() {
   };
 
   const obtenerEstadoAlumno = (alumnoId) => {
-
-    const registro =
-      asistencia.find(
-        (item) =>
-          item.alumnoId === alumnoId
-      );
+    const registro = asistencia.find(
+      (item) => item.alumnoId === alumnoId
+    );
 
     return registro?.estado || null;
   };
 
-  useEffect(() => {
+  const estadisticasAsistencia = useMemo(() => {
+    return {
+      presentes: asistencia.filter(
+        (item) => item.estado === 'PRESENTE'
+      ).length,
 
-    if (
-      pestana === 'anotaciones' &&
-      cursoId
-    ) {
+      ausentes: asistencia.filter(
+        (item) => item.estado === 'AUSENTE'
+      ).length,
+
+      atrasados: asistencia.filter(
+        (item) => item.estado === 'ATRASADO'
+      ).length,
+
+      justificados: asistencia.filter(
+        (item) => item.estado === 'JUSTIFICADO'
+      ).length
+    };
+  }, [asistencia]);
+
+  useEffect(() => {
+    if (pestana === 'anotaciones' && cursoId) {
       cargarAnotaciones();
     }
-
-  }, [
-    pestana,
-    cursoId
-  ]);
+  }, [pestana, cursoId]);
 
   const cargarAnotaciones = async () => {
-
     try {
-
       setCargandoAnotaciones(true);
 
-      const data =
-        await fetchConAuth(
-          `/anotaciones/curso/${cursoId}`
-        );
-
-      setAnotaciones(
-        data.anotaciones || []
+      const data = await fetchConAuth(
+        `/anotaciones/curso/${cursoId}`
       );
+
+      setAnotaciones(data.anotaciones || []);
 
     } catch (error) {
-
-      console.error(
-        'Error cargando anotaciones:',
-        error
-      );
+      console.error('Error cargando anotaciones:', error);
 
       alert(
         error.message ||
@@ -476,18 +588,14 @@ export default function ProfesorCurso() {
       );
 
     } finally {
-
       setCargandoAnotaciones(false);
-
     }
   };
 
   const crearAnotacion = async (event) => {
-
     event.preventDefault();
 
     try {
-
       if (!anotacionForm.alumnoId) {
         alert('Selecciona un alumno.');
         return;
@@ -498,34 +606,25 @@ export default function ProfesorCurso() {
         return;
       }
 
-      const data =
-        await fetchConAuth(
-          '/anotaciones',
-          {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              alumnoId:
-                anotacionForm.alumnoId,
-              cursoId,
-              tipo:
-                anotacionForm.tipo,
-              titulo:
-                anotacionForm.titulo || null,
-              descripcion:
-                anotacionForm.descripcion,
-              fecha:
-                anotacionForm.fecha || null
-            })
-          }
-        );
-
-      alert(
-        data.mensaje ||
-        'Anotación registrada correctamente.'
+      const data = await fetchConAuth(
+        '/anotaciones',
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json'
+          },
+          body: JSON.stringify({
+            alumnoId: anotacionForm.alumnoId,
+            cursoId,
+            tipo: anotacionForm.tipo,
+            titulo: anotacionForm.titulo || null,
+            descripcion: anotacionForm.descripcion,
+            fecha: anotacionForm.fecha || null
+          })
+        }
       );
+
+      alert(data.mensaje || 'Anotación registrada correctamente.');
 
       setAnotacionForm({
         alumnoId: '',
@@ -540,11 +639,7 @@ export default function ProfesorCurso() {
       await cargarAnotaciones();
 
     } catch (error) {
-
-      console.error(
-        'Error creando anotación:',
-        error
-      );
+      console.error('Error creando anotación:', error);
 
       alert(
         error.message ||
@@ -553,40 +648,27 @@ export default function ProfesorCurso() {
     }
   };
 
-  const eliminarAnotacion = async (
-    anotacionId
-  ) => {
-
-    const confirmar =
-      window.confirm(
-        '¿Seguro que deseas eliminar esta anotación?'
-      );
+  const eliminarAnotacion = async (anotacionId) => {
+    const confirmar = window.confirm(
+      '¿Seguro que deseas eliminar esta anotación?'
+    );
 
     if (!confirmar) return;
 
     try {
-
-      const data =
-        await fetchConAuth(
-          `/anotaciones/${anotacionId}`,
-          {
-            method: 'DELETE'
-          }
-        );
-
-      alert(
-        data.mensaje ||
-        'Anotación eliminada correctamente.'
+      const data = await fetchConAuth(
+        `/anotaciones/${anotacionId}`,
+        {
+          method: 'DELETE'
+        }
       );
+
+      alert(data.mensaje || 'Anotación eliminada correctamente.');
 
       await cargarAnotaciones();
 
     } catch (error) {
-
-      console.error(
-        'Error eliminando anotación:',
-        error
-      );
+      console.error('Error eliminando anotación:', error);
 
       alert(
         error.message ||
@@ -594,6 +676,7 @@ export default function ProfesorCurso() {
       );
     }
   };
+
 
   const obtenerNombreDia = (dia) => {
     const dias = {
@@ -610,45 +693,9 @@ export default function ProfesorCurso() {
   };
 
   const formatearHora = (hora) => {
-    if (!hora) {
-      return '-';
-    }
-
+    if (!hora) return '-';
     return String(hora).slice(0, 5);
   };
-
-  const estadisticasAsistencia =
-    useMemo(() => {
-
-      return {
-        presentes:
-          asistencia.filter(
-            (item) =>
-              item.estado === 'PRESENTE'
-          ).length,
-
-        ausentes:
-          asistencia.filter(
-            (item) =>
-              item.estado === 'AUSENTE'
-          ).length,
-
-        atrasados:
-          asistencia.filter(
-            (item) =>
-              item.estado === 'ATRASADO'
-          ).length,
-
-        justificados:
-          asistencia.filter(
-            (item) =>
-              item.estado === 'JUSTIFICADO'
-          ).length
-      };
-
-    }, [asistencia]);
-
-
 
   const volver = () => {
     navigate('/profesores_dashboard');
@@ -659,9 +706,7 @@ export default function ProfesorCurso() {
     navigate('/');
   };
 
-
   if (cargando) {
-
     return (
       <div className="profesor-curso-container">
         <div className="profesor-curso-card">
@@ -673,23 +718,14 @@ export default function ProfesorCurso() {
   }
 
   if (error) {
-
     return (
       <div className="profesor-curso-container">
-
         <div className="profesor-curso-card">
+          <div className="error-icon">⚠️</div>
 
-          <div className="error-icon">
-            ⚠️
-          </div>
+          <h2>No se pudo cargar el curso</h2>
 
-          <h2>
-            No se pudo cargar el curso
-          </h2>
-
-          <p>
-            {error}
-          </p>
+          <p>{error}</p>
 
           <button
             className="btn-primary"
@@ -697,15 +733,12 @@ export default function ProfesorCurso() {
           >
             Volver a mis cursos
           </button>
-
         </div>
-
       </div>
     );
   }
 
   return (
-
     <div className="profesor-curso-container">
 
       <header className="profesor-curso-header">
@@ -720,15 +753,8 @@ export default function ProfesorCurso() {
           </button>
 
           <div>
-
-            <h1>
-              {curso?.nombre}
-            </h1>
-
-            <p>
-              Panel del curso · {curso?.anio}
-            </p>
-
+            <h1>{curso?.nombre}</h1>
+            <p>Panel del curso · {curso?.anio}</p>
           </div>
 
         </div>
@@ -742,216 +768,112 @@ export default function ProfesorCurso() {
 
       </header>
 
-
       <main className="profesor-curso-content">
 
         <section className="curso-resumen">
 
           <div className="resumen-item">
-
-            <span className="resumen-icon">
-              👥
-            </span>
-
+            <span className="resumen-icon">👥</span>
             <div>
-              <strong>
-                {alumnos.length}
-              </strong>
-
-              <span>
-                Alumnos
-              </span>
+              <strong>{alumnos.length}</strong>
+              <span>Alumnos</span>
             </div>
-
           </div>
 
           <div className="resumen-item">
-
-            <span className="resumen-icon">
-              📚
-            </span>
-
+            <span className="resumen-icon">📚</span>
             <div>
-              <strong>
-                {asignaturas.length}
-              </strong>
-
-              <span>
-                Asignaturas
-              </span>
+              <strong>{asignaturas.length}</strong>
+              <span>Asignaturas</span>
             </div>
-
           </div>
 
           <div className="resumen-item">
-
-            <span className="resumen-icon">
-              📝
-            </span>
-
+            <span className="resumen-icon">📝</span>
             <div>
-              <strong>
-                {notas.length}
-              </strong>
-
-              <span>
-                Notas cargadas
-              </span>
+              <strong>{notas.length}</strong>
+              <span>Notas cargadas</span>
             </div>
-
           </div>
 
           <div className="resumen-item">
-
-            <span className="resumen-icon">
-              📋
-            </span>
-
+            <span className="resumen-icon">📋</span>
             <div>
-              <strong>
-                {anotaciones.length}
-              </strong>
-
-              <span>
-                Anotaciones
-              </span>
+              <strong>{anotaciones.length}</strong>
+              <span>Anotaciones</span>
             </div>
-
           </div>
 
         </section>
 
-
         <nav className="curso-tabs">
 
           <button
-            className={
-              pestana === 'alumnos'
-                ? 'curso-tab active'
-                : 'curso-tab'
-            }
-            onClick={() =>
-              setPestana('alumnos')
-            }
+            className={pestana === 'alumnos' ? 'curso-tab active' : 'curso-tab'}
+            onClick={() => setPestana('alumnos')}
           >
             👥 Alumnos
           </button>
 
           <button
-            className={
-              pestana === 'notas'
-                ? 'curso-tab active'
-                : 'curso-tab'
-            }
-            onClick={() =>
-              setPestana('notas')
-            }
+            className={pestana === 'notas' ? 'curso-tab active' : 'curso-tab'}
+            onClick={() => setPestana('notas')}
           >
             📝 Notas
           </button>
 
           <button
-            className={
-              pestana === 'asistencia'
-                ? 'curso-tab active'
-                : 'curso-tab'
-            }
-            onClick={() =>
-              setPestana('asistencia')
-            }
+            className={pestana === 'asistencia' ? 'curso-tab active' : 'curso-tab'}
+            onClick={() => setPestana('asistencia')}
           >
             📅 Asistencia
           </button>
 
           <button
-            className={
-              pestana === 'anotaciones'
-                ? 'curso-tab active'
-                : 'curso-tab'
-            }
-            onClick={() =>
-              setPestana('anotaciones')
-            }
+            className={pestana === 'anotaciones' ? 'curso-tab active' : 'curso-tab'}
+            onClick={() => setPestana('anotaciones')}
           >
             📋 Anotaciones
           </button>
 
           <button
-            className={
-              pestana === 'informacion-alumno'
-                ? 'curso-tab active'
-                : 'curso-tab'
-            }
-            onClick={() =>
-              setPestana('informacion-alumno')
-            }
+            className={pestana === 'informacion-alumno' ? 'curso-tab active' : 'curso-tab'}
+            onClick={() => setPestana('informacion-alumno')}
           >
             👤 Información del alumno
           </button>
 
           <button
-            className={
-              pestana === 'informacion'
-                ? 'curso-tab active'
-                : 'curso-tab'
-            }
-            onClick={() =>
-              setPestana('informacion')
-            }
+            className={pestana === 'informacion' ? 'curso-tab active' : 'curso-tab'}
+            onClick={() => setPestana('informacion')}
           >
             ℹ️ Información
           </button>
 
         </nav>
 
-
-
         {pestana === 'alumnos' && (
-
           <section className="curso-panel">
 
             <div className="panel-header">
-
               <div>
-                <h2>
-                  👥 Alumnos
-                </h2>
-
-                <p>
-                  Estudiantes matriculados en este curso.
-                </p>
+                <h2>👥 Alumnos</h2>
+                <p>Estudiantes matriculados en este curso.</p>
               </div>
 
-              <span className="count-badge">
-                {alumnos.length}
-              </span>
-
+              <span className="count-badge">{alumnos.length}</span>
             </div>
 
-
             {alumnos.length === 0 ? (
-
               <div className="empty-state">
                 <div>👥</div>
-
-                <h3>
-                  No hay alumnos
-                </h3>
-
-                <p>
-                  No existen estudiantes matriculados
-                  en este curso.
-                </p>
+                <h3>No hay alumnos</h3>
+                <p>No existen estudiantes matriculados en este curso.</p>
               </div>
-
             ) : (
-
               <div className="table-wrapper">
-
                 <table className="curso-table">
-
                   <thead>
-
                     <tr>
                       <th>#</th>
                       <th>Alumno</th>
@@ -959,367 +881,236 @@ export default function ProfesorCurso() {
                       <th>Sexo</th>
                       <th>Información</th>
                     </tr>
-
                   </thead>
 
                   <tbody>
+                    {alumnos.map((alumno, index) => (
+                      <tr key={alumno.id}>
+                        <td>{index + 1}</td>
 
-                    {alumnos.map(
-                      (alumno, index) => (
+                        <td>
+                          <strong>{alumno.nombre}</strong>
+                        </td>
 
-                        <tr key={alumno.id}>
+                        <td>{alumno.rut || '-'}</td>
+                        <td>{alumno.sexo || '-'}</td>
 
-                          <td>
-                            {index + 1}
-                          </td>
-
-                          <td>
-                            <strong>
-                              {alumno.nombre}
-                            </strong>
-                          </td>
-
-                          <td>
-                            {alumno.rut || '-'}
-                          </td>
-
-                          <td>
-                            {alumno.sexo || '-'}
-                          </td>
-
-                          <td>
-                            <button
-                              type="button"
-                              className="btn-primary"
-                              onClick={() => {
-                                setAlumnoSeleccionadoId(alumno.id);
-                                setPestana('informacion-alumno');
-                              }}
-                            >
-                              Ver información
-                            </button>
-                          </td>
-
-                        </tr>
-
-                      )
-                    )}
-
+                        <td>
+                          <button
+                            type="button"
+                            className="btn-primary"
+                            onClick={() => {
+                              setAlumnoSeleccionadoId(alumno.id);
+                              setPestana('informacion-alumno');
+                            }}
+                          >
+                            Ver información
+                          </button>
+                        </td>
+                      </tr>
+                    ))}
                   </tbody>
-
                 </table>
-
               </div>
-
             )}
 
           </section>
-
         )}
 
-
         {pestana === 'notas' && (
-
           <section className="curso-panel">
 
             <div className="panel-header">
-
               <div>
-                <h2>
-                  📝 Notas
-                </h2>
-
+                <h2>📝 Libro de clases · Notas</h2>
                 <p>
-                  Gestiona las evaluaciones de tus asignaturas.
+                  Registra evaluaciones y calificaciones de tus asignaturas.
                 </p>
               </div>
 
               <button
                 className="btn-primary"
-                onClick={() =>
-                  setMostrarFormularioNota(
-                    !mostrarFormularioNota
-                  )
-                }
+                disabled={!asignaturaNotas || guardandoEvaluacion}
+                onClick={() => setMostrarNuevaEvaluacion(!mostrarNuevaEvaluacion)}
               >
-                {mostrarFormularioNota
-                  ? '✕ Cerrar'
-                  : '+ Nueva nota'}
+                {mostrarNuevaEvaluacion ? '✕ Cerrar' : '+ Nueva evaluación'}
               </button>
+            </div>
+
+            <div
+              className="filter-row"
+              style={{
+                display: 'flex',
+                gap: '18px',
+                flexWrap: 'wrap',
+                alignItems: 'end',
+                marginBottom: '20px'
+              }}
+            >
+
+              <div className="form-group">
+                <label>Asignatura</label>
+
+                <select
+                  value={asignaturaNotas}
+                  onChange={(e) => {
+                    setAsignaturaNotas(e.target.value);
+                    setEdicionesNotas({});
+                    setMostrarNuevaEvaluacion(false);
+                  }}
+                >
+                  <option value="">Seleccionar asignatura</option>
+
+                  {asignaturas.map((asignatura) => (
+                    <option
+                      key={asignatura.id}
+                      value={asignatura.id}
+                    >
+                      {asignatura.nombre}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="form-group">
+                <label>Período académico</label>
+
+                <select
+                  value={periodoNotas}
+                  onChange={(e) => {
+                    setPeriodoNotas(e.target.value);
+                    setEdicionesNotas({});
+                    setMostrarNuevaEvaluacion(false);
+                  }}
+                >
+                  <option value="1">1° Semestre / Período</option>
+                  <option value="2">2° Semestre / Período</option>
+                </select>
+              </div>
 
             </div>
 
+            {asignaturaNotas && (
+              <div
+                style={{
+                  display: 'flex',
+                  gap: '16px',
+                  flexWrap: 'wrap',
+                  marginBottom: '20px'
+                }}
+              >
+                <div className="info-box">
+                  <span>Ponderación registrada</span>
+                  <strong>{porcentajePeriodo.toFixed(2)}%</strong>
+                </div>
 
-            {mostrarFormularioNota && (
+                <div className="info-box">
+                  <span>Ponderación disponible</span>
+                  <strong>
+                    {Math.max(0, 100 - porcentajePeriodo).toFixed(2)}%
+                  </strong>
+                </div>
 
+                <div className="info-box">
+                  <span>Evaluaciones</span>
+                  <strong>{evaluacionesAgrupadas.length}</strong>
+                </div>
+              </div>
+            )}
+
+            {mostrarNuevaEvaluacion && (
               <form
                 className="form-card"
-                onSubmit={crearNota}
+                onSubmit={crearNuevaEvaluacion}
               >
 
-                <h3>
-                  Registrar nota
-                </h3>
+                <h3>Crear evaluación para todo el curso</h3>
+
+                <p>
+                  Se creará una columna para todos los alumnos.
+                  Podrás ingresar las calificaciones después.
+                </p>
 
                 <div className="form-grid">
 
                   <div className="form-group">
-
-                    <label>
-                      Alumno
-                    </label>
-
-                    <select
-                      value={
-                        notaForm.alumnoId
-                      }
-                      onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          alumnoId:
-                            e.target.value
-                        })
-                      }
-                      required
-                    >
-
-                      <option value="">
-                        Seleccionar alumno
-                      </option>
-
-                      {alumnos.map(
-                        (alumno) => (
-
-                          <option
-                            key={alumno.id}
-                            value={alumno.id}
-                          >
-                            {alumno.nombre}
-                          </option>
-
-                        )
-                      )}
-
-                    </select>
-
-                  </div>
-
-
-                  <div className="form-group">
-
-                    <label>
-                      Asignatura
-                    </label>
-
-                    <select
-                      value={
-                        notaForm.asignaturaId
-                      }
-                      onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          asignaturaId:
-                            e.target.value
-                        })
-                      }
-                      required
-                    >
-
-                      <option value="">
-                        Seleccionar asignatura
-                      </option>
-
-                      {asignaturas.map(
-                        (asignatura) => (
-
-                          <option
-                            key={asignatura.id}
-                            value={asignatura.id}
-                          >
-                            {asignatura.nombre}
-                          </option>
-
-                        )
-                      )}
-
-                    </select>
-
-                  </div>
-
-
-                  <div className="form-group">
-
-                    <label>
-                      Período
-                    </label>
-
-                    <select
-                      value={
-                        notaForm.periodo
-                      }
-                      onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          periodo:
-                            e.target.value
-                        })
-                      }
-                    >
-
-                      <option value="">
-                        Seleccionar
-                      </option>
-
-                      <option value="1">
-                        1° Período
-                      </option>
-
-                      <option value="2">
-                        2° Período
-                      </option>
-
-                    </select>
-
-                  </div>
-
-
-                  <div className="form-group">
-
-                    <label>
-                      Tipo de evaluación
-                    </label>
+                    <label>Nombre de la evaluación</label>
 
                     <input
                       type="text"
-                      placeholder="Ej: Prueba"
-                      value={
-                        notaForm.tipoEvaluacion
-                      }
+                      maxLength="100"
+                      placeholder="Ej: Prueba unidad 1"
+                      value={nuevaEvaluacion.tipoEvaluacion}
                       onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          tipoEvaluacion:
-                            e.target.value
-                        })
-                      }
-                    />
-
-                  </div>
-
-
-                  <div className="form-group">
-
-                    <label>
-                      Nota
-                    </label>
-
-                    <input
-                      type="number"
-                      min="1"
-                      max="7"
-                      step="0.1"
-                      placeholder="1.0 - 7.0"
-                      value={
-                        notaForm.nota
-                      }
-                      onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          nota:
-                            e.target.value
+                        setNuevaEvaluacion({
+                          ...nuevaEvaluacion,
+                          tipoEvaluacion: e.target.value
                         })
                       }
                       required
                     />
-
                   </div>
 
-
                   <div className="form-group">
-
-                    <label>
-                      Porcentaje
-                    </label>
+                    <label>Ponderación (%)</label>
 
                     <input
                       type="number"
-                      min="0"
+                      min="0.01"
                       max="100"
                       step="0.01"
                       placeholder="Ej: 30"
-                      value={
-                        notaForm.porcentaje
-                      }
+                      value={nuevaEvaluacion.porcentaje}
                       onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          porcentaje:
-                            e.target.value
+                        setNuevaEvaluacion({
+                          ...nuevaEvaluacion,
+                          porcentaje: e.target.value
                         })
                       }
+                      required
                     />
-
                   </div>
 
-
                   <div className="form-group">
-
-                    <label>
-                      Fecha
-                    </label>
+                    <label>Fecha de evaluación</label>
 
                     <input
                       type="date"
-                      value={
-                        notaForm.fecha
-                      }
+                      value={nuevaEvaluacion.fecha}
                       onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          fecha:
-                            e.target.value
+                        setNuevaEvaluacion({
+                          ...nuevaEvaluacion,
+                          fecha: e.target.value
                         })
                       }
+                      required
                     />
-
                   </div>
 
-
                   <div className="form-group form-group-full">
-
-                    <label>
-                      Observación
-                    </label>
+                    <label>Observación (opcional)</label>
 
                     <textarea
-                      rows="3"
-                      value={
-                        notaForm.observacion
-                      }
+                      rows="2"
+                      value={nuevaEvaluacion.observacion}
                       onChange={(e) =>
-                        setNotaForm({
-                          ...notaForm,
-                          observacion:
-                            e.target.value
+                        setNuevaEvaluacion({
+                          ...nuevaEvaluacion,
+                          observacion: e.target.value
                         })
                       }
                     />
-
                   </div>
 
                 </div>
-
 
                 <div className="form-actions">
 
                   <button
                     type="button"
                     className="btn-secondary"
-                    onClick={() =>
-                      setMostrarFormularioNota(
-                        false
-                      )
-                    }
+                    onClick={() => setMostrarNuevaEvaluacion(false)}
+                    disabled={guardandoEvaluacion}
                   >
                     Cancelar
                   </button>
@@ -1327,603 +1118,512 @@ export default function ProfesorCurso() {
                   <button
                     type="submit"
                     className="btn-primary"
+                    disabled={guardandoEvaluacion}
                   >
-                    Guardar nota
+                    {guardandoEvaluacion
+                      ? 'Guardando...'
+                      : 'Crear evaluación'}
                   </button>
 
                 </div>
 
               </form>
-
             )}
 
-
-            <div className="filter-row">
-
-              <div className="form-group">
-
-                <label>
-                  Filtrar por asignatura
-                </label>
-
-                <select
-                  value={asignaturaNotas}
-                  onChange={(e) =>
-                    setAsignaturaNotas(
-                      e.target.value
-                    )
-                  }
-                >
-
-                  <option value="">
-                    Todas las asignaturas
-                  </option>
-
-                  {asignaturas.map(
-                    (asignatura) => (
-
-                      <option
-                        key={asignatura.id}
-                        value={asignatura.id}
-                      >
-                        {asignatura.nombre}
-                      </option>
-
-                    )
-                  )}
-
-                </select>
-
+            {!asignaturaNotas ? (
+              <div className="empty-state">
+                <div>📚</div>
+                <h3>Selecciona una asignatura</h3>
+                <p>
+                  Para consultar o registrar calificaciones,
+                  primero selecciona una de tus asignaturas.
+                </p>
               </div>
-
-            </div>
-
-
-            {cargandoNotas ? (
-
+            ) : cargandoNotas ? (
               <div className="loading-state">
                 Cargando notas...
               </div>
-
-            ) : notas.length === 0 ? (
-
+            ) : alumnos.length === 0 ? (
               <div className="empty-state">
-
-                <div>📝</div>
-
-                <h3>
-                  No hay notas registradas
-                </h3>
-
-                <p>
-                  Las notas que registres aparecerán aquí.
-                </p>
-
+                <div>👥</div>
+                <h3>No hay alumnos en el curso</h3>
               </div>
-
+            ) : evaluacionesAgrupadas.length === 0 ? (
+              <div className="empty-state">
+                <div>📝</div>
+                <h3>No hay evaluaciones registradas</h3>
+                <p>
+                  Utiliza el botón «Nueva evaluación» para crear
+                  la primera columna de calificaciones.
+                </p>
+              </div>
             ) : (
 
-              <div className="table-wrapper">
+              <div
+                className="table-wrapper"
+                style={{
+                  overflowX: 'auto',
+                  width: '100%'
+                }}
+              >
 
                 <table className="curso-table">
 
                   <thead>
-
                     <tr>
-                      <th>Alumno</th>
-                      <th>Asignatura</th>
-                      <th>Período</th>
-                      <th>Evaluación</th>
-                      <th>Nota</th>
-                      <th>Fecha</th>
-                      <th></th>
-                    </tr>
+                      <th
+                        style={{
+                          minWidth: '230px',
+                          position: 'sticky',
+                          left: 0,
+                          zIndex: 2,
+                          background: '#f4f6f9'
+                        }}
+                      >
+                        Alumno
+                      </th>
 
+                      {evaluacionesAgrupadas.map((evaluacion) => (
+                        <th
+                          key={evaluacion.clave}
+                          title={`${evaluacion.tipoEvaluacion} · Ponderación: ${evaluacion.porcentaje}% · Fecha: ${formatearFecha(evaluacion.fecha)}`}
+                          style={{
+                            minWidth: '145px',
+                            textAlign: 'center'
+                          }}
+                        >
+                          <div>
+                            <strong>{evaluacion.tipoEvaluacion}</strong>
+                          </div>
+
+                          <small>
+                            {evaluacion.porcentaje}%
+                          </small>
+
+                          <div>
+                            <small>
+                              {formatearFecha(evaluacion.fecha)}
+                            </small>
+                          </div>
+                        </th>
+                      ))}
+
+                      <th
+                        style={{
+                          minWidth: '150px',
+                          textAlign: 'center'
+                        }}
+                      >
+                        Promedio
+                      </th>
+                    </tr>
                   </thead>
 
                   <tbody>
 
-                    {notas.map(
-                      (nota) => (
+                    {alumnosOrdenados.map((alumno, index) => {
+                      const resultado = calcularPromedioAlumno(alumno.id);
 
-                        <tr key={nota.id}>
+                      return (
+                        <tr key={alumno.id}>
 
-                          <td>
-                            <strong>
-                              {nota.alumno}
-                            </strong>
-                          </td>
-
-                          <td>
-                            {nota.asignatura}
-                          </td>
-
-                          <td>
-                            {nota.periodo || '-'}
-                          </td>
-
-                          <td>
-                            {nota.tipoEvaluacion || '-'}
-                          </td>
-
-                          <td>
-
-                            <span
-                              className={
-                                Number(nota.nota) >= 4
-                                  ? 'nota-aprobada'
-                                  : 'nota-reprobada'
-                              }
-                            >
-                              {nota.nota}
-                            </span>
-
-                          </td>
-
-                          <td>
-                            {formatearFecha(
-                              nota.fecha
+                          <td
+                            style={{
+                              position: 'sticky',
+                              left: 0,
+                              zIndex: 1,
+                              background: '#fff'
+                            }}
+                          >
+                            <strong>{alumno.nombre}</strong>
+                            {alumno.rut && (
+                              <div>
+                                <small>{alumno.rut}</small>
+                              </div>
                             )}
                           </td>
 
-                          <td>
+                          {evaluacionesAgrupadas.map((evaluacion) => {
+                            const registro = evaluacion.notas[alumno.id];
 
-                            <button
-                              className="btn-delete"
-                              onClick={() =>
-                                eliminarNota(
-                                  nota.id
-                                )
-                              }
-                            >
-                              🗑️
-                            </button>
+                            const claveCelda = `${evaluacion.clave}_${alumno.id}`;
 
+                            const valorNota = edicionesNotas[claveCelda] !== undefined
+                              ? edicionesNotas[claveCelda]
+                              : (registro?.nota ?? '');
+
+                            return (
+                              <td
+                                key={evaluacion.clave}
+                                title={`${evaluacion.tipoEvaluacion} · ${evaluacion.porcentaje}%`}
+                                style={{ textAlign: 'center' }}
+                              >
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="7"
+                                  step="0.1"
+                                  placeholder="—"
+                                  value={valorNota}
+                                  disabled={guardandoEvaluacion}
+                                  onChange={(e) =>
+                                    cambiarNotaGrilla(
+                                      evaluacion.clave,
+                                      alumno.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    width: '75px',
+                                    padding: '7px',
+                                    textAlign: 'center',
+                                    border: '1px solid #d0d7de',
+                                    borderRadius: '6px'
+                                  }}
+                                />
+                              </td>
+                            );
+                          })}
+
+                          <td style={{ textAlign: 'center' }}>
+                            {resultado ? (
+                              <div>
+                                <strong
+                                  className={
+                                    resultado.promedio >= 4
+                                      ? 'nota-aprobada'
+                                      : 'nota-reprobada'
+                                  }
+                                  style={{ fontSize: '16px' }}
+                                >
+                                  {resultado.promedio.toFixed(1)}
+                                </strong>
+
+                                <div>
+                                  <small>
+                                    {resultado.definitivo
+                                      ? 'Promedio definitivo'
+                                      : `Parcial · ${resultado.porcentajeIngresado.toFixed(0)}%`}
+                                  </small>
+                                </div>
+                              </div>
+                            ) : (
+                              <span>—</span>
+                            )}
                           </td>
 
                         </tr>
-
-                      )
-                    )}
+                      );
+                    })}
 
                   </tbody>
 
                 </table>
 
-              </div>
+                {/* GUARDAR CADA EVALUACIÓN */}
 
-            )}
+                <div
+                  style={{
+                    display: 'flex',
+                    gap: '10px',
+                    flexWrap: 'wrap',
+                    padding: '15px 0'
+                  }}
+                >
+                  {evaluacionesAgrupadas.map((evaluacion) => (
+                    <button
+                      key={evaluacion.clave}
+                      type="button"
+                      className="btn-primary"
+                      disabled={guardandoEvaluacion}
+                      onClick={() => guardarEvaluacionMasiva(evaluacion)}
+                    >
+                      {guardandoEvaluacion
+                        ? 'Guardando...'
+                        : `Guardar: ${evaluacion.tipoEvaluacion}`}
+                    </button>
+                  ))}
+                </div>
 
-          </section>
-
-        )}
-
-
-
-
-        {pestana === 'asistencia' && (
-
-          <section className="curso-panel">
-
-            <div className="panel-header">
-
-              <div>
-
-                <h2>
-                  📅 Asistencia
-                </h2>
-
-                <p>
-                  Registra la asistencia de tus alumnos.
+                <p style={{ fontSize: '12px', color: '#666' }}>
+                  Las notas modificadas se guardan al presionar
+                  el botón de la evaluación correspondiente.
+                  Los campos vacíos quedan como notas pendientes.
                 </p>
 
               </div>
+            )}
 
+          </section>
+        )}
+
+        {pestana === 'asistencia' && (
+          <section className="curso-panel">
+
+            <div className="panel-header">
+              <div>
+                <h2>📅 Asistencia</h2>
+                <p>Registra la asistencia de tus alumnos.</p>
+              </div>
             </div>
 
-
             <div className="attendance-date">
-
               <div className="form-group">
-
-                <label>
-                  Fecha
-                </label>
+                <label>Fecha</label>
 
                 <input
                   type="date"
-                  value={
-                    fechaAsistencia
-                  }
-                  onChange={(e) =>
-                    setFechaAsistencia(
-                      e.target.value
-                    )
-                  }
+                  value={fechaAsistencia}
+                  onChange={(e) => setFechaAsistencia(e.target.value)}
                 />
-
               </div>
-
             </div>
-
 
             <div className="attendance-stats">
 
               <div>
-                <strong>
-                  {estadisticasAsistencia.presentes}
-                </strong>
-                <span>
-                  Presentes
-                </span>
+                <strong>{estadisticasAsistencia.presentes}</strong>
+                <span>Presentes</span>
               </div>
 
               <div>
-                <strong>
-                  {estadisticasAsistencia.ausentes}
-                </strong>
-                <span>
-                  Ausentes
-                </span>
+                <strong>{estadisticasAsistencia.ausentes}</strong>
+                <span>Ausentes</span>
               </div>
 
               <div>
-                <strong>
-                  {estadisticasAsistencia.atrasados}
-                </strong>
-                <span>
-                  Atrasados
-                </span>
+                <strong>{estadisticasAsistencia.atrasados}</strong>
+                <span>Atrasados</span>
               </div>
 
               <div>
-                <strong>
-                  {estadisticasAsistencia.justificados}
-                </strong>
-                <span>
-                  Justificados
-                </span>
+                <strong>{estadisticasAsistencia.justificados}</strong>
+                <span>Justificados</span>
               </div>
 
             </div>
 
-
             {cargandoAsistencia ? (
-
               <div className="loading-state">
                 Cargando asistencia...
               </div>
-
             ) : (
-
               <div className="attendance-list">
 
-                {alumnos.map(
-                  (alumno, index) => {
+                {alumnos.map((alumno, index) => {
+                  const estado = obtenerEstadoAlumno(alumno.id);
 
-                    const estado =
-                      obtenerEstadoAlumno(
-                        alumno.id
-                      );
+                  return (
+                    <div
+                      className="attendance-row"
+                      key={alumno.id}
+                    >
 
-                    return (
+                      <div className="attendance-student">
+                        <span className="student-number">
+                          {index + 1}
+                        </span>
 
-                      <div
-                        className="attendance-row"
-                        key={alumno.id}
-                      >
-
-                        <div className="attendance-student">
-
-                          <span className="student-number">
-                            {index + 1}
-                          </span>
-
-                          <div>
-                            <strong>
-                              {alumno.nombre}
-                            </strong>
-
-                            <small>
-                              {alumno.rut}
-                            </small>
-                          </div>
-
+                        <div>
+                          <strong>{alumno.nombre}</strong>
+                          <small>{alumno.rut}</small>
                         </div>
+                      </div>
 
+                      <div className="attendance-buttons">
 
-                        <div className="attendance-buttons">
+                        <button
+                          className={
+                            estado === 'PRESENTE'
+                              ? 'attendance-btn selected present'
+                              : 'attendance-btn present'
+                          }
+                          onClick={() =>
+                            guardarEstadoAsistencia(alumno.id, 'PRESENTE')
+                          }
+                        >
+                          ✓ Presente
+                        </button>
 
-                          <button
-                            className={
-                              estado === 'PRESENTE'
-                                ? 'attendance-btn selected present'
-                                : 'attendance-btn present'
-                            }
-                            onClick={() =>
-                              guardarEstadoAsistencia(
-                                alumno.id,
-                                'PRESENTE'
-                              )
-                            }
-                          >
-                            ✓ Presente
-                          </button>
+                        <button
+                          className={
+                            estado === 'AUSENTE'
+                              ? 'attendance-btn selected absent'
+                              : 'attendance-btn absent'
+                          }
+                          onClick={() =>
+                            guardarEstadoAsistencia(alumno.id, 'AUSENTE')
+                          }
+                        >
+                          ✕ Ausente
+                        </button>
 
-                          <button
-                            className={
-                              estado === 'AUSENTE'
-                                ? 'attendance-btn selected absent'
-                                : 'attendance-btn absent'
-                            }
-                            onClick={() =>
-                              guardarEstadoAsistencia(
-                                alumno.id,
-                                'AUSENTE'
-                              )
-                            }
-                          >
-                            ✕ Ausente
-                          </button>
+                        <button
+                          className={
+                            estado === 'ATRASADO'
+                              ? 'attendance-btn selected late'
+                              : 'attendance-btn late'
+                          }
+                          onClick={() =>
+                            guardarEstadoAsistencia(alumno.id, 'ATRASADO')
+                          }
+                        >
+                          ⏰ Atrasado
+                        </button>
 
-                          <button
-                            className={
-                              estado === 'ATRASADO'
-                                ? 'attendance-btn selected late'
-                                : 'attendance-btn late'
-                            }
-                            onClick={() =>
-                              guardarEstadoAsistencia(
-                                alumno.id,
-                                'ATRASADO'
-                              )
-                            }
-                          >
-                            ⏰ Atrasado
-                          </button>
-
-                          <button
-                            className={
-                              estado === 'JUSTIFICADO'
-                                ? 'attendance-btn selected justified'
-                                : 'attendance-btn justified'
-                            }
-                            onClick={() =>
-                              guardarEstadoAsistencia(
-                                alumno.id,
-                                'JUSTIFICADO'
-                              )
-                            }
-                          >
-                            📄 Justificado
-                          </button>
-
-                        </div>
+                        <button
+                          className={
+                            estado === 'JUSTIFICADO'
+                              ? 'attendance-btn selected justified'
+                              : 'attendance-btn justified'
+                          }
+                          onClick={() =>
+                            guardarEstadoAsistencia(alumno.id, 'JUSTIFICADO')
+                          }
+                        >
+                          📄 Justificado
+                        </button>
 
                       </div>
 
-                    );
-                  }
-                )}
+                    </div>
+                  );
+                })}
 
               </div>
-
             )}
 
           </section>
-
         )}
-
-
+ 
         {pestana === 'anotaciones' && (
-
           <section className="curso-panel">
 
             <div className="panel-header">
-
               <div>
-
-                <h2>
-                  📋 Anotaciones
-                </h2>
-
-                <p>
-                  Registra observaciones sobre tus alumnos.
-                </p>
-
+                <h2>📋 Anotaciones</h2>
+                <p>Registra observaciones sobre tus alumnos.</p>
               </div>
 
               <button
                 className="btn-primary"
                 onClick={() =>
-                  setMostrarFormularioAnotacion(
-                    !mostrarFormularioAnotacion
-                  )
+                  setMostrarFormularioAnotacion(!mostrarFormularioAnotacion)
                 }
               >
                 {mostrarFormularioAnotacion
                   ? '✕ Cerrar'
                   : '+ Nueva anotación'}
               </button>
-
             </div>
 
-
             {mostrarFormularioAnotacion && (
-
               <form
                 className="form-card"
                 onSubmit={crearAnotacion}
               >
 
-                <h3>
-                  Nueva anotación
-                </h3>
+                <h3>Nueva anotación</h3>
 
                 <div className="form-grid">
 
                   <div className="form-group">
-
-                    <label>
-                      Alumno
-                    </label>
+                    <label>Alumno</label>
 
                     <select
-                      value={
-                        anotacionForm.alumnoId
-                      }
+                      value={anotacionForm.alumnoId}
                       onChange={(e) =>
                         setAnotacionForm({
                           ...anotacionForm,
-                          alumnoId:
-                            e.target.value
+                          alumnoId: e.target.value
                         })
                       }
                       required
                     >
+                      <option value="">Seleccionar alumno</option>
 
-                      <option value="">
-                        Seleccionar alumno
-                      </option>
-
-                      {alumnos.map(
-                        (alumno) => (
-
-                          <option
-                            key={alumno.id}
-                            value={alumno.id}
-                          >
-                            {alumno.nombre}
-                          </option>
-
-                        )
-                      )}
-
+                      {alumnos.map((alumno) => (
+                        <option key={alumno.id} value={alumno.id}>
+                          {alumno.nombre}
+                        </option>
+                      ))}
                     </select>
-
                   </div>
 
-
                   <div className="form-group">
-
-                    <label>
-                      Tipo
-                    </label>
+                    <label>Tipo</label>
 
                     <select
-                      value={
-                        anotacionForm.tipo
-                      }
+                      value={anotacionForm.tipo}
                       onChange={(e) =>
                         setAnotacionForm({
                           ...anotacionForm,
-                          tipo:
-                            e.target.value
+                          tipo: e.target.value
                         })
                       }
                     >
-
-                      <option value="POSITIVA">
-                        Positiva
-                      </option>
-
-                      <option value="NEGATIVA">
-                        Negativa
-                      </option>
-
-                      <option value="OBSERVACION">
-                        Observación
-                      </option>
-
+                      <option value="POSITIVA">Positiva</option>
+                      <option value="NEGATIVA">Negativa</option>
+                      <option value="OBSERVACION">Observación</option>
                     </select>
-
                   </div>
 
-
                   <div className="form-group form-group-full">
-
-                    <label>
-                      Título
-                    </label>
+                    <label>Título</label>
 
                     <input
                       type="text"
                       placeholder="Ej: Participación destacada"
-                      value={
-                        anotacionForm.titulo
-                      }
+                      value={anotacionForm.titulo}
                       onChange={(e) =>
                         setAnotacionForm({
                           ...anotacionForm,
-                          titulo:
-                            e.target.value
+                          titulo: e.target.value
                         })
                       }
                     />
-
                   </div>
 
-
                   <div className="form-group form-group-full">
-
-                    <label>
-                      Descripción
-                    </label>
+                    <label>Descripción</label>
 
                     <textarea
                       rows="4"
                       placeholder="Escribe la anotación..."
-                      value={
-                        anotacionForm.descripcion
-                      }
+                      value={anotacionForm.descripcion}
                       onChange={(e) =>
                         setAnotacionForm({
                           ...anotacionForm,
-                          descripcion:
-                            e.target.value
+                          descripcion: e.target.value
                         })
                       }
                       required
                     />
-
                   </div>
 
-
                   <div className="form-group">
-
-                    <label>
-                      Fecha
-                    </label>
+                    <label>Fecha</label>
 
                     <input
                       type="date"
-                      value={
-                        anotacionForm.fecha
-                      }
+                      value={anotacionForm.fecha}
                       onChange={(e) =>
                         setAnotacionForm({
                           ...anotacionForm,
-                          fecha:
-                            e.target.value
+                          fecha: e.target.value
                         })
                       }
                     />
-
                   </div>
 
                 </div>
-
 
                 <div className="form-actions">
 
                   <button
                     type="button"
                     className="btn-secondary"
-                    onClick={() =>
-                      setMostrarFormularioAnotacion(
-                        false
-                      )
-                    }
+                    onClick={() => setMostrarFormularioAnotacion(false)}
                   >
                     Cancelar
                   </button>
@@ -1938,137 +1638,93 @@ export default function ProfesorCurso() {
                 </div>
 
               </form>
-
             )}
 
-
             {cargandoAnotaciones ? (
-
               <div className="loading-state">
                 Cargando anotaciones...
               </div>
-
             ) : anotaciones.length === 0 ? (
-
               <div className="empty-state">
-
                 <div>📋</div>
-
-                <h3>
-                  No hay anotaciones
-                </h3>
-
-                <p>
-                  Las anotaciones que registres aparecerán aquí.
-                </p>
-
+                <h3>No hay anotaciones</h3>
+                <p>Las anotaciones que registres aparecerán aquí.</p>
               </div>
-
             ) : (
-
               <div className="anotaciones-list">
 
-                {anotaciones.map(
-                  (anotacion) => (
+                {anotaciones.map((anotacion) => (
+                  <article
+                    className={`anotacion-card ${anotacion.tipo?.toLowerCase() || ''}`}
+                    key={anotacion.id}
+                  >
 
-                    <article
-                      className={`anotacion-card ${anotacion.tipo?.toLowerCase() ||
-                        ''
-                        }`}
-                      key={anotacion.id}
-                    >
-
-                      <div className="anotacion-top">
-
-                        <div>
-
-                          <span
-                            className={`anotacion-tipo ${anotacion.tipo?.toLowerCase() ||
-                              ''
-                              }`}
-                          >
-                            {textoTipoAnotacion(
-                              anotacion.tipo
-                            )}
-                          </span>
-
-                          <h3>
-                            {anotacion.titulo ||
-                              'Sin título'}
-                          </h3>
-
-                        </div>
-
-                        <button
-                          className="btn-delete"
-                          onClick={() =>
-                            eliminarAnotacion(
-                              anotacion.id
-                            )
-                          }
+                    <div className="anotacion-top">
+                      <div>
+                        <span
+                          className={`anotacion-tipo ${anotacion.tipo?.toLowerCase() || ''}`}
                         >
-                          🗑️
-                        </button>
-
-                      </div>
-
-                      <p>
-                        {anotacion.descripcion}
-                      </p>
-
-                      <div className="anotacion-footer">
-
-                        <strong>
-                          {anotacion.alumno}
-                        </strong>
-
-                        <span>
-                          {formatearFecha(
-                            anotacion.fecha
-                          )}
+                          {textoTipoAnotacion(anotacion.tipo)}
                         </span>
 
+                        <h3>{anotacion.titulo || 'Sin título'}</h3>
                       </div>
 
-                    </article>
+                      <button
+                        className="btn-delete"
+                        onClick={() => eliminarAnotacion(anotacion.id)}
+                      >
+                        🗑️
+                      </button>
+                    </div>
 
-                  )
-                )}
+                    <p>{anotacion.descripcion}</p>
+
+                    <div className="anotacion-footer">
+                      <strong>{anotacion.alumno}</strong>
+                      <span>{formatearFecha(anotacion.fecha)}</span>
+                    </div>
+
+                  </article>
+                ))}
 
               </div>
-
             )}
 
           </section>
-
         )}
 
-
-
-
         {pestana === 'informacion-alumno' && (
-
           <section className="curso-panel">
 
             <div className="panel-header">
               <div>
                 <h2>👤 Información del alumno</h2>
-                <p>Consulta los datos personales, apoderados y antecedentes relevantes del estudiante.</p>
+                <p>
+                  Consulta los datos personales, apoderados y antecedentes
+                  relevantes del estudiante.
+                </p>
               </div>
             </div>
 
             <div className="form-card">
               <div className="form-group form-group-full">
                 <label>Seleccionar alumno</label>
+
                 <select
                   value={alumnoSeleccionadoId}
                   onChange={(e) => {
                     const id = e.target.value;
+
                     setAlumnoSeleccionadoId(id);
-                    if (!id) setInformacionAlumno(null);
+
+                    if (!id) {
+                      setInformacionAlumno(null);
+                    }
                   }}
                 >
                   <option value="">Seleccionar alumno</option>
+
                   {alumnos.map((alumno) => (
                     <option key={alumno.id} value={alumno.id}>
                       {alumno.nombre} {alumno.rut ? `· ${alumno.rut}` : ''}
@@ -2089,31 +1745,42 @@ export default function ProfesorCurso() {
               <div className="empty-state">
                 <div>👤</div>
                 <h3>Selecciona un alumno</h3>
-                <p>Selecciona un estudiante para consultar su información.</p>
+                <p>
+                  Selecciona un estudiante para consultar su información.
+                </p>
               </div>
             )}
 
             {!cargandoInformacionAlumno && informacionAlumno && (
               <>
+
                 <div className="information-section">
                   <h3>Datos del alumno</h3>
+
                   <div className="info-grid">
+
                     <div className="info-box">
                       <span>Nombre completo</span>
                       <strong>{informacionAlumno.nombre || '-'}</strong>
                     </div>
+
                     <div className="info-box">
                       <span>RUT</span>
                       <strong>{informacionAlumno.rut || '-'}</strong>
                     </div>
+
                     <div className="info-box">
                       <span>Fecha de nacimiento</span>
-                      <strong>{formatearFecha(informacionAlumno.fechaNacimiento)}</strong>
+                      <strong>
+                        {formatearFecha(informacionAlumno.fechaNacimiento)}
+                      </strong>
                     </div>
+
                     <div className="info-box">
                       <span>Sexo</span>
                       <strong>{informacionAlumno.sexo || '-'}</strong>
                     </div>
+
                   </div>
                 </div>
 
@@ -2133,15 +1800,22 @@ export default function ProfesorCurso() {
                             <th>Principal</th>
                           </tr>
                         </thead>
+
                         <tbody>
                           {informacionAlumno.apoderados.map((apoderado) => (
                             <tr key={apoderado.id}>
-                              <td><strong>{apoderado.nombre || '-'}</strong></td>
+                              <td>
+                                <strong>{apoderado.nombre || '-'}</strong>
+                              </td>
+
                               <td>{apoderado.rut || '-'}</td>
                               <td>{apoderado.parentesco || '-'}</td>
                               <td>{apoderado.telefono || '-'}</td>
                               <td>{apoderado.correo || '-'}</td>
-                              <td>{apoderado.esApoderadoPrincipal ? 'Sí' : 'No'}</td>
+
+                              <td>
+                                {apoderado.esApoderadoPrincipal ? 'Sí' : 'No'}
+                              </td>
                             </tr>
                           ))}
                         </tbody>
@@ -2158,313 +1832,188 @@ export default function ProfesorCurso() {
 
                 <div className="information-section">
                   <h3>Condición especial / observaciones relevantes</h3>
+
                   <div className="info-box">
                     <span>Antecedentes registrados en la matrícula</span>
+
                     <strong>
-                      {informacionAlumno.observacionesRelevantes || 'No registra información especial.'}
+                      {informacionAlumno.observacionesRelevantes ||
+                        'No registra información especial.'}
                     </strong>
                   </div>
                 </div>
+
               </>
             )}
 
           </section>
-
         )}
 
-
         {pestana === 'informacion' && (
-
           <section className="curso-panel">
 
             <div className="panel-header">
-
               <div>
-
-                <h2>
-                  Información del curso
-                </h2>
-
-                <p>
-                  Información general y asignaturas.
-                </p>
-
+                <h2>Información del curso</h2>
+                <p>Información general y asignaturas.</p>
               </div>
-
             </div>
-
 
             <div className="info-grid">
 
               <div className="info-box">
-
-                <span>
-                  Curso
-                </span>
-
-                <strong>
-                  {curso?.nombre || '-'}
-                </strong>
-
+                <span>Curso</span>
+                <strong>{curso?.nombre || '-'}</strong>
               </div>
 
-
               <div className="info-box">
-
-                <span>
-                  Año
-                </span>
-
-                <strong>
-                  {curso?.anio || '-'}
-                </strong>
-
+                <span>Año</span>
+                <strong>{curso?.anio || '-'}</strong>
               </div>
 
-
               <div className="info-box">
-
-                <span>
-                  Jornada
-                </span>
-
-                <strong>
-                  {curso?.jornada || '-'}
-                </strong>
-
+                <span>Jornada</span>
+                <strong>{curso?.jornada || '-'}</strong>
               </div>
 
-
               <div className="info-box">
-
-                <span>
-                  Código nivel
-                </span>
-
-                <strong>
-                  {curso?.codigoNivel || '-'}
-                </strong>
-
+                <span>Código nivel</span>
+                <strong>{curso?.codigoNivel || '-'}</strong>
               </div>
 
-
               <div className="info-box">
-
-                <span>
-                  Profesor jefe
-                </span>
-
-                <strong>
-                  {curso?.esProfesorJefe
-                    ? 'Sí'
-                    : 'No'}
-                </strong>
-
+                <span>Profesor jefe</span>
+                <strong>{curso?.esProfesorJefe ? 'Sí' : 'No'}</strong>
               </div>
 
-
               <div className="info-box">
-
-                <span>
-                  Alumnos
-                </span>
-
-                <strong>
-                  {alumnos.length}
-                </strong>
-
+                <span>Alumnos</span>
+                <strong>{alumnos.length}</strong>
               </div>
 
             </div>
 
-
             <div className="information-section">
-
-              <h3>
-                Mis asignaturas
-              </h3>
+              <h3>Mis asignaturas</h3>
 
               <div className="asignaturas-list">
 
-                {asignaturas.map(
-                  (asignatura) => (
+                {asignaturas.map((asignatura) => (
+                  <div
+                    className="asignatura-item"
+                    key={asignatura.id}
+                  >
+                    <strong>{asignatura.nombre}</strong>
 
-                    <div
-                      className="asignatura-item"
-                      key={asignatura.id}
-                    >
-
-                      <strong>
-                        {asignatura.nombre}
-                      </strong>
-
-                      {asignatura.codigo && (
-                        <span>
-                          {asignatura.codigo}
-                        </span>
-                      )}
-
-                    </div>
-
-                  )
-                )}
+                    {asignatura.codigo && (
+                      <span>{asignatura.codigo}</span>
+                    )}
+                  </div>
+                ))}
 
               </div>
-
             </div>
-            {curso?.esProfesorJefe && (
 
+            {curso?.esProfesorJefe && (
               <div className="information-section horario-section">
 
-                <h3>
-                  🗓️ Horario de clases del curso
-                </h3>
+                <h3>🗓️ Horario de clases del curso</h3>
 
                 <p className="horario-descripcion">
                   Horario completo de las clases de este curso.
                 </p>
 
                 {horario.length === 0 ? (
-
                   <div className="empty-state">
-
-                    <div>
-                      🗓️
-                    </div>
-
-                    <h3>
-                      No hay horario registrado
-                    </h3>
-
+                    <div>🗓️</div>
+                    <h3>No hay horario registrado</h3>
                     <p>
                       No existen clases registradas para este curso.
                     </p>
-
                   </div>
-
                 ) : (
-
                   <div className="table-wrapper">
-
                     <table className="curso-table">
-
                       <thead>
-
                         <tr>
                           <th>Día</th>
                           <th>Hora</th>
                           <th>Asignatura</th>
                           <th>Profesor</th>
                         </tr>
-
                       </thead>
 
                       <tbody>
-
                         {horario.map((clase) => (
-
                           <tr key={clase.id}>
-
                             <td>
                               <strong>
-                                {obtenerNombreDia(
-                                  clase.diaSemana
-                                )}
+                                {obtenerNombreDia(clase.diaSemana)}
                               </strong>
                             </td>
 
                             <td>
-                              {formatearHora(
-                                clase.horaInicio
-                              )}
+                              {formatearHora(clase.horaInicio)}
                               {' - '}
-                              {formatearHora(
-                                clase.horaFin
-                              )}
+                              {formatearHora(clase.horaFin)}
                             </td>
 
                             <td>
-
-                              <strong>
-                                {clase.asignatura || '-'}
-                              </strong>
+                              <strong>{clase.asignatura || '-'}</strong>
 
                               {clase.codigoAsignatura && (
-                                <small>
-                                  {clase.codigoAsignatura}
-                                </small>
+                                <small>{clase.codigoAsignatura}</small>
                               )}
-
                             </td>
 
-                            <td>
-                              {clase.docente || '-'}
-                            </td>
-
+                            <td>{clase.docente || '-'}</td>
                           </tr>
-
                         ))}
-
                       </tbody>
-
                     </table>
-
                   </div>
-
                 )}
 
               </div>
-
             )}
-          </section>
 
+          </section>
         )}
 
       </main>
-
     </div>
   );
 }
 
-
 function obtenerFechaActual() {
-
   const fecha = new Date();
 
-  const anio =
-    fecha.getFullYear();
+  const anio = fecha.getFullYear();
 
-  const mes =
-    String(
-      fecha.getMonth() + 1
-    ).padStart(2, '0');
+  const mes = String(
+    fecha.getMonth() + 1
+  ).padStart(2, '0');
 
-  const dia =
-    String(
-      fecha.getDate()
-    ).padStart(2, '0');
+  const dia = String(
+    fecha.getDate()
+  ).padStart(2, '0');
 
   return `${anio}-${mes}-${dia}`;
 }
 
-
 function obtenerHeaders() {
-
   const token =
     localStorage.getItem('token') ||
     localStorage.getItem('accessToken');
 
   return token
     ? {
-      Authorization:
-        `Bearer ${token}`
-    }
+        Authorization: `Bearer ${token}`
+      }
     : {};
 }
 
-
 async function leerRespuesta(response) {
-
   let data = {};
 
   try {
@@ -2474,7 +2023,6 @@ async function leerRespuesta(response) {
   }
 
   if (!response.ok) {
-
     throw new Error(
       data.error ||
       data.mensaje ||
@@ -2485,15 +2033,10 @@ async function leerRespuesta(response) {
   return data;
 }
 
-
 function formatearFecha(fecha) {
+  if (!fecha) return '-';
 
-  if (!fecha) {
-    return '-';
-  }
-
-  const partes =
-    String(fecha).split('-');
+  const partes = String(fecha).split('-');
 
   if (partes.length === 3) {
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
@@ -2502,13 +2045,8 @@ function formatearFecha(fecha) {
   return fecha;
 }
 
-
 function textoTipoAnotacion(tipo) {
-
-  switch (
-  String(tipo || '').toUpperCase()
-  ) {
-
+  switch (String(tipo || '').toUpperCase()) {
     case 'POSITIVA':
       return '✓ Positiva';
 

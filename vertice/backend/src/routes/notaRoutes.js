@@ -3,7 +3,8 @@ import { Router } from "express";
 import {
   obtenerNotasCurso,
   crearNota,
-  eliminarNota
+  eliminarNota,
+  guardarNotasMasivas
 } from "../controllers/notaController.js";
 
 import {
@@ -25,6 +26,13 @@ router.post(
   verificarToken,
   esDocente,
   crearNota
+);
+
+router.post(
+  "/masivas",
+  verificarToken,
+  esDocente,
+  guardarNotasMasivas
 );
 
 router.delete(
