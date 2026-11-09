@@ -3,6 +3,48 @@ import { cambiarPasswordService } from '../services/authService.js';
 import logo from '../img/logo_Institucional.png';
 import './CambiarPassword.css';
 
+function CampoPassword({
+  label,
+  valor,
+  cambiar,
+  mostrar,
+  alternar,
+  placeholder,
+  autoComplete
+}) {
+  return (
+    <div className="cp-campo">
+      <label>{label}</label>
+
+      <div className="cp-input-contenedor">
+        <span className="cp-icono-candado">●</span>
+
+        <input
+          type={mostrar ? 'text' : 'password'}
+          value={valor}
+          onChange={(e) => cambiar(e.target.value)}
+          placeholder={placeholder}
+          autoComplete={autoComplete}
+          required
+        />
+
+        <button
+          type="button"
+          className="cp-ver-password"
+          onClick={alternar}
+          aria-label={mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+        >
+          {mostrar ? 'Ocultar' : 'Ver'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
+// =========================================
+// COMPONENTE PRINCIPAL
+// =========================================
+
 export default function CambiarPassword() {
   const [abierto, setAbierto] = useState(false);
 
@@ -22,8 +64,10 @@ export default function CambiarPassword() {
     setPasswordActual('');
     setPasswordNueva('');
     setConfirmarPassword('');
+
     setMensaje('');
     setTipoMensaje('');
+
     setMostrarActual(false);
     setMostrarNueva(false);
     setMostrarConfirmar(false);
@@ -31,6 +75,7 @@ export default function CambiarPassword() {
 
   const cerrarPanel = () => {
     if (cargando) return;
+
     setAbierto(false);
     limpiarFormulario();
   };
@@ -81,48 +126,19 @@ export default function CambiarPassword() {
       setPasswordActual('');
       setPasswordNueva('');
       setConfirmarPassword('');
+
+      setMostrarActual(false);
+      setMostrarNueva(false);
+      setMostrarConfirmar(false);
+
     } catch (error) {
       setMensaje(error.message || 'No se pudo actualizar la contraseña.');
       setTipoMensaje('error');
+
     } finally {
       setCargando(false);
     }
   };
-
-  const CampoPassword = ({
-    label,
-    valor,
-    cambiar,
-    mostrar,
-    alternar,
-    placeholder
-  }) => (
-    <div className="cp-campo">
-      <label>{label}</label>
-
-      <div className="cp-input-contenedor">
-        <span className="cp-icono-candado">●</span>
-
-        <input
-          type={mostrar ? 'text' : 'password'}
-          value={valor}
-          onChange={(e) => cambiar(e.target.value)}
-          placeholder={placeholder}
-          autoComplete="off"
-          required
-        />
-
-        <button
-          type="button"
-          className="cp-ver-password"
-          onClick={alternar}
-          aria-label={mostrar ? 'Ocultar contraseña' : 'Mostrar contraseña'}
-        >
-          {mostrar ? 'Ocultar' : 'Ver'}
-        </button>
-      </div>
-    </div>
-  );
 
   return (
     <>
@@ -131,13 +147,16 @@ export default function CambiarPassword() {
         className="cp-boton-perfil"
         onClick={() => setAbierto(true)}
       >
-        <span className="cp-avatar">●</span>
+        <span className="cp-avatar">👤</span>
         <span>Mi cuenta</span>
-        <span className="cp-flecha">⌄</span>
+        <span className="cp-flecha">↓</span>
       </button>
 
       {abierto && (
-        <div className="cp-overlay" onMouseDown={cerrarPanel}>
+        <div
+          className="cp-overlay"
+          onMouseDown={cerrarPanel}
+        >
           <section
             className="cp-modal"
             onMouseDown={(e) => e.stopPropagation()}
@@ -154,10 +173,15 @@ export default function CambiarPassword() {
 
             <div className="cp-cabecera">
               <div className="cp-logo-contenedor">
-                <img src={logo} alt="Colegio Orden de San Jorge" />
+                <img
+                  src={logo}
+                  alt="Colegio Orden de San Jorge"
+                />
               </div>
 
-              <span className="cp-etiqueta">VÉRTICE · SEGURIDAD</span>
+              <span className="cp-etiqueta">
+                VERTICE · SEGURIDAD
+              </span>
 
               <h2>Mi cuenta</h2>
 
@@ -173,7 +197,10 @@ export default function CambiarPassword() {
               <span />
             </div>
 
-            <form className="cp-formulario" onSubmit={guardarPassword}>
+            <form
+              className="cp-formulario"
+              onSubmit={guardarPassword}
+            >
               <div className="cp-titulo-formulario">
                 <h3>Cambiar contraseña</h3>
                 <p>Ingresa tus datos para realizar el cambio.</p>
@@ -184,8 +211,9 @@ export default function CambiarPassword() {
                 valor={passwordActual}
                 cambiar={setPasswordActual}
                 mostrar={mostrarActual}
-                alternar={() => setMostrarActual(!mostrarActual)}
+                alternar={() => setMostrarActual(v => !v)}
                 placeholder="Tu contraseña actual"
+                autoComplete="current-password"
               />
 
               <CampoPassword
@@ -193,8 +221,9 @@ export default function CambiarPassword() {
                 valor={passwordNueva}
                 cambiar={setPasswordNueva}
                 mostrar={mostrarNueva}
-                alternar={() => setMostrarNueva(!mostrarNueva)}
+                alternar={() => setMostrarNueva(v => !v)}
                 placeholder="Mínimo 8 caracteres"
+                autoComplete="new-password"
               />
 
               <CampoPassword
@@ -202,8 +231,9 @@ export default function CambiarPassword() {
                 valor={confirmarPassword}
                 cambiar={setConfirmarPassword}
                 mostrar={mostrarConfirmar}
-                alternar={() => setMostrarConfirmar(!mostrarConfirmar)}
+                alternar={() => setMostrarConfirmar(v => !v)}
                 placeholder="Repite tu nueva contraseña"
+                autoComplete="new-password"
               />
 
               <div className="cp-recomendacion">
@@ -213,7 +243,9 @@ export default function CambiarPassword() {
 
               {mensaje && (
                 <div className={`cp-mensaje ${tipoMensaje}`}>
-                  <span>{tipoMensaje === 'exito' ? '✓' : '!'}</span>
+                  <span>
+                    {tipoMensaje === 'exito' ? '✓' : '!'}
+                  </span>
                   {mensaje}
                 </div>
               )}
@@ -240,7 +272,7 @@ export default function CambiarPassword() {
 
             <div className="cp-pie">
               COLEGIO ORDEN DE SAN JORGE
-              <span>Plataforma de gestión Vértice</span>
+              <span>Plataforma de gestión Vertice</span>
             </div>
           </section>
         </div>
