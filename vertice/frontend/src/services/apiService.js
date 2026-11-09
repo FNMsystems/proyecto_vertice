@@ -1,4 +1,6 @@
-const API_URL = 'http://localhost:3000/api';
+const API_URL = import.meta.env.DEV
+  ? 'http://localhost:3000/api'
+  : 'https://proyecto-vertice-ten.vercel.app/api';
 
 /**const API_URL = 'https://0hvj9hvv-3000.brs.devtunnels.ms/api';**/
 
