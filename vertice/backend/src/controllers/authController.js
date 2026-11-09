@@ -1,88 +1,62 @@
-import bcrypt from 'bcryptjs';
-import jwt from 'jsonwebtoken';
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
 
 import {
   buscarPersonaPorCorreo,
   buscarPersonaPorId,
-  actualizarPassword
-} from '../models/authModel.js';
+  actualizarPassword,
+} from "../models/authModel.js";
 
 export const login = async (req, res) => {
-
   try {
-
-    const {
-      email,
-      password
-    } = req.body;
+    const { email, password } = req.body;
 
     if (!email || !password) {
-
       return res.status(400).json({
-        error:
-          'El correo y la contraseña son obligatorios.'
+        error: "El correo y la contraseña son obligatorios.",
       });
-
     }
 
-    const persona =
-      await buscarPersonaPorCorreo(email);
-   
+    const persona = await buscarPersonaPorCorreo(email);
 
     if (!persona) {
-
       return res.status(401).json({
-        error:
-          'Correo o contraseña incorrectos.'
+        error: "Correo o contraseña incorrectos.",
       });
-
     }
 
     if (!persona.password_hash) {
-
       return res.status(401).json({
-        error:
-          'Esta cuenta todavía no tiene una contraseña configurada.'
+        error: "Esta cuenta todavía no tiene una contraseña configurada.",
       });
-
     }
 
-    const passwordCorrecta =
-      await bcrypt.compare(
-        password,
-        persona.password_hash
-      );
+    const passwordCorrecta = await bcrypt.compare(
+      password,
+      persona.password_hash,
+    );
 
     if (!passwordCorrecta) {
-
       return res.status(401).json({
-        error:
-          'Correo o contraseña incorrectos.'
+        error: "Correo o contraseña incorrectos.",
       });
-
     }
 
     let nombre;
 
-    if (persona.tipo_persona === 'DOCENTE') {
-
+    if (persona.tipo_persona === "DOCENTE") {
       nombre = [
         persona.nombres,
         persona.apellido_paterno,
-        persona.apellido_materno
+        persona.apellido_materno,
       ]
         .filter(Boolean)
-        .join(' ');
-
+        .join(" ");
     } else {
-
-      nombre =
-        persona.nombre_completo;
-
+      nombre = persona.nombre_completo;
     }
 
     const payload = {
-
       id: persona.id,
 
       rut: persona.rut,
@@ -93,31 +67,21 @@ export const login = async (req, res) => {
 
       rol: persona.rol,
 
-      tipo_persona:
-        persona.tipo_persona,
+      tipo_persona: persona.tipo_persona,
 
-      especialidad:
-        persona.especialidad || null,
+      especialidad: persona.especialidad || null,
 
-      debe_cambiar_password:
-        persona.debe_cambiar_password
-
+      debe_cambiar_password: persona.debe_cambiar_password,
     };
 
-    const token = jwt.sign(
-      payload,
-      process.env.JWT_SECRET,
-      {
-        expiresIn: '8h'
-      }
-    );
+    const token = jwt.sign(payload, process.env.JWT_SECRET, {
+      expiresIn: "8h",
+    });
 
     return res.json({
-
       token,
 
       usuario: {
-
         id: persona.id,
 
         rut: persona.rut,
@@ -128,137 +92,93 @@ export const login = async (req, res) => {
 
         rol: persona.rol,
 
-        tipo_persona:
-          persona.tipo_persona,
+        tipo_persona: persona.tipo_persona,
 
-        especialidad:
-          persona.especialidad || null,
+        especialidad: persona.especialidad || null,
 
-        debe_cambiar_password:
-          persona.debe_cambiar_password
-
-      }
-
+        debe_cambiar_password: persona.debe_cambiar_password,
+      },
     });
-
   } catch (error) {
-
-    console.error(
-      'Error en login:',
-      error
-    );
+    console.error("Error en login:", error);
 
     return res.status(500).json({
-      error:
-        'Error interno del servidor.'
+      error: "Error interno del servidor.",
     });
-
   }
-
 };
 
-export const cambiarPassword = async (
-  req,
-  res
-) => {
-
+export const cambiarPassword = async (req, res) => {
   try {
+    const { passwordActual, passwordNueva } = req.body;
 
-    const {
-      passwordActual,
-      passwordNueva
-    } = req.body;
-
-    if (
-      !passwordActual ||
-      !passwordNueva
-    ) {
-
+    if (!passwordActual || !passwordNueva) {
       return res.status(400).json({
-        error:
-          'Debe ingresar la contraseña actual y la nueva contraseña.'
+        error: "Debe ingresar la contraseña actual y la nueva contraseña.",
       });
-
     }
 
     if (passwordNueva.length < 8) {
-
       return res.status(400).json({
-        error:
-          'La nueva contraseña debe tener al menos 8 caracteres.'
+        error: "La nueva contraseña debe tener al menos 8 caracteres.",
       });
-
     }
 
-    const persona =
-      await buscarPersonaPorId(
-        req.usuario.id,
-        req.usuario.rol
-      );
+    const persona = await buscarPersonaPorId(
+      req.usuario.id,
+      req.usuario.tipo_persona,
+    );
 
     if (!persona) {
-
       return res.status(404).json({
-        error:
-          'No se encontró la cuenta.'
+        error: "No se encontró la cuenta.",
       });
-
     }
 
-    const passwordCorrecta =
-      await bcrypt.compare(
-        passwordActual,
-        persona.password_hash
-      );
+    const passwordCorrecta = await bcrypt.compare(
+      passwordActual,
+      persona.password_hash,
+    );
 
     if (!passwordCorrecta) {
-
       return res.status(401).json({
-        error:
-          'La contraseña actual es incorrecta.'
+        error: "La contraseña actual es incorrecta.",
       });
-
     }
 
-    const nuevoHash =
-      await bcrypt.hash(
-        passwordNueva,
-        10
-      );
+    const nuevoHash = await bcrypt.hash(passwordNueva, 10);
 
-    const actualizado =
-      await actualizarPassword(
-        req.usuario.id,
-        req.usuario.rol,
-        nuevoHash
-      );
+    const actualizado = await actualizarPassword(
+      req.usuario.id,
+      req.usuario.tipo_persona,
+      nuevoHash,
+    );
 
     if (!actualizado) {
-
       return res.status(500).json({
-        error:
-          'No se pudo actualizar la contraseña.'
+        error: "No se pudo actualizar la contraseña.",
       });
+    }
+    if (passwordActual === passwordNueva) {
+      return res.status(400).json({
+        error: "La nueva contraseña debe ser diferente de la actual.",
+      });
+    }
 
+    if (passwordNueva.length < 8) {
+      return res.status(400).json({
+        error: "La nueva contraseña debe tener al menos 8 caracteres.",
+      });
     }
 
     return res.json({
-      mensaje:
-        'Contraseña actualizada correctamente.'
+      mensaje: "Contraseña actualizada correctamente.",
     });
-
   } catch (error) {
-
-    console.error(
-      'Error cambiando contraseña:',
-      error
-    );
+    console.error("Error cambiando contraseña:", error);
 
     return res.status(500).json({
-      error:
-        'No se pudo cambiar la contraseña.'
+      error: "No se pudo cambiar la contraseña.",
     });
-
   }
-
 };

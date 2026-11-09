@@ -43,9 +43,11 @@ export const buscarPersonaPorCorreo = async (identificador) => {
       'APODERADO' AS rol,
       'APODERADO' AS tipo_persona
     FROM apoderados
-    WHERE LOWER(correo) = LOWER($1)
-       OR REPLACE(REPLACE(UPPER(rut), '.', ''), '-', '') =
-          REPLACE(REPLACE(UPPER($1), '.', ''), '-', '')
+    WHERE (
+      LOWER(correo) = LOWER($1)
+      OR REPLACE(REPLACE(UPPER(rut), '.', ''), '-', '') =
+         REPLACE(REPLACE(UPPER($1), '.', ''), '-', '')
+    )
     LIMIT 1;
   `;
 
@@ -58,14 +60,8 @@ export const buscarPersonaPorCorreo = async (identificador) => {
   return null;
 };
 
-export const buscarPersonaPorId = async (id, rol) => {
-  if (
-    rol === "DOCENTE" ||
-    rol === "INSPECTORA" ||
-    rol === "INSPECTORIA" ||
-    rol === "INSPECTOR" ||
-    rol === "INSPECTOR_GENERAL"
-  ) {
+export const buscarPersonaPorId = async (id, tipoPersona) => {
+  if (tipoPersona === "DOCENTE") {
     const { rows } = await query(
       `
         SELECT
@@ -77,13 +73,13 @@ export const buscarPersonaPorId = async (id, rol) => {
           AND activo = TRUE
         LIMIT 1;
       `,
-      [id],
+      [id]
     );
 
     return rows[0] || null;
   }
 
-  if (rol === "APODERADO") {
+  if (tipoPersona === "APODERADO") {
     const { rows } = await query(
       `
         SELECT
@@ -94,7 +90,7 @@ export const buscarPersonaPorId = async (id, rol) => {
         WHERE id = $1
         LIMIT 1;
       `,
-      [id],
+      [id]
     );
 
     return rows[0] || null;
@@ -103,8 +99,12 @@ export const buscarPersonaPorId = async (id, rol) => {
   return null;
 };
 
-export const actualizarPassword = async (id, rol, passwordHash) => {
-  if (rol === "DOCENTE" || rol === "INSPECTOR_GENERAL" || rol === "INSPECTOR") {
+export const actualizarPassword = async (
+  id,
+  tipoPersona,
+  passwordHash
+) => {
+  if (tipoPersona === "DOCENTE") {
     const { rows } = await query(
       `
         UPDATE docentes
@@ -113,15 +113,16 @@ export const actualizarPassword = async (id, rol, passwordHash) => {
           debe_cambiar_password = FALSE,
           actualizado_en = NOW()
         WHERE id = $2
+          AND activo = TRUE
         RETURNING id;
       `,
-      [passwordHash, id],
+      [passwordHash, id]
     );
 
     return rows[0] || null;
   }
 
-  if (rol === "APODERADO") {
+  if (tipoPersona === "APODERADO") {
     const { rows } = await query(
       `
         UPDATE apoderados
@@ -132,7 +133,7 @@ export const actualizarPassword = async (id, rol, passwordHash) => {
         WHERE id = $2
         RETURNING id;
       `,
-      [passwordHash, id],
+      [passwordHash, id]
     );
 
     return rows[0] || null;

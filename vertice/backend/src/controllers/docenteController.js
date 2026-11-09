@@ -296,19 +296,38 @@ export const getCursoDocente = async (req, res) => {
         END
       ) AS docente_nombre,
       d.correo AS docente_correo
+
     FROM docente_curso dc
+
     INNER JOIN asignaturas a
       ON a.id = dc.asignatura_id
+
     LEFT JOIN docentes d
       ON d.id = dc.docente_id
+
     WHERE dc.curso_id = $1
       AND dc.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
       AND a.activo = TRUE
+
+      AND (
+        -- Si es profesor jefe, puede ver todas las asignaturas.
+        EXISTS (
+          SELECT 1
+          FROM docente_curso dc_jefe
+          WHERE dc_jefe.docente_id = $2
+            AND dc_jefe.curso_id = dc.curso_id
+            AND dc_jefe.anio = dc.anio
+            AND dc_jefe.es_profesor_jefe = TRUE
+        )
+
+        -- Si no es profesor jefe, solamente ve las propias.
+        OR dc.docente_id = $2
+      )
+
     ORDER BY a.nombre;
   `,
-      [cursoId],
+      [cursoId, docenteId],
     );
-
     const alumnosResult = await query(
       `
         SELECT

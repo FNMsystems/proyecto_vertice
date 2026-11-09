@@ -80,3 +80,35 @@ export const getUsuarioActual = () => {
     ? JSON.parse(userStr)
     : null;
 };
+
+export const cambiarPasswordService = async (
+  passwordActual,
+  passwordNueva
+) => {
+  const token = localStorage.getItem('token');
+
+  const response = await fetch(
+    `${API_URL}/cambiar-password`,
+    {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${token}`
+      },
+      body: JSON.stringify({
+        passwordActual,
+        passwordNueva
+      })
+    }
+  );
+
+  const data = await response.json();
+
+  if (!response.ok) {
+    throw new Error(
+      data.error || 'No se pudo cambiar la contraseña.'
+    );
+  }
+
+  return data;
+};

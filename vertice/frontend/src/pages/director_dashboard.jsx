@@ -24,6 +24,7 @@ import {
   getAnotacionesDirector,
   desvincularAlumno
 } from '../services/directorService.js';
+import CambiarPassword from '../components/CambiarPassword.jsx';
 import { logoutService, getUsuarioActual } from '../services/authService.js';
 import './director_dashboard.css';
 
@@ -698,6 +699,8 @@ export default function DirectorDashboard() {
             <strong>{anio}</strong>
           </div>
 
+          <CambiarPassword />
+          
           <button
             className="director-logout"
             onClick={logoutService}
