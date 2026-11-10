@@ -1,4 +1,4 @@
-// Mock temporal del cliente Supabase para desarrollo en Frontend
+
 export const supabase = {
   from: () => ({
     select: async () => ({ data: [], error: null }),
