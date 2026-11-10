@@ -2,7 +2,7 @@ import { fetchConAuth } from './apiService.js';
 
 export const obtenerCursosInspector = async () => {
   return await fetchConAuth(
-    '/retrasos/cursos'
+    '/api/retrasos/cursos'
   );
 };
 
@@ -10,7 +10,7 @@ export const obtenerAlumnosCurso = async (
   cursoId
 ) => {
   return await fetchConAuth(
-    `/retrasos/cursos/${cursoId}/alumnos`
+    `/api/retrasos/cursos/${cursoId}/alumnos`
   );
 };
 
@@ -23,7 +23,7 @@ export const registrarRetraso = async ({
   observacion
 }) => {
   return await fetchConAuth(
-    '/retrasos',
+    '/api/retrasos',
     {
       method: 'POST',
       body: JSON.stringify({

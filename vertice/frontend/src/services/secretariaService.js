@@ -1,17 +1,15 @@
 import { fetchConAuth } from "./apiService.js";
 
 export const getCursosSecretaria = () =>
-  fetchConAuth("/secretaria/cursos");
-
+  fetchConAuth("/api/secretaria/cursos");
 
 export const getAlumnosPorCursoSecretaria = (cursoId) =>
   fetchConAuth(
-    `/secretaria/cursos/${encodeURIComponent(cursoId)}/alumnos`
+    `/api/secretaria/cursos/${encodeURIComponent(cursoId)}/alumnos`
   );
 
-
 export const registrarAtrasoSecretaria = (datos) =>
-  fetchConAuth("/secretaria/atrasos", {
+  fetchConAuth("/api/secretaria/atrasos", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -19,31 +17,26 @@ export const registrarAtrasoSecretaria = (datos) =>
     body: JSON.stringify(datos),
   });
 
-
 export const getRetiroPorIdSecretaria = (id) =>
   fetchConAuth(
-    `/secretaria/validar-qr/${encodeURIComponent(id)}`
+    `/api/secretaria/validar-qr/${encodeURIComponent(id)}`
   );
 
-
 export const getRetirosSecretaria = () =>
-  fetchConAuth("/secretaria/retiros-recientes");
-
+  fetchConAuth("/api/secretaria/retiros-recientes");
 
 export const getEstudiantesSecretaria = () =>
-  fetchConAuth("/secretaria/estudiantes");
-
+  fetchConAuth("/api/secretaria/estudiantes");
 
 export const getJustificativosSecretaria = () =>
-  fetchConAuth("/secretaria/justificativos");
-
+  fetchConAuth("/api/secretaria/justificativos");
 
 export const cambiarEstadoJustificativoSecretaria = (
   id,
   estado
 ) =>
   fetchConAuth(
-    `/secretaria/justificativos/${encodeURIComponent(id)}/estado`,
+    `/api/secretaria/justificativos/${encodeURIComponent(id)}/estado`,
     {
       method: "PATCH",
       headers: {
@@ -53,9 +46,8 @@ export const cambiarEstadoJustificativoSecretaria = (
     }
   );
 
-
 export const registrarMatriculaSecretaria = (datos) =>
-  fetchConAuth("/secretaria/matriculas", {
+  fetchConAuth("/api/secretaria/matriculas", {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
