@@ -6,21 +6,17 @@ const rawApiUrl = import.meta.env.DEV
 
 const API_URL = rawApiUrl.replace(/\/+$/, '');
 
-
 export const loginService = async (
   email,
   password
 ) => {
-
   const response = await fetch(
-    `${API_URL}/login`,
+    `${API_URL}/auth/login`,
     {
       method: 'POST',
-
       headers: {
         'Content-Type': 'application/json'
       },
-
       body: JSON.stringify({
         email,
         password
@@ -28,38 +24,29 @@ export const loginService = async (
     }
   );
 
-
-  const data =
-    await response.json();
-
+  const data = await response.json();
 
   if (!response.ok) {
-
     throw new Error(
       data.error ||
       'Error al iniciar sesión'
     );
-
   }
-
 
   localStorage.setItem(
     'token',
     data.token
   );
 
-
   localStorage.setItem(
     'usuario',
     JSON.stringify(data.usuario)
   );
 
-
   return data;
 };
 
 export const logoutService = () => {
-
   localStorage.removeItem(
     'token'
   );
@@ -71,14 +58,11 @@ export const logoutService = () => {
   window.location.href = '/';
 };
 
-
 export const getUsuarioActual = () => {
-
   const userStr =
     localStorage.getItem(
       'usuario'
     );
-
 
   return userStr
     ? JSON.parse(userStr)
