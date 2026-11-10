@@ -2,7 +2,7 @@ const API_URL = import.meta.env.DEV
   ? 'http://localhost:3000/api'
   : (
       import.meta.env.VITE_API_URL ||
-      'https://proyecto-vertice-plum.vercel.app/api'
+      'https://proyecto-vertice-plum.vercel.app//api'
     );
 
 export { API_URL };
