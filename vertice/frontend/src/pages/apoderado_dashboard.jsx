@@ -108,7 +108,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
         }
 
         const dataAlumnos = await fetchConAuth(
-          '/api/apoderados/me/alumnos'
+          '/apoderados/me/alumnos'
         );
 
         const alumnosFormateados = Array.isArray(dataAlumnos)
