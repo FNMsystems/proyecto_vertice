@@ -1,7 +1,6 @@
 import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
-// Importaciones con los nombres exactos de la carpeta src/pages/
 import Home from "./pages/home.jsx";
 import Funcionarios from "./pages/funcionarios.jsx";
 import Apoderados from "./pages/apoderado_dashboard.jsx";
