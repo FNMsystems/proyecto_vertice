@@ -1,6 +1,6 @@
 import { fetchConAuth } from './apiService.js';
 
-const API = '/director';
+const API = '/api/director';
 
 export const getResumenDirector = async (anio = 2026) => {
   return await fetchConAuth(`${API}/resumen?anio=${anio}`);
