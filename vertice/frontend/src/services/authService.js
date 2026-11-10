@@ -1,8 +1,8 @@
 const rawApiUrl = import.meta.env.DEV
-  ? 'http://localhost:3000/api/auth'
+  ? 'http://localhost:3000/api'
   : (import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') + '/api/auth'
-      : 'https://verticebackend.vercel.app/api/auth');
+      ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') + '/api'
+      : 'https://vertice-backend-sd48.onrender.com/api');
 
 const API_URL = rawApiUrl.replace(/\/+$/, '');
 
