@@ -1,6 +1,6 @@
 const rawApiUrl = import.meta.env.DEV
   ? 'http://localhost:3000'
-  : (import.meta.env.VITE_API_URL || 'https://proyecto-vertice-plum.vercel.app');
+  : (import.meta.env.VITE_API_URL || 'https://verticebackend.vercel.app');
 
 export const API_URL = rawApiUrl.replace(/\/+$/, '');
 
