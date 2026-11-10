@@ -326,7 +326,7 @@ export default function ProfesoresDashboard() {
                       <button
                         type="button"
                         onClick={() =>
-                          navigate(`/profesores/cursos/${curso.id}`)
+                          navigate(`/api/profesores/cursos/${curso.id}`)
                         }
                       >
                         Ingresar al curso
