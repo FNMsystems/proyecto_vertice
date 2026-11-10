@@ -1,12 +1,12 @@
 import { fetchConAuth } from './apiService.js';
 
 export const obtenerMiDashboardDocente = async () => {
-  return await fetchConAuth('/docentes/me/dashboard');
+  return await fetchConAuth('/api/docentes/me/dashboard');
 };
 
 export const obtenerCursoDocente = async (cursoId) => {
   return await fetchConAuth(
-    `/docentes/me/cursos/${cursoId}`
+    `/api/docentes/me/cursos/${cursoId}`
   );
 };
 
@@ -15,7 +15,7 @@ export const obtenerAsistenciaCurso = async (
   fecha
 ) => {
   return await fetchConAuth(
-    `/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fecha)}`
+    `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fecha)}`
   );
 };
 
@@ -27,7 +27,7 @@ export const guardarAsistenciaCurso = async (
   observacion = ''
 ) => {
   return await fetchConAuth(
-    `/docentes/me/cursos/${cursoId}/asistencia`,
+    `/api/docentes/me/cursos/${cursoId}/asistencia`,
     {
       method: 'POST',
       headers: {
