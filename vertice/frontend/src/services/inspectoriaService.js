@@ -7,7 +7,7 @@ export const generarSolicitudRetiroQR = async ({
   observacion
 }) => {
   return await fetchConAuth(
-    '/inspectoria/generar-qr',
+    '/api/inspectoria/generar-qr',
     {
       method: 'POST',
       body: JSON.stringify({
@@ -24,7 +24,7 @@ export const validarRetiroQR = async (
   codigoQR
 ) => {
   return await fetchConAuth(
-    '/inspectoria/validar-qr',
+    '/api/inspectoria/validar-qr',
     {
       method: 'POST',
       body: JSON.stringify({
@@ -42,7 +42,7 @@ export const confirmarRetiro = async ({
   observacion
 }) => {
   return await fetchConAuth(
-    '/inspectoria/confirmar-retiro',
+    '/api/inspectoria/confirmar-retiro',
     {
       method: 'POST',
       body: JSON.stringify({
