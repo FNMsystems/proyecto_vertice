@@ -1,10 +1,10 @@
-const rawApiUrl = import.meta.env.DEV
-  ? 'http://localhost:3000/api'
-  : (import.meta.env.VITE_API_URL
-      ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') + '/api'
-      : 'https://vertice-backend-sd48.onrender.com/api');
+const rawBaseUrl = import.meta.env.DEV
+  ? 'http://localhost:3000'
+  : (import.meta.env.VITE_API_URL || 'https://vertice-backend-sd48.onrender.com');
 
-const API_URL = rawApiUrl.replace(/\/+$/, '');
+const BASE_URL = rawBaseUrl.replace(/\/+$/, '');
+
+const API_URL = `${BASE_URL}/api`;
 
 export const loginService = async (
   email,
