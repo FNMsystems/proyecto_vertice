@@ -136,7 +136,7 @@ function SecretariaDashboard() {
   const obtenerEstudiantesBD = async () => {
     try {
       setCargandoEstudiantes(true);
-      const res = await fetchConAuth('/secretaria/estudiantes');
+      const res = await fetchConAuth('/api/secretaria/estudiantes');
       setListaEstudiantes(extraerLista(res, ['estudiantes', 'alumnos', 'data', 'resultado']));
     } catch (err) {
       console.error('Error al obtener estudiantes:', err);
@@ -148,7 +148,7 @@ function SecretariaDashboard() {
 
   const obtenerCursosBD = async () => {
     try {
-      const res = await fetchConAuth('/secretaria/cursos');
+      const res = await fetchConAuth('/api/secretaria/cursos');
       setListaCursos(extraerLista(res, ['cursos', 'data', 'resultado']));
     } catch (err) {
       console.error('Error al obtener cursos:', err);
@@ -159,7 +159,7 @@ function SecretariaDashboard() {
   const obtenerRetirosBD = async () => {
     try {
       setCargandoRetiros(true);
-      const res = await fetchConAuth('/secretaria/retiros-recientes');
+      const res = await fetchConAuth('/api/secretaria/retiros-recientes');
       setListaRetiros(extraerLista(res, ['retiros', 'data', 'resultado']));
     } catch (err) {
       console.error('Error al obtener historial de retiros:', err);
@@ -179,7 +179,7 @@ function SecretariaDashboard() {
     if (estadoActual === 'APROBADO' || estadoActual === 'RECHAZADO') return;
     try {
       setActualizandoJustificativo(item.id);
-      await fetchConAuth(`/secretaria/justificativos/${encodeURIComponent(item.id)}/estado`, {
+      await fetchConAuth(`/api/secretaria/justificativos/${encodeURIComponent(item.id)}/estado`, {
         method: 'PATCH',
         body: JSON.stringify({ estado })
       });
@@ -196,7 +196,7 @@ function SecretariaDashboard() {
     try {
       setCargandoJustificativos(true);
       setErrorJustificativos('');
-      const res = await fetchConAuth('/secretaria/justificativos');
+      const res = await fetchConAuth('/api/secretaria/justificativos');
       setListaJustificativos(extraerLista(res, ['justificativos', 'solicitudes', 'data', 'resultado']));
     } catch (err) {
       console.error('Error al obtener justificativos:', err);
@@ -217,7 +217,7 @@ function SecretariaDashboard() {
 
     setCargandoAlumnosAtraso(true);
     try {
-      const res = await fetchConAuth(`/secretaria/cursos/${encodeURIComponent(selectedCursoId)}/alumnos`);
+      const res = await fetchConAuth(`/api/secretaria/cursos/${encodeURIComponent(selectedCursoId)}/alumnos`);
       setEstudiantesAtrasoFiltrados(extraerLista(res, ['alumnos', 'estudiantes', 'data', 'resultado']));
     } catch (err) {
       console.error('Error al obtener alumnos del curso:', err);
@@ -236,7 +236,7 @@ function SecretariaDashboard() {
 
     try {
       setGuardandoAtraso(true);
-      const res = await fetchConAuth('/secretaria/atrasos', {
+      const res = await fetchConAuth('/api/secretaria/atrasos', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -355,7 +355,7 @@ function SecretariaDashboard() {
       setExitoQR('');
       setPaseEncontrado(null);
 
-      const data = await fetchConAuth('/inspectoria/validar-qr', {
+      const data = await fetchConAuth('/api/inspectoria/validar-qr', {
         method: 'POST',
         body: JSON.stringify({ codigoQR: codigo })
       });
@@ -383,7 +383,7 @@ function SecretariaDashboard() {
     try {
       setConfirmandoRetiro(true);
       setErrorQR('');
-      await fetchConAuth('/inspectoria/confirmar-retiro', {
+      await fetchConAuth('/api/inspectoria/confirmar-retiro', {
         method: 'POST',
         body: JSON.stringify({
           solicitudId: retiroInspector.retiro.id,
@@ -481,7 +481,7 @@ function SecretariaDashboard() {
       setGuardandoMatricula(true);
       setMensajeMatricula({ tipo: '', texto: '' });
 
-      const res = await fetchConAuth('/secretaria/matriculas', {
+      const res = await fetchConAuth('/api/secretaria/matriculas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(formMatricula)
