@@ -103,7 +103,7 @@ export default function ProfesorCurso() {
       setCargandoInformacionAlumno(true);
 
       const data = await fetchConAuth(
-        `/docentes/me/alumnos/${alumnoId}/informacion`
+        `/api/docentes/me/alumnos/${alumnoId}/informacion`
       );
 
       setInformacionAlumno(data.alumno || null);
@@ -132,7 +132,7 @@ export default function ProfesorCurso() {
     try {
       setCargandoNotas(true);
 
-      let url = `/notas/curso/${cursoId}`;
+      let url = `/api/notas/curso/${cursoId}`;
 
       if (asignaturaNotas) {
         url += `?asignaturaId=${encodeURIComponent(asignaturaNotas)}`;
@@ -329,7 +329,7 @@ export default function ProfesorCurso() {
     try {
       setGuardandoEvaluacion(true);
 
-      const data = await fetchConAuth('/notas/masivas', {
+      const data = await fetchConAuth('/api/notas/masivas', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json'
@@ -437,7 +437,7 @@ export default function ProfesorCurso() {
 
     try {
       const data = await fetchConAuth(
-        `/notas/${notaId}`,
+        `/api/notas/${notaId}`,
         {
           method: 'DELETE'
         }
@@ -574,7 +574,7 @@ export default function ProfesorCurso() {
       setCargandoAnotaciones(true);
 
       const data = await fetchConAuth(
-        `/anotaciones/curso/${cursoId}`
+        `/api/anotaciones/curso/${cursoId}`
       );
 
       setAnotaciones(data.anotaciones || []);
@@ -607,7 +607,7 @@ export default function ProfesorCurso() {
       }
 
       const data = await fetchConAuth(
-        '/anotaciones',
+        '/api/anotaciones',
         {
           method: 'POST',
           headers: {
@@ -657,7 +657,7 @@ export default function ProfesorCurso() {
 
     try {
       const data = await fetchConAuth(
-        `/anotaciones/${anotacionId}`,
+        `/api/anotaciones/${anotacionId}`,
         {
           method: 'DELETE'
         }
