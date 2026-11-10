@@ -1,10 +1,11 @@
 const rawApiUrl = import.meta.env.DEV
   ? 'http://localhost:3000/api/auth'
-  : 'https://proyecto-vertice-plum.vercel.app/api/auth';
+  : (import.meta.env.VITE_API_URL
+      ? import.meta.env.VITE_API_URL.replace(/\/+$/, '') + '/api/auth'
+      : 'https://proyecto-vertice-plum.vercel.app/api/auth');
 
 const API_URL = rawApiUrl.replace(/\/+$/, '');
 
- /**const API_URL = 'https://0hvj9hvv-3000.brs.devtunnels.ms/api/auth'; **/
 
 export const loginService = async (
   email,

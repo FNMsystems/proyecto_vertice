@@ -41,10 +41,6 @@ function CampoPassword({
   );
 }
 
-// =========================================
-// COMPONENTE PRINCIPAL
-// =========================================
-
 export default function CambiarPassword() {
   const [abierto, setAbierto] = useState(false);
 

@@ -1,10 +1,8 @@
 const rawApiUrl = import.meta.env.DEV
-  ? 'http://localhost:3000/api'
-  : (import.meta.env.VITE_API_URL || 'https://proyecto-vertice-plum.vercel.app/api');
+  ? 'http://localhost:3000'
+  : (import.meta.env.VITE_API_URL || 'https://proyecto-vertice-plum.vercel.app');
 
 export const API_URL = rawApiUrl.replace(/\/+$/, '');
-
-export { API_URL };
 
 const obtenerHeaders = (options = {}) => {
   const token = localStorage.getItem('token');
@@ -39,12 +37,20 @@ const verificarSesion = (response) => {
   }
 };
 
+const formatearUrl = (baseUrl, endpoint) => {
+  const baseLimpia = baseUrl.replace(/\/+$/, '');
+  const endpointLimpio = endpoint.replace(/^\/+/, '');
+  return `${baseLimpia}/${endpointLimpio}`;
+};
+
 export const fetchConAuth = async (
   endpoint,
   options = {}
 ) => {
+  const urlFinal = formatearUrl(API_URL, endpoint);
+
   const response = await fetch(
-    `${API_URL}${endpoint}`,
+    urlFinal,
     {
       ...options,
       headers: obtenerHeaders(options)
@@ -88,8 +94,10 @@ export const fetchArchivoConAuth = async (
   endpoint,
   options = {}
 ) => {
+  const urlFinal = formatearUrl(API_URL, endpoint);
+
   const response = await fetch(
-    `${API_URL}${endpoint}`,
+    urlFinal,
     {
       ...options,
       headers: obtenerHeaders(options)
