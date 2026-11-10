@@ -345,8 +345,7 @@ export const subirJustificativo = async (req, res) => {
 
     let archivoPdf;
 
-    if (process.env.VERCEL === '1') {
-      // Vercel: guardar en Blob privado.
+    if (process.env.VERCEL === '1') {S
       const nombreArchivo =
         `justificativos/${Date.now()}-${Math.random()
           .toString(36)
