@@ -5,6 +5,7 @@ import {
   getPersonasAutorizadasRetiroModel,
   crearJustificativoModel
 } from '../models/apoderadoModel.js';
+import { put } from '@vercel/blob';
 
 export const getApoderadoByRut = async (
   req,
@@ -288,91 +289,101 @@ export const getPersonasAutorizadasRetiro = async (
   }
 };
 
-export const subirJustificativo = async (
-  req,
-  res
-) => {
+
+export const subirJustificativo = async (req, res) => {
   try {
     const { id } = req.params;
-    const {
-      fechaInicio,
-      fechaFin,
-      motivo
-    } = req.body;
+    const { fechaInicio, fechaFin, motivo } = req.body;
 
     const rut = req.usuario?.rut;
 
     if (!rut) {
       return res.status(401).json({
-        error:
-          'La sesión no contiene el RUT del apoderado.'
+        error: 'La sesión no contiene el RUT del apoderado.'
       });
     }
 
     if (!fechaInicio) {
       return res.status(400).json({
-        error:
-          'La fecha de inicio es obligatoria.'
+        error: 'La fecha de inicio es obligatoria.'
       });
     }
 
     if (!motivo || !motivo.trim()) {
       return res.status(400).json({
-        error:
-          'El motivo es obligatorio.'
+        error: 'El motivo es obligatorio.'
       });
     }
 
-    const apoderado =
-      await getApoderadoPorRutModel(rut);
+    if (!req.file) {
+      return res.status(400).json({
+        error: 'Debe adjuntar un archivo PDF.'
+      });
+    }
+
+    const apoderado = await getApoderadoPorRutModel(rut);
 
     if (!apoderado) {
       return res.status(404).json({
-        error:
-          'No se encontró el apoderado.'
+        error: 'No se encontró el apoderado.'
       });
     }
 
-    const alumnos =
-      await getAlumnosPorApoderadoModel(
-        apoderado.id
-      );
+    const alumnos = await getAlumnosPorApoderadoModel(
+      apoderado.id
+    );
 
     const pertenece = alumnos.some(
-      alumno =>
-        String(alumno.id) === String(id)
+      alumno => String(alumno.id) === String(id)
     );
 
     if (!pertenece) {
       return res.status(403).json({
-        error:
-          'El alumno no pertenece a este apoderado.'
+        error: 'El alumno no pertenece a este apoderado.'
       });
     }
 
-    const archivoPdf = req.file
-      ? req.file.path.replace(/\\/g, '/')
-      : null;
+    let archivoPdf;
 
-    const justificativo =
-      await crearJustificativoModel(
-        id,
-        fechaInicio,
-        fechaFin,
-        motivo.trim(),
-        archivoPdf
+    if (process.env.VERCEL === '1') {
+      // Vercel: guardar en Blob privado.
+      const nombreArchivo =
+        `justificativos/${Date.now()}-${Math.random()
+          .toString(36)
+          .slice(2, 10)}.pdf`;
+
+      const blob = await put(
+        nombreArchivo,
+        req.file.buffer,
+        {
+          access: 'private',
+          contentType: 'application/pdf',
+          addRandomSuffix: true
+        }
       );
 
+      archivoPdf = blob.pathname;
+    } else {
+      archivoPdf = req.file.path
+        ? req.file.path.replace(/\\/g, '/')
+        : null;
+    }
+
+    const justificativo = await crearJustificativoModel(
+      id,
+      fechaInicio,
+      fechaFin,
+      motivo.trim(),
+      archivoPdf
+    );
+
     res.status(201).json({
-      mensaje:
-        'Justificativo enviado correctamente.',
+      mensaje: 'Justificativo enviado correctamente.',
       justificativo
     });
+
   } catch (error) {
-    console.error(
-      'Error subiendo justificativo:',
-      error
-    );
+    console.error('Error subiendo justificativo:', error);
 
     res.status(500).json({
       error: error.message

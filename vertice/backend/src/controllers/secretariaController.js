@@ -1,6 +1,6 @@
 import { query } from "../config/db.js";
-
-
+import { get } from "@vercel/blob";
+import { Readable } from "node:stream";
 
 const formatearFecha = (fechaRaw) => {
   if (!fechaRaw) return "-";
@@ -430,4 +430,89 @@ export const registrarMatricula = async (req, res) => {
   }
 };
 
+export const verPdfJustificativo = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const rol = String(req.usuario?.rol || "")
+      .trim()
+      .toUpperCase();
+
+    const rolesPermitidos = [
+      "SECRETARIA",
+      "DIRECTOR",
+      "ADMIN",
+      "ADMINISTRADOR"
+    ];
+
+    if (!rolesPermitidos.includes(rol)) {
+      return res.status(403).json({
+        error: "No tienes autorización para ver este documento."
+      });
+    }
+
+    const resultBD = await query(
+      `SELECT archivo_pdf FROM justificativos WHERE id = $1 LIMIT 1`,
+      [id]
+    );
+
+    if (resultBD.rows.length === 0) {
+      return res.status(404).json({
+        error: "No se encontró el justificativo."
+      });
+    }
+
+    const pathname = resultBD.rows[0].archivo_pdf;
+
+    if (
+      !pathname ||
+      !String(pathname).startsWith("justificativos/")
+    ) {
+      return res.status(404).json({
+        error: "El documento no está almacenado en Blob."
+      });
+    }
+
+    const archivo = await get(pathname, {
+      access: "private"
+    });
+
+    if (!archivo || archivo.statusCode !== 200) {
+      return res.status(404).json({
+        error: "No se encontró el archivo PDF."
+      });
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/pdf"
+    );
+
+    res.setHeader(
+      "Content-Disposition",
+      'inline; filename="justificativo.pdf"'
+    );
+
+    res.setHeader(
+      "Cache-Control",
+      "private, no-store"
+    );
+
+    res.setHeader(
+      "X-Content-Type-Options",
+      "nosniff"
+    );
+
+    Readable.fromWeb(archivo.stream).pipe(res);
+
+  } catch (error) {
+    console.error("Error mostrando PDF:", error);
+
+    if (!res.headersSent) {
+      return res.status(500).json({
+        error: "No se pudo visualizar el justificativo."
+      });
+    }
+  }
+};
 

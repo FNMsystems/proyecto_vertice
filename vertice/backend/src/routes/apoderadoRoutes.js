@@ -47,100 +47,72 @@ router.get(
   getDetalleAlumno
 );
 
-const directorioJustificativos =
-  path.resolve(
+router.get(
+  '/alumno/:id/personas-retiro',
+  verificarToken,
+  esApoderado,
+  getPersonasAutorizadasRetiro
+);
+
+
+const esVercel = process.env.VERCEL === '1';
+
+let storage;
+
+if (esVercel) {
+  storage = multer.memoryStorage();
+} else {
+  const directorioJustificativos = path.resolve(
     'uploads',
     'justificativos'
   );
 
-fs.mkdirSync(
-  directorioJustificativos,
-  {
+  fs.mkdirSync(directorioJustificativos, {
     recursive: true
-  }
-);
+  });
 
-const storage =
-  multer.diskStorage({
-    destination: (
-      req,
-      file,
-      cb
-    ) => {
-      cb(
-        null,
-        directorioJustificativos
-      );
+  storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+      cb(null, directorioJustificativos);
     },
 
-    filename: (
-      req,
-      file,
-      cb
-    ) => {
-      const extension =
-        path
-          .extname(
-            file.originalname
-          )
-          .toLowerCase();
+    filename: (req, file, cb) => {
+      const extension = path
+        .extname(file.originalname)
+        .toLowerCase();
 
       const nombre =
         `${Date.now()}-${Math.random()
           .toString(36)
           .slice(2, 10)}${extension}`;
 
-      cb(
-        null,
-        nombre
-      );
+      cb(null, nombre);
     }
   });
+}
 
-const upload =
-  multer({
-    storage,
-    limits: {
-      fileSize:
-        10 * 1024 * 1024
-    },
-    fileFilter: (
-      req,
-      file,
-      cb
-    ) => {
-      const extension =
-        path
-          .extname(
-            file.originalname
-          )
-          .toLowerCase();
+const upload = multer({
+  storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024
+  },
+  fileFilter: (req, file, cb) => {
+    const extension = path
+      .extname(file.originalname)
+      .toLowerCase();
 
-      if (
-        extension !== '.pdf' ||
-        file.mimetype !==
-          'application/pdf'
-      ) {
-        return cb(
-          new Error(
-            'Solo se permiten archivos PDF.'
-          )
-        );
-      }
-
-      cb(
-        null,
-        true
+    if (
+      extension !== '.pdf' ||
+      file.mimetype !== 'application/pdf'
+    ) {
+      return cb(
+        new Error('Solo se permiten archivos PDF.')
       );
     }
-  });
 
-  router.get(
-  '/alumno/:id/personas-retiro',
-  verificarToken,
-  esApoderado,
-  getPersonasAutorizadasRetiro
-);
+    cb(null, true);
+  }
+});
 
 router.post(
   '/alumno/:id/justificativo',
