@@ -108,7 +108,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
         }
 
         const dataAlumnos = await fetchConAuth(
-          '/apoderados/me/alumnos'
+          '/api/apoderados/me/alumnos'
         );
 
         const alumnosFormateados = Array.isArray(dataAlumnos)
@@ -177,7 +177,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
       setObservacionRetiro('');
 
       const data = await fetchConAuth(
-        `/apoderados/alumno/${alumno.id}/detalle`
+        `/api/apoderados/alumno/${alumno.id}/detalle`
       );
 
       const alumnoCompleto = {
@@ -235,7 +235,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
       setError('');
 
       const personas = await fetchConAuth(
-        `/apoderados/alumno/${alumnoSeleccionado.id}/personas-retiro`
+        `/api/apoderados/alumno/${alumnoSeleccionado.id}/personas-retiro`
       );
 
       const lista = Array.isArray(personas)
@@ -316,7 +316,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
       }
 
       await fetchConAuth(
-        `/apoderados/alumno/${alumnoSeleccionado.id}/justificativo`,
+        `/api/apoderados/alumno/${alumnoSeleccionado.id}/justificativo`,
         {
           method: 'POST',
           body: formData
@@ -380,7 +380,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
       setSolicitudQR(null);
 
       const data = await fetchConAuth(
-        '/inspectoria/generar-qr',
+        '/api/inspectoria/generar-qr',
         {
           method: 'POST',
           body: JSON.stringify({
