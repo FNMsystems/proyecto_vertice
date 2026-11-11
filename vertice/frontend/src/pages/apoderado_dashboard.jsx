@@ -764,7 +764,6 @@ function ApoderadoDashboard({ apoderadoRut }) {
                           console.warn("No se pudo cargar el logo en el PDF", e);
                         }
 
-
                         doc.setFont("helvetica", "bold");
                         doc.setFontSize(13);
                         doc.setTextColor(...colorPrimario);
@@ -802,7 +801,6 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         doc.text(`Profesor/a Jefe:`, 125, 54);
                         doc.setFont("helvetica", "normal");
                         doc.text(`${alumnoSeleccionado.profesorJefe || 'No registrado'}`, 152, 54);
-
 
                         let y = 66;
                         const x = 14;
@@ -908,11 +906,11 @@ function ApoderadoDashboard({ apoderadoRut }) {
                                   <button
                                     type="button"
                                     className="asignatura-apoderado-btn"
-                                    onClick={() => {
-                                      const docente = a.docente_nombre || 'Docente no registrado';
-                                      const correo = a.docente_correo || 'Correo no registrado';
-                                      alert(`Asignatura: ${a.nombre}\n\nDocente: ${docente}\nCorreo: ${correo}`);
-                                    }}
+                                    onClick={() => setDocenteModal({
+                                      asignatura: a.nombre,
+                                      docente: a.docente_nombre || 'Docente no registrado',
+                                      correo: a.docente_correo || 'Correo no registrado'
+                                    })}
                                   >
                                     {a.nombre} ℹ️
                                   </button>
@@ -946,6 +944,44 @@ function ApoderadoDashboard({ apoderadoRut }) {
                     </div>
                   ) : (
                     <p>No hay notas registradas.</p>
+                  )}
+
+                  {docenteModal && (
+                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px' }}>
+                      <div style={{ background: '#fff', width: '100%', maxWidth: '420px', borderRadius: '16px', padding: '30px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', position: 'relative', borderTop: '6px solid #800020' }}>
+
+                        <h3 style={{ margin: '0 0 15px 0', color: '#800020', fontSize: '20px', fontFamily: 'Georgia, serif' }}>
+                          Información del Docente
+                        </h3>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', color: '#33272c', marginBottom: '25px' }}>
+                          <div style={{ background: '#fdf8f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2d7db' }}>
+                            <span style={{ display: 'block', fontSize: '11px', color: '#777078', fontWeight: 'bold', marginBottom: '2px' }}>ASIGNATURA</span>
+                            <strong>{docenteModal.asignatura}</strong>
+                          </div>
+
+                          <div style={{ background: '#fdf8f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2d7db' }}>
+                            <span style={{ display: 'block', fontSize: '11px', color: '#777078', fontWeight: 'bold', marginBottom: '2px' }}>DOCENTE A CARGO</span>
+                            <strong>{docenteModal.docente}</strong>
+                          </div>
+
+                          <div style={{ background: '#fdf8f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2d7db' }}>
+                            <span style={{ display: 'block', fontSize: '11px', color: '#777078', fontWeight: 'bold', marginBottom: '2px' }}>CORREO ELECTRÓNICO</span>
+                            <a href={`mailto:${docenteModal.correo}`} style={{ color: '#800020', fontWeight: 'bold', textDecoration: 'none' }}>
+                              {docenteModal.correo}
+                            </a>
+                          </div>
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={() => setDocenteModal(null)}
+                          style={{ width: '100%', padding: '12px', background: '#800020', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
+                        >
+                          Cerrar
+                        </button>
+                      </div>
+                    </div>
                   )}
                 </div>
               )}
