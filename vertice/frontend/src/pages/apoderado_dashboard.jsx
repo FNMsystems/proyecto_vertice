@@ -438,16 +438,17 @@ function ApoderadoDashboard({ apoderadoRut }) {
             <h1 className="apoderado-header__title">
               Portal del Apoderado
             </h1>
+            <div className="apoderado-header-acciones">
+              <CambiarPassword />
 
-
-
-            <button
-              type="button"
-              className="btn-cerrar-sesion"
-              onClick={cerrarSesion}
-            >
-              Cerrar sesión
-            </button>
+              <button
+                type="button"
+                className="btn-cerrar-sesion"
+                onClick={cerrarSesion}
+              >
+                Cerrar sesión
+              </button>
+            </div>
           </header>
 
           <p style={{ textAlign: 'center' }}>
