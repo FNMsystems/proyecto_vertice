@@ -480,8 +480,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
             <h1 className="apoderado-header__title">
               Portal del Apoderado
             </h1>
-
-            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', margin: '10px 0' }}>
+            <div className="apoderado-header-acciones">
               <CambiarPassword />
 
               <button
@@ -531,13 +530,17 @@ function ApoderadoDashboard({ apoderadoRut }) {
             Portal del Apoderado
           </h1>
 
-          <button
-            type="button"
-            className="btn-cerrar-sesion"
-            onClick={cerrarSesion}
-          >
-            Cerrar sesión
-          </button>
+          <div className="apoderado-header-acciones">
+            <CambiarPassword />
+
+            <button
+              type="button"
+              className="btn-cerrar-sesion"
+              onClick={cerrarSesion}
+            >
+              Cerrar sesión
+            </button>
+          </div>
 
           <div className="apoderado-header__divider" />
 
