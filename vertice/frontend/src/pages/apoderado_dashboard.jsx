@@ -439,7 +439,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
               Portal del Apoderado
             </h1>
 
-       
+
 
             <button
               type="button"
@@ -479,16 +479,28 @@ function ApoderadoDashboard({ apoderadoRut }) {
             <h1 className="apoderado-header__title">
               Portal del Apoderado
             </h1>
-            <CambiarPassword />
-            <button
-              type="button"
-              className="btn-cerrar-sesion"
-              onClick={cerrarSesion}
-            >
-              Cerrar sesión
-            </button>
 
-     
+            <div style={{ display: 'flex', gap: '12px', alignItems: 'center', margin: '10px 0' }}>
+              <CambiarPassword />
+
+              <button
+                type="button"
+                className="btn-cerrar-sesion"
+                onClick={cerrarSesion}
+              >
+                Cerrar sesión
+              </button>
+            </div>
+
+            <div className="apoderado-header__divider" />
+
+            {apoderado && (
+              <p>
+                {apoderado.nombre_completo}
+                {' · '}
+                RUT: {apoderado.rut}
+              </p>
+            )}
           </header>
 
           <div className="alert-repitencia">
@@ -703,8 +715,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
 
               <button
                 className={`tab-btn ${tab === 'comunicaciones'
-                    ? 'active'
-                    : ''
+                  ? 'active'
+                  : ''
                   }`}
                 onClick={() =>
                   setTab('comunicaciones')
