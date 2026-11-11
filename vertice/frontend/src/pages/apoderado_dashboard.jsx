@@ -439,8 +439,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
               Portal del Apoderado
             </h1>
 
-            <CambiarPassword />
-            
+       
+
             <button
               type="button"
               className="btn-cerrar-sesion"
@@ -487,6 +487,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
             >
               Cerrar sesión
             </button>
+
+            <CambiarPassword />
           </header>
 
           <div className="alert-repitencia">
