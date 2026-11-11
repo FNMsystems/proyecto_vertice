@@ -754,7 +754,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                       onClick={() => {
                         const doc = new jsPDF('portrait', 'mm', 'a4');
 
-                        const colorPrimario = [128, 0, 32]; 
+                        const colorPrimario = [128, 0, 32];
                         const colorTexto = [51, 39, 44];
                         const colorGrisClaro = [248, 243, 245];
 
@@ -771,6 +771,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         doc.setLineWidth(0.8);
                         doc.line(14, 32, 196, 32);
 
+                       
                         doc.setFillColor(...colorGrisClaro);
                         doc.roundedRect(14, 38, 182, 22, 2, 2, 'F');
 
@@ -795,60 +796,71 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         doc.setFont("helvetica", "normal");
                         doc.text(`${alumnoSeleccionado.profesorJefe || 'No registrado'}`, 152, 54);
 
-                        const cuerpoTabla = alumnoSeleccionado.asignaturas.map((a) => {
-                          const s1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1 : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)) : []);
-                          const s2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2 : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)) : []);
-                          const p1 = a.promedioSemestre1 || (s1.length > 0 ? a.promedio : '-');
-                          const p2 = a.promedioSemestre2 || '-';
-                          const pf = a.promedio || '-';
+                       
+                        let y = 66;
+                        const x = 14;
+                        const anchoTotal = 182;
 
-                          return [
-                            a.nombre,
-                            s1.join(' · '),
-                            p1,
-                            s2.join(' · '),
-                            p2,
-                            pf
-                          ];
-                        });
+                  
+                        doc.setFillColor(...colorPrimario);
+                        doc.rect(x, y, anchoTotal, 10, 'F');
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(8);
+                        doc.setTextColor(255, 255, 255);
 
-                        doc.autoTable({
-                          startY: 66,
-                          head: [
-                            [
-                              { content: 'Asignatura', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
-                              { content: 'Primer Semestre', colSpan: 2, styles: { halign: 'center' } },
-                              { content: 'Segundo Semestre', colSpan: 2, styles: { halign: 'center' } },
-                              { content: 'Prom. Final', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }
-                            ],
-                            [
-                              'Calificaciones Parciales', 'Prom.',
-                              'Calificaciones Parciales', 'Prom.'
-                            ]
-                          ],
-                          body: cuerpoTabla,
-                          theme: 'grid',
-                          headStyles: {
-                            fillColor: colorPrimario,
-                            textColor: [255, 255, 255],
-                            fontStyle: 'bold',
-                            fontSize: 9
-                          },
-                          bodyStyles: {
-                            textColor: colorTexto,
-                            fontSize: 9
-                          },
-                          columnStyles: {
-                            0: { cellWidth: 45, fontStyle: 'bold' },
-                            1: { cellWidth: 45 },
-                            2: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
-                            3: { cellWidth: 45 },
-                            4: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
-                            5: { cellWidth: 17, halign: 'center', fontStyle: 'bold', fillColor: [248, 243, 245] }
-                          },
-                          margin: { left: 14, right: 14 }
-                        });
+                        doc.text("Asignatura", x + 2, y + 6);
+                        doc.text("Primer Semestre (Parciales / Prom)", x + 50, y + 6);
+                        doc.text("Segundo Semestre (Parciales / Prom)", x + 112, y + 6);
+                        doc.text("Final", x + 168, y + 6);
+                        y += 10;
 
+                        doc.setFont("helvetica", "normal");
+                        doc.setFontSize(8);
+
+                        if (Array.isArray(alumnoSeleccionado.asignaturas)) {
+                          alumnoSeleccionado.asignaturas.forEach((a, index) => {
+                            if (y > 270) {
+                              doc.addPage();
+                              y = 20;
+                            }
+
+                            const s1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1.join(' · ') : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)).join(' · ') : '-');
+                            const p1 = a.promedioSemestre1 || (a.notas?.length > 0 ? a.promedio : '-');
+                            const s2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2.join(' · ') : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)).join(' · ') : '-');
+                            const p2 = a.promedioSemestre2 || '-';
+                            const pf = a.promedio || '-';
+
+                            if (index % 2 === 0) {
+                              doc.setFillColor(252, 249, 250);
+                              doc.rect(x, y, anchoTotal, 8, 'F');
+                            }
+
+                            doc.setDrawColor(226, 215, 219);
+                            doc.rect(x, y, anchoTotal, 8);
+
+                            doc.setTextColor(...colorTexto);
+                            doc.setFont("helvetica", "bold");
+                            doc.text(String(a.nombre || ''), x + 2, y + 5);
+
+                            doc.setFont("helvetica", "normal");
+                            doc.text(String(s1 || '-'), x + 50, y + 5, { maxWidth: 45 });
+                            doc.setFont("helvetica", "bold");
+                            doc.text(String(p1), x + 100, y + 5);
+
+                            doc.setFont("helvetica", "normal");
+                            doc.text(String(s2 || '-'), x + 112, y + 5, { maxWidth: 45 });
+                            doc.setFont("helvetica", "bold");
+                            doc.text(String(p2), x + 160, y + 5);
+
+                            doc.setTextColor(...colorPrimario);
+                            doc.text(String(pf), x + 171, y + 5);
+
+                            y += 8;
+                          });
+                        }
+
+
+                        doc.setFont("helvetica", "normal");
                         doc.setFontSize(8);
                         doc.setTextColor(100, 100, 100);
                         doc.text("Documento oficial emitido por el Portal del Apoderado - Colegio Orden de San Jorge", 14, doc.internal.pageSize.height - 10);
