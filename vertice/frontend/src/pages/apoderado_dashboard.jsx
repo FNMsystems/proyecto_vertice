@@ -741,77 +741,157 @@ function ApoderadoDashboard({ apoderadoRut }) {
             <div className="tab-content">
               {tab === 'notas' && (
                 <div>
-                  <h3>
-                    Notas y Asignaturas
-                  </h3>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
+                    <h3 style={{ margin: 0 }}>
+                      Notas y Asignaturas
+                    </h3>
+
+                    <button
+                      type="button"
+                      className="btn-action"
+                      onClick={() => {
+
+                        const ventanaImpresion = window.open('', '_blank');
+                        ventanaImpresion.document.write(`
+                          <html>
+                            <head>
+                              <title>Concentrado de Notas - ${alumnoSeleccionado.nombreCompleto}</title>
+                              <style>
+                                body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
+                                .header { text-align: center; border-bottom: 2px solid #800020; padding-bottom: 15px; margin-bottom: 25px; }
+                                .header h1 { color: #17365d; font-size: 22px; margin: 5px 0; }
+                                .header h2 { color: #800020; font-size: 16px; margin: 0; }
+                                .info-box { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; }
+                                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
+                                th, td { border: 1px solid #ccc; padding: 10px; text-align: left; font-size: 13px; }
+                                th { background: #17365d; color: white; }
+                                .rojo { color: #d9534f; font-weight: bold; }
+                                .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; pt: 15px; }
+                              </style>
+                            </head>
+                            <body>
+                              <div class="header">
+                                <h2>COLEGIO ORDEN DE SAN JORGE</h2>
+                                <h1>CONCENTRADO DE CALIFICACIONES OFICIAL</h1>
+                              </div>
+                              <div class="info-box">
+                                <div><strong>Estudiante:</strong> ${alumnoSeleccionado.nombreCompleto}</div>
+                                <div><strong>RUT:</strong> ${alumnoSeleccionado.rut}</div>
+                                <div><strong>Curso:</strong> ${alumnoSeleccionado.curso || 'Sin curso'}</div>
+                                <div><strong>Profesor/a Jefe:</strong> ${alumnoSeleccionado.profesorJefe || 'No registrado'}</div>
+                              </div>
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th>Asignatura</th>
+                                    <th>Calificaciones Parciales</th>
+                                    <th>Promedio Final</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  ${alumnoSeleccionado.asignaturas.map(a => `
+                                    <tr>
+                                      <td><strong>${a.nombre}</strong></td>
+                                      <td>${Array.isArray(a.notas) ? a.notas.join(' · ') : 'Sin notas'}</td>
+                                      <td><strong>${a.promedio !== null && a.promedio !== undefined ? a.promedio : '-'}</strong></td>
+                                    </tr>
+                                  `).join('')}
+                                </tbody>
+                              </table>
+                              <div class="footer">
+                                <p>Documento generado desde el Portal del Apoderado - Colegio Orden de San Jorge</p>
+                              </div>
+                            </body>
+                          </html>
+                        `);
+                        ventanaImpresion.document.close();
+                        ventanaImpresion.print();
+                      }}
+                    >
+                      Descargar Concentrado de Notas
+                    </button>
+                  </div>
 
                   {alumnoSeleccionado.asignaturas?.length > 0 ? (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Asignatura</th>
-                          <th>Notas</th>
-                          <th>Promedio</th>
-                        </tr>
-                      </thead>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
+                      {alumnoSeleccionado.asignaturas.map((a) => {
+                        const promedioNum = parseFloat(a.promedio);
+                        const esReprobado = !isNaN(promedioNum) && promedioNum < 4.0;
 
-                      <tbody>
-                        {alumnoSeleccionado.asignaturas.map(
-                          (a) => (
-                            <tr
-                              key={a.asignatura_id}
-                            >
-                              <td>
-                                <button
-                                  type="button"
-                                  className="asignatura-apoderado-btn"
-                                  onClick={() => {
-                                    const docente =
-                                      a.docente_nombre ||
-                                      'Docente no registrado';
+                        return (
+                          <div
+                            key={a.asignatura_id}
+                            style={{
+                              background: '#fff',
+                              border: '1px solid #e2e8f0',
+                              borderRadius: '12px',
+                              padding: '18px 20px',
+                              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '10px'
+                            }}
+                          >
+                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
+                              <button
+                                type="button"
+                                className="asignatura-apoderado-btn"
+                                style={{ fontSize: '16px', fontWeight: '700', color: '#17365d' }}
+                                onClick={() => {
+                                  const docente = a.docente_nombre || 'Docente no registrado';
+                                  const correo = a.docente_correo || 'Correo no registrado';
+                                  alert(`Asignatura: ${a.nombre}\n\nDocente: ${docente}\nCorreo: ${correo}`);
+                                }}
+                              >
+                                {a.nombre} ℹ️
+                              </button>
 
-                                    const correo =
-                                      a.docente_correo ||
-                                      'Correo no registrado';
+                              <div style={{
+                                background: esReprobado ? '#fff5f5' : '#f0fdf4',
+                                color: esReprobado ? '#9b2c2c' : '#166534',
+                                border: `1px solid ${esReprobado ? '#feb2b2' : '#bbf7d0'}`,
+                                padding: '6px 14px',
+                                borderRadius: '20px',
+                                fontSize: '13px',
+                                fontWeight: '700'
+                              }}>
+                                Promedio: {a.promedio !== null && a.promedio !== undefined ? a.promedio : 'Sin evaluar'}
+                              </div>
+                            </div>
 
-                                    alert(
-                                      `Asignatura: ${a.nombre}\n\n` +
-                                      `Docente: ${docente}\n` +
-                                      `Correo: ${correo}`
-                                    );
-                                  }}
-                                >
-                                  {a.nombre}
-                                </button>
-                              </td>
-
-                              <td>
-                                {Array.isArray(a.notas)
-                                  ? a.notas
-                                    .filter(
-                                      (n) =>
-                                        n !== null &&
-                                        n !== undefined
-                                    )
-                                    .join(' · ')
-                                  : '-'}
-                              </td>
-
-                              <td>
-                                {a.promedio !== null &&
-                                  a.promedio !== undefined
-                                  ? a.promedio
-                                  : '-'}
-                              </td>
-                            </tr>
-                          )
-                        )}
-                      </tbody>
-                    </table>
+                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginTop: '5px' }}>
+                              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginRight: '5px' }}>Evaluaciones:</span>
+                              {Array.isArray(a.notas) && a.notas.filter(n => n !== null && n !== undefined).length > 0 ? (
+                                a.notas.filter(n => n !== null && n !== undefined).map((nota, idx) => {
+                                  const notaNum = parseFloat(nota);
+                                  const esRoja = !isNaN(notaNum) && notaNum < 4.0;
+                                  return (
+                                    <span
+                                      key={idx}
+                                      style={{
+                                        background: esRoja ? '#fee2e2' : '#f1f5f9',
+                                        color: esRoja ? '#991b1b' : '#334155',
+                                        border: `1px solid ${esRoja ? '#fca5a5' : '#cbd5e1'}`,
+                                        padding: '4px 10px',
+                                        borderRadius: '6px',
+                                        fontSize: '13px',
+                                        fontWeight: '600'
+                                      }}
+                                    >
+                                      {nota}
+                                    </span>
+                                  );
+                                })
+                              ) : (
+                                <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Sin calificaciones registradas aún</span>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
                   ) : (
-                    <p>
-                      No hay notas registradas.
-                    </p>
+                    <p>No hay notas registradas.</p>
                   )}
                 </div>
               )}
