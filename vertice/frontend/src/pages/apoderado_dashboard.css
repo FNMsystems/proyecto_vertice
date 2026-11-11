@@ -510,6 +510,30 @@ textarea.form-input {
   text-decoration: underline;
 }
 
+.btn-cerrar-sesion {
+  background: #ffffff;
+  color: #800020;
+  border: 1px solid #800020;
+  padding: 8px 18px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.04);
+}
+
+.btn-cerrar-sesion:hover {
+  background: #800020;
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 4px 10px rgba(128, 0, 32, 0.15);
+}
+
+.btn-cerrar-sesion:active {
+  transform: translateY(0);
+}
+
 @media (max-width: 900px) {
   .apoderado-header {
     min-height: 270px;
