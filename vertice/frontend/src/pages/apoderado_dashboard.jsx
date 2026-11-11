@@ -4,6 +4,7 @@ import fondoColegio from "../img/home_fondo.jpeg";
 import "./apoderado_dashboard.css";
 import { fetchConAuth } from "../services/apiService.js";
 import { QRCodeSVG } from "qrcode.react";
+import CambiarPassword from '../components/CambiarPassword.jsx';
 
 function ApoderadoDashboard({ apoderadoRut }) {
   const [apoderado, setApoderado] = useState(null);
@@ -438,6 +439,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
               Portal del Apoderado
             </h1>
 
+            <CambiarPassword />
+            
             <button
               type="button"
               className="btn-cerrar-sesion"
