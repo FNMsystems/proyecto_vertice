@@ -5,6 +5,8 @@ import "./apoderado_dashboard.css";
 import { fetchConAuth } from "../services/apiService.js";
 import { QRCodeSVG } from "qrcode.react";
 import CambiarPassword from '../components/CambiarPassword.jsx';
+import jsPDF from 'jspdf';
+import 'jspdf-autotable';
 
 function ApoderadoDashboard({ apoderadoRut }) {
   const [apoderado, setApoderado] = useState(null);
@@ -750,100 +752,111 @@ function ApoderadoDashboard({ apoderadoRut }) {
                       type="button"
                       className="btn-action"
                       onClick={() => {
-                        const ventanaImpresion = window.open('', '_blank');
-                        ventanaImpresion.document.write(`
-                          <html>
-                            <head>
-                              <title>Concentrado de Notas - ${alumnoSeleccionado.nombreCompleto}</title>
-                              <style>
-                                body { font-family: Arial, sans-serif; padding: 30px; color: #222; }
-                                .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #800020; padding-bottom: 15px; margin-bottom: 25px; }
-                                .logo-colegio { width: 75px; height: 75px; object-fit: contain; }
-                                .header-text { text-align: right; }
-                                .header-text h2 { color: #800020; font-size: 15px; margin: 0; }
-                                .header-text h1 { color: #111; font-size: 20px; margin: 5px 0; }
-                                .info-container { background: #fdf8f9; border: 1px solid #e2d7db; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; }
-                                .info-container div span { color: #777078; }
-                                table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
-                                th, td { border: 1px solid #c8b9be; padding: 8px 10px; text-align: left; font-size: 12px; }
-                                th { background: #800020; color: white; font-weight: 700; text-align: center; }
-                                td.asignatura { font-weight: bold; color: #33272c; }
-                                td.centro { text-align: center; }
-                                .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #777; border-top: 1px solid #e2d7db; padding-top: 15px; }
-                                @media print {
-                                  body { padding: 10px; }
-                                  .no-print { display: none; }
-                                }
-                              </style>
-                            </head>
-                            <body>
-                              <div class="top-bar">
-                                <img src="${logoColegio}" class="logo-colegio" alt="Logo Colegio" />
-                                <div class="header-text">
-                                  <h2>COLEGIO ORDEN DE SAN JORGE</h2>
-                                  <h1>CONCENTRADO DE CALIFICACIONES OFICIAL</h1>
-                                </div>
-                              </div>
+                        const doc = new jsPDF('portrait', 'mm', 'a4');
 
-                              <div class="info-container">
-                                <div><span>Estudiante:</span> <strong>${alumnoSeleccionado.nombreCompleto}</strong></div>
-                                <div><span>RUT:</span> <strong>${alumnoSeleccionado.rut}</strong></div>
-                                <div><span>Curso:</span> <strong>${alumnoSeleccionado.curso || 'Sin curso'}</strong></div>
-                                <div><span>Profesor/a Jefe:</span> <strong>${alumnoSeleccionado.profesorJefe || 'No registrado'}</strong></div>
-                              </div>
+                        const colorPrimario = [128, 0, 32]; 
+                        const colorTexto = [51, 39, 44];
+                        const colorGrisClaro = [248, 243, 245];
 
-                              <table>
-                                <thead>
-                                  <tr>
-                                    <th rowspan="2" style="vertical-align: middle; width: 30%;">Asignatura</th>
-                                    <th colspan="2">Primer Semestre</th>
-                                    <th colspan="2">Segundo Semestre</th>
-                                    <th rowspan="2" style="vertical-align: middle; width: 10%;">Promedio Final</th>
-                                  </tr>
-                                  <tr>
-                                    <th>Calificaciones Parciales</th>
-                                    <th style="width: 8%;">Prom.</th>
-                                    <th>Calificaciones Parciales</th>
-                                    <th style="width: 8%;">Prom.</th>
-                                  </tr>
-                                </thead>
-                                <tbody>
-                                  ${alumnoSeleccionado.asignaturas.map(a => {
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(14);
+                        doc.setTextColor(...colorPrimario);
+                        doc.text("COLEGIO ORDEN DE SAN JORGE", 14, 20);
+
+                        doc.setFontSize(11);
+                        doc.setTextColor(...colorTexto);
+                        doc.text("CONCENTRADO DE CALIFICACIONES OFICIAL", 14, 27);
+
+                        doc.setDrawColor(...colorPrimario);
+                        doc.setLineWidth(0.8);
+                        doc.line(14, 32, 196, 32);
+
+                        doc.setFillColor(...colorGrisClaro);
+                        doc.roundedRect(14, 38, 182, 22, 2, 2, 'F');
+
+                        doc.setFontSize(10);
+                        doc.setFont("helvetica", "bold");
+                        doc.text(`Estudiante:`, 18, 46);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(`${alumnoSeleccionado.nombreCompleto}`, 42, 46);
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text(`RUT:`, 125, 46);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(`${alumnoSeleccionado.rut}`, 135, 46);
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text(`Curso:`, 18, 54);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(`${alumnoSeleccionado.curso || 'Sin curso'}`, 32, 54);
+
+                        doc.setFont("helvetica", "bold");
+                        doc.text(`Profesor/a Jefe:`, 125, 54);
+                        doc.setFont("helvetica", "normal");
+                        doc.text(`${alumnoSeleccionado.profesorJefe || 'No registrado'}`, 152, 54);
+
+                        const cuerpoTabla = alumnoSeleccionado.asignaturas.map((a) => {
                           const s1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1 : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)) : []);
                           const s2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2 : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)) : []);
                           const p1 = a.promedioSemestre1 || (s1.length > 0 ? a.promedio : '-');
                           const p2 = a.promedioSemestre2 || '-';
                           const pf = a.promedio || '-';
-                          return `
-                                      <tr>
-                                        <td class="asignatura">${a.nombre}</td>
-                                        <td>${s1.join(' · ')}</td>
-                                        <td class="centro"><strong>${p1}</strong></td>
-                                        <td>${s2.join(' · ')}</td>
-                                        <td class="centro"><strong>${p2}</strong></td>
-                                        <td class="centro" style="background: #f8f3f5;"><strong>${pf}</strong></td>
-                                      </tr>
-                                    `;
-                        }).join('')}
-                                </tbody>
-                              </table>
 
-                              <div class="no-print" style="text-align: center; margin-top: 30px;">
-                                <button onclick="window.print()" style="background: #800020; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
-                                  Descargar 
-                                </button>
-                              </div>
+                          return [
+                            a.nombre,
+                            s1.join(' · '),
+                            p1,
+                            s2.join(' · '),
+                            p2,
+                            pf
+                          ];
+                        });
 
-                              <div class="footer">
-                                <p>Documento oficial emitido por el Portal del Apoderado - Colegio Orden de San Jorge</p>
-                              </div>
-                            </body>
-                          </html>
-                        `);
-                        ventanaImpresion.document.close();
+                        doc.autoTable({
+                          startY: 66,
+                          head: [
+                            [
+                              { content: 'Asignatura', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } },
+                              { content: 'Primer Semestre', colSpan: 2, styles: { halign: 'center' } },
+                              { content: 'Segundo Semestre', colSpan: 2, styles: { halign: 'center' } },
+                              { content: 'Prom. Final', rowSpan: 2, styles: { halign: 'center', valign: 'middle' } }
+                            ],
+                            [
+                              'Calificaciones Parciales', 'Prom.',
+                              'Calificaciones Parciales', 'Prom.'
+                            ]
+                          ],
+                          body: cuerpoTabla,
+                          theme: 'grid',
+                          headStyles: {
+                            fillColor: colorPrimario,
+                            textColor: [255, 255, 255],
+                            fontStyle: 'bold',
+                            fontSize: 9
+                          },
+                          bodyStyles: {
+                            textColor: colorTexto,
+                            fontSize: 9
+                          },
+                          columnStyles: {
+                            0: { cellWidth: 45, fontStyle: 'bold' },
+                            1: { cellWidth: 45 },
+                            2: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+                            3: { cellWidth: 45 },
+                            4: { cellWidth: 15, halign: 'center', fontStyle: 'bold' },
+                            5: { cellWidth: 17, halign: 'center', fontStyle: 'bold', fillColor: [248, 243, 245] }
+                          },
+                          margin: { left: 14, right: 14 }
+                        });
+
+                        doc.setFontSize(8);
+                        doc.setTextColor(100, 100, 100);
+                        doc.text("Documento oficial emitido por el Portal del Apoderado - Colegio Orden de San Jorge", 14, doc.internal.pageSize.height - 10);
+
+                        doc.save(`Concentrado_Notas_${alumnoSeleccionado.nombreCompleto.replace(/\s+/g, '_')}.pdf`);
                       }}
                     >
-                     Descargar Concentrado de Notas
+                      Descargar Concentrado Notas
                     </button>
                   </div>
 
@@ -853,8 +866,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         <thead>
                           <tr>
                             <th rowSpan="2" style={{ verticalAlign: 'middle', background: '#800020', color: '#fff' }}>Asignatura</th>
-                            <th colSpan="2" style={{ textAlign: 'center', background: '#71001F', color: '#fff' }}>Primer Semestre</th>
-                            <th colSpan="2" style={{ textAlign: 'center', background: '#71001F', color: '#fff' }}>Segundo Semestre</th>
+                            <th colSpan="2" style={{ textAlign: 'center', background: '#800020', color: '#fff' }}>Primer Semestre</th>
+                            <th colSpan="2" style={{ textAlign: 'center', background: '#800020', color: '#fff' }}>Segundo Semestre</th>
                             <th rowSpan="2" style={{ verticalAlign: 'middle', textAlign: 'center', background: '#800020', color: '#fff' }}>Promedio Final</th>
                           </tr>
                           <tr>
@@ -907,7 +920,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                                   </div>
                                 </td>
                                 <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#800020' }}>{p2}</td>
-                                <td style={{ textAlign: 'center', fontWeight: 'bold', background: '#fdf8f9', color: '#800020' }}>{pf}</td>
+                                <td style={{ textAlign: 'center', fontWeight: 'bold', background: '#f8f3f5', color: '#800020' }}>{pf}</td>
                               </tr>
                             );
                           })}
