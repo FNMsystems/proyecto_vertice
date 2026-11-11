@@ -764,7 +764,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                           console.warn("No se pudo cargar el logo en el PDF", e);
                         }
 
-                       
+
                         doc.setFont("helvetica", "bold");
                         doc.setFontSize(13);
                         doc.setTextColor(...colorPrimario);
@@ -803,7 +803,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         doc.setFont("helvetica", "normal");
                         doc.text(`${alumnoSeleccionado.profesorJefe || 'No registrado'}`, 152, 54);
 
-                        
+
                         let y = 66;
                         const x = 14;
                         const anchoTotal = 182;
@@ -973,7 +973,10 @@ function ApoderadoDashboard({ apoderadoRut }) {
                           (a) => (
                             <tr key={a.id}>
                               <td>
-                                {a.fecha || '-'}
+                                {a.fecha ? (() => {
+                                  const [anio, mes, dia] = a.fecha.split('T')[0].split('-');
+                                  return anio && mes && dia ? `${dia}/${mes}/${anio}` : a.fecha;
+                                })() : '-'}
                               </td>
 
                               <td>
@@ -1041,7 +1044,10 @@ function ApoderadoDashboard({ apoderadoRut }) {
                           (a, i) => (
                             <tr key={i}>
                               <td>
-                                {a.fecha || '-'}
+                                {a.fecha ? (() => {
+                                  const [anio, mes, dia] = a.fecha.split('T')[0].split('-');
+                                  return anio && mes && dia ? `${dia}/${mes}/${anio}` : a.fecha;
+                                })() : '-'}
                               </td>
 
                               <td>
