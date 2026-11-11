@@ -742,8 +742,8 @@ function ApoderadoDashboard({ apoderadoRut }) {
               {tab === 'notas' && (
                 <div>
                   <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px', flexWrap: 'wrap', gap: '15px' }}>
-                    <h3 style={{ margin: 0 }}>
-                      Notas y Asignaturas
+                    <h3 style={{ margin: 0, color: '#800020' }}>
+                      Notas y Asignaturas (I y II Semestre)
                     </h3>
 
                     <button
@@ -754,30 +754,35 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         ventanaImpresion.document.write(`
                           <html>
                             <head>
-                              <title>Concentrado de Notas Oficial - ${alumnoSeleccionado.nombreCompleto}</title>
+                              <title>Concentrado de Notas - ${alumnoSeleccionado.nombreCompleto}</title>
                               <style>
-                                body { font-family: Arial, sans-serif; padding: 40px; color: #222; }
-                                .header { text-align: center; border-bottom: 3px solid #800020; padding-bottom: 20px; margin-bottom: 30px; }
-                                .header h2 { color: #17365d; font-size: 18px; margin: 0; letter-spacing: 1px; }
-                                .header h1 { color: #800020; font-size: 24px; margin: 8px 0; }
-                                .info-container { background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
-                                .info-container div span { color: #64748b; }
-                                h3.seccion-titulo { color: #17365d; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 30px; font-size: 16px; }
+                                body { font-family: Arial, sans-serif; padding: 30px; color: #222; }
+                                .top-bar { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #800020; padding-bottom: 15px; margin-bottom: 25px; }
+                                .logo-colegio { width: 75px; height: 75px; object-fit: contain; }
+                                .header-text { text-align: right; }
+                                .header-text h2 { color: #800020; font-size: 15px; margin: 0; }
+                                .header-text h1 { color: #111; font-size: 20px; margin: 5px 0; }
+                                .info-container { background: #fdf8f9; border: 1px solid #e2d7db; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 13px; }
+                                .info-container div span { color: #777078; }
                                 table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
-                                th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 13px; }
-                                th { background: #17365d; color: white; font-weight: 700; }
-                                .rojo { color: #991b1b; font-weight: bold; }
-                                .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+                                th, td { border: 1px solid #c8b9be; padding: 8px 10px; text-align: left; font-size: 12px; }
+                                th { background: #800020; color: white; font-weight: 700; text-align: center; }
+                                td.asignatura { font-weight: bold; color: #33272c; }
+                                td.centro { text-align: center; }
+                                .footer { margin-top: 40px; text-align: center; font-size: 11px; color: #777; border-top: 1px solid #e2d7db; padding-top: 15px; }
                                 @media print {
-                                  body { padding: 20px; }
-                                  button { display: none; }
+                                  body { padding: 10px; }
+                                  .no-print { display: none; }
                                 }
                               </style>
                             </head>
                             <body>
-                              <div class="header">
-                                <h2>COLEGIO ORDEN DE SAN JORGE</h2>
-                                <h1>CONCENTRADO DE CALIFICACIONES OFICIAL</h1>
+                              <div class="top-bar">
+                                <img src="${logoColegio}" class="logo-colegio" alt="Logo Colegio" />
+                                <div class="header-text">
+                                  <h2>COLEGIO ORDEN DE SAN JORGE</h2>
+                                  <h1>CONCENTRADO DE CALIFICACIONES OFICIAL</h1>
+                                </div>
                               </div>
 
                               <div class="info-container">
@@ -787,51 +792,45 @@ function ApoderadoDashboard({ apoderadoRut }) {
                                 <div><span>Profesor/a Jefe:</span> <strong>${alumnoSeleccionado.profesorJefe || 'No registrado'}</strong></div>
                               </div>
 
-                              <!-- PRIMER SEMESTRE -->
-                              <h3 class="seccion-titulo">I Semestre</h3>
                               <table>
                                 <thead>
                                   <tr>
-                                    <th style="width: 35%;">Asignatura</th>
-                                    <th>Calificaciones Parciales</th>
-                                    <th style="width: 15%; text-align: center;">Promedio</th>
+                                    <th rowspan="2" style="vertical-align: middle; width: 30%;">Asignatura</th>
+                                    <th colspan="2">Primer Semestre</th>
+                                    <th colspan="2">Segundo Semestre</th>
+                                    <th rowspan="2" style="vertical-align: middle; width: 10%;">Promedio Final</th>
                                   </tr>
-                                </thead>
-                                <tbody>
-                                  ${alumnoSeleccionado.asignaturas.map(a => `
-                                    <tr>
-                                      <td><strong>${a.nombre}</strong></td>
-                                      <td>${Array.isArray(a.notasSemestre1) && a.notasSemestre1.length > 0 ? a.notasSemestre1.join(' · ') : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)).join(' · ') : 'Sin notas')}</td>
-                                      <td style="text-align: center;"><strong>${a.promedioSemestre1 || a.promedio || '-'}</strong></td>
-                                    </tr>
-                                  `).join('')}
-                                </tbody>
-                              </table>
-
-                              <!-- SEGUNDO SEMESTRE -->
-                              <h3 class="seccion-titulo">II Semestre</h3>
-                              <table>
-                                <thead>
                                   <tr>
-                                    <th style="width: 35%;">Asignatura</th>
                                     <th>Calificaciones Parciales</th>
-                                    <th style="width: 15%; text-align: center;">Promedio</th>
+                                    <th style="width: 8%;">Prom.</th>
+                                    <th>Calificaciones Parciales</th>
+                                    <th style="width: 8%;">Prom.</th>
                                   </tr>
                                 </thead>
                                 <tbody>
-                                  ${alumnoSeleccionado.asignaturas.map(a => `
-                                    <tr>
-                                      <td><strong>${a.nombre}</strong></td>
-                                      <td>${Array.isArray(a.notasSemestre2) && a.notasSemestre2.length > 0 ? a.notasSemestre2.join(' · ') : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)).join(' · ') : 'Sin notas')}</td>
-                                      <td style="text-align: center;"><strong>${a.promedioSemestre2 || '-'}</strong></td>
-                                    </tr>
-                                  `).join('')}
+                                  ${alumnoSeleccionado.asignaturas.map(a => {
+                          const s1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1 : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)) : []);
+                          const s2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2 : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)) : []);
+                          const p1 = a.promedioSemestre1 || (s1.length > 0 ? a.promedio : '-');
+                          const p2 = a.promedioSemestre2 || '-';
+                          const pf = a.promedio || '-';
+                          return `
+                                      <tr>
+                                        <td class="asignatura">${a.nombre}</td>
+                                        <td>${s1.join(' · ')}</td>
+                                        <td class="centro"><strong>${p1}</strong></td>
+                                        <td>${s2.join(' · ')}</td>
+                                        <td class="centro"><strong>${p2}</strong></td>
+                                        <td class="centro" style="background: #f8f3f5;"><strong>${pf}</strong></td>
+                                      </tr>
+                                    `;
+                        }).join('')}
                                 </tbody>
                               </table>
 
-                              <div style="text-align: center; margin-top: 30px;">
+                              <div class="no-print" style="text-align: center; margin-top: 30px;">
                                 <button onclick="window.print()" style="background: #800020; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
-                                  Guardar como PDF
+                                  Descargar 
                                 </button>
                               </div>
 
@@ -844,86 +843,83 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         ventanaImpresion.document.close();
                       }}
                     >
-                      Concentrado de Notas
+                     Descargar Concentrado de Notas
                     </button>
                   </div>
 
                   {alumnoSeleccionado.asignaturas?.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
-
-                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                        <h4 style={{ color: '#17365d', margin: '0 0 15px 0', fontSize: '18px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
-                          Primer Semestre
-                        </h4>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                    <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', overflowX: 'auto' }}>
+                      <table className="data-table">
+                        <thead>
+                          <tr>
+                            <th rowSpan="2" style={{ verticalAlign: 'middle', background: '#800020', color: '#fff' }}>Asignatura</th>
+                            <th colSpan="2" style={{ textAlign: 'center', background: '#71001F', color: '#fff' }}>Primer Semestre</th>
+                            <th colSpan="2" style={{ textAlign: 'center', background: '#71001F', color: '#fff' }}>Segundo Semestre</th>
+                            <th rowSpan="2" style={{ verticalAlign: 'middle', textAlign: 'center', background: '#800020', color: '#fff' }}>Promedio Final</th>
+                          </tr>
+                          <tr>
+                            <th style={{ background: '#f8f3f5', color: '#800020' }}>Notas Parciales</th>
+                            <th style={{ background: '#f8f3f5', color: '#800020', textAlign: 'center' }}>Prom.</th>
+                            <th style={{ background: '#f8f3f5', color: '#800020' }}>Notas Parciales</th>
+                            <th style={{ background: '#f8f3f5', color: '#800020', textAlign: 'center' }}>Prom.</th>
+                          </tr>
+                        </thead>
+                        <tbody>
                           {alumnoSeleccionado.asignaturas.map((a) => {
-                            
-                            const notasS1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1 : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)) : []);
-                            const promS1 = a.promedioSemestre1 || (notasS1.length > 0 ? a.promedio : '-');
-                            const promNum = parseFloat(promS1);
-                            const esReprobado = !isNaN(promNum) && promNum < 4.0;
+                            const s1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1 : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)) : []);
+                            const s2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2 : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)) : []);
+                            const p1 = a.promedioSemestre1 || (s1.length > 0 ? a.promedio : '-');
+                            const p2 = a.promedioSemestre2 || '-';
+                            const pf = a.promedio || '-';
 
                             return (
-                              <div key={a.asignatura_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf2f7', flexWrap: 'wrap', gap: '10px' }}>
-                                <div>
-                                  <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '15px', display: 'block', marginBottom: '4px' }}>{a.nombre}</span>
-                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    {notasS1.length > 0 ? notasS1.map((n, i) => (
-                                      <span key={i} style={{ background: parseFloat(n) < 4 ? '#fee2e2' : '#ffffff', color: parseFloat(n) < 4 ? '#991b1b' : '#334155', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
+                              <tr key={a.asignatura_id}>
+                                <td>
+                                  <button
+                                    type="button"
+                                    className="asignatura-apoderado-btn"
+                                    onClick={() => {
+                                      const docente = a.docente_nombre || 'Docente no registrado';
+                                      const correo = a.docente_correo || 'Correo no registrado';
+                                      alert(`Asignatura: ${a.nombre}\n\nDocente: ${docente}\nCorreo: ${correo}`);
+                                    }}
+                                  >
+                                    {a.nombre} ℹ️
+                                  </button>
+                                </td>
+                                <td>
+                                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                                    {s1.length > 0 ? s1.map((n, i) => (
+                                      <span key={i} style={{ background: parseFloat(n) < 4 ? '#fee2e2' : '#fff', color: parseFloat(n) < 4 ? '#991b1b' : '#33272c', border: '1px solid #e2d7db', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: '600' }}>
                                         {n}
                                       </span>
-                                    )) : <span style={{ fontSize: '12px', color: '#94a3b8' }}>Sin notas</span>}
+                                    )) : <span style={{ fontSize: '12px', color: '#958a8f' }}>-</span>}
                                   </div>
-                                </div>
-                                <div style={{ background: esReprobado ? '#fff5f5' : '#f0fdf4', color: esReprobado ? '#9b2c2c' : '#166534', border: `1px solid ${esReprobado ? '#feb2b2' : '#bbf7d0'}`, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
-                                  Prom: {promS1}
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-
-                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
-                        <h4 style={{ color: '#17365d', margin: '0 0 15px 0', fontSize: '18px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
-                          Segundo Semestre
-                        </h4>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                          {alumnoSeleccionado.asignaturas.map((a) => {
-                            const notasS2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2 : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)) : []);
-                            const promS2 = a.promedioSemestre2 || '-';
-                            const promNum = parseFloat(promS2);
-                            const esReprobado = !isNaN(promNum) && promNum < 4.0;
-
-                            return (
-                              <div key={a.asignatura_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf2f7', flexWrap: 'wrap', gap: '10px' }}>
-                                <div>
-                                  <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '15px', display: 'block', marginBottom: '4px' }}>{a.nombre}</span>
-                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
-                                    {notasS2.length > 0 ? notasS2.map((n, i) => (
-                                      <span key={i} style={{ background: parseFloat(n) < 4 ? '#fee2e2' : '#ffffff', color: parseFloat(n) < 4 ? '#991b1b' : '#334155', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
+                                </td>
+                                <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#800020' }}>{p1}</td>
+                                <td>
+                                  <div style={{ display: 'flex', gap: '5px', flexWrap: 'wrap' }}>
+                                    {s2.length > 0 ? s2.map((n, i) => (
+                                      <span key={i} style={{ background: parseFloat(n) < 4 ? '#fee2e2' : '#fff', color: parseFloat(n) < 4 ? '#991b1b' : '#33272c', border: '1px solid #e2d7db', padding: '1px 6px', borderRadius: '4px', fontSize: '11px', fontWeight: '600' }}>
                                         {n}
                                       </span>
-                                    )) : <span style={{ fontSize: '12px', color: '#94a3b8' }}>Sin notas en este período</span>}
+                                    )) : <span style={{ fontSize: '12px', color: '#958a8f' }}>-</span>}
                                   </div>
-                                </div>
-                                <div style={{ background: promS2 === '-' ? '#f1f5f9' : (esReprobado ? '#fff5f5' : '#f0fdf4'), color: promS2 === '-' ? '#64748b' : (esReprobado ? '#9b2c2c' : '#166534'), border: `1px solid ${promS2 === '-' ? '#cbd5e1' : (esReprobado ? '#feb2b2' : '#bbf7d0')}`, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
-                                  Prom: {promS2}
-                                </div>
-                              </div>
+                                </td>
+                                <td style={{ textAlign: 'center', fontWeight: 'bold', color: '#800020' }}>{p2}</td>
+                                <td style={{ textAlign: 'center', fontWeight: 'bold', background: '#fdf8f9', color: '#800020' }}>{pf}</td>
+                              </tr>
                             );
                           })}
-                        </div>
-                      </div>
-
+                        </tbody>
+                      </table>
                     </div>
                   ) : (
                     <p>No hay notas registradas.</p>
                   )}
                 </div>
               )}
+
               {tab === 'anotaciones' && (
                 <div>
                   <h3>
