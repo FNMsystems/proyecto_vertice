@@ -758,20 +758,27 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         const colorTexto = [51, 39, 44];
                         const colorGrisClaro = [248, 243, 245];
 
-                        doc.setFont("helvetica", "bold");
-                        doc.setFontSize(14);
-                        doc.setTextColor(...colorPrimario);
-                        doc.text("COLEGIO ORDEN DE SAN JORGE", 14, 20);
+                        try {
+                          doc.addImage(logoColegio, 'PNG', 14, 12, 16, 16);
+                        } catch (e) {
+                          console.warn("No se pudo cargar el logo en el PDF", e);
+                        }
 
-                        doc.setFontSize(11);
+                       
+                        doc.setFont("helvetica", "bold");
+                        doc.setFontSize(13);
+                        doc.setTextColor(...colorPrimario);
+                        doc.text("COLEGIO ORDEN DE SAN JORGE", 35, 18);
+
+                        doc.setFontSize(10);
+                        doc.setFont("helvetica", "normal");
                         doc.setTextColor(...colorTexto);
-                        doc.text("CONCENTRADO DE CALIFICACIONES OFICIAL", 14, 27);
+                        doc.text("CONCENTRADO DE CALIFICACIONES OFICIAL", 35, 24);
 
                         doc.setDrawColor(...colorPrimario);
                         doc.setLineWidth(0.8);
                         doc.line(14, 32, 196, 32);
 
-                       
                         doc.setFillColor(...colorGrisClaro);
                         doc.roundedRect(14, 38, 182, 22, 2, 2, 'F');
 
@@ -796,12 +803,11 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         doc.setFont("helvetica", "normal");
                         doc.text(`${alumnoSeleccionado.profesorJefe || 'No registrado'}`, 152, 54);
 
-                       
+                        
                         let y = 66;
                         const x = 14;
                         const anchoTotal = 182;
 
-                  
                         doc.setFillColor(...colorPrimario);
                         doc.rect(x, y, anchoTotal, 10, 'F');
                         doc.setFont("helvetica", "bold");
@@ -858,7 +864,6 @@ function ApoderadoDashboard({ apoderadoRut }) {
                             y += 8;
                           });
                         }
-
 
                         doc.setFont("helvetica", "normal");
                         doc.setFontSize(8);
