@@ -750,23 +750,28 @@ function ApoderadoDashboard({ apoderadoRut }) {
                       type="button"
                       className="btn-action"
                       onClick={() => {
-
                         const ventanaImpresion = window.open('', '_blank');
                         ventanaImpresion.document.write(`
                           <html>
                             <head>
-                              <title>Concentrado de Notas - ${alumnoSeleccionado.nombreCompleto}</title>
+                              <title>Concentrado de Notas Oficial - ${alumnoSeleccionado.nombreCompleto}</title>
                               <style>
-                                body { font-family: Arial, sans-serif; padding: 30px; color: #333; }
-                                .header { text-align: center; border-bottom: 2px solid #800020; padding-bottom: 15px; margin-bottom: 25px; }
-                                .header h1 { color: #17365d; font-size: 22px; margin: 5px 0; }
-                                .header h2 { color: #800020; font-size: 16px; margin: 0; }
-                                .info-box { background: #f9f9f9; border: 1px solid #ddd; padding: 15px; border-radius: 8px; margin-bottom: 25px; display: grid; grid-template-columns: 1fr 1fr; gap: 10px; font-size: 14px; }
-                                table { width: 100%; border-collapse: collapse; margin-top: 10px; }
-                                th, td { border: 1px solid #ccc; padding: 10px; text-align: left; font-size: 13px; }
-                                th { background: #17365d; color: white; }
-                                .rojo { color: #d9534f; font-weight: bold; }
-                                .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #777; border-top: 1px solid #eee; pt: 15px; }
+                                body { font-family: Arial, sans-serif; padding: 40px; color: #222; }
+                                .header { text-align: center; border-bottom: 3px solid #800020; padding-bottom: 20px; margin-bottom: 30px; }
+                                .header h2 { color: #17365d; font-size: 18px; margin: 0; letter-spacing: 1px; }
+                                .header h1 { color: #800020; font-size: 24px; margin: 8px 0; }
+                                .info-container { background: #f8fafc; border: 1px solid #cbd5e1; padding: 20px; border-radius: 8px; margin-bottom: 30px; display: grid; grid-template-columns: 1fr 1fr; gap: 12px; font-size: 14px; }
+                                .info-container div span { color: #64748b; }
+                                h3.seccion-titulo { color: #17365d; border-bottom: 2px solid #e2e8f0; padding-bottom: 6px; margin-top: 30px; font-size: 16px; }
+                                table { width: 100%; border-collapse: collapse; margin-top: 10px; margin-bottom: 20px; }
+                                th, td { border: 1px solid #cbd5e1; padding: 10px 12px; text-align: left; font-size: 13px; }
+                                th { background: #17365d; color: white; font-weight: 700; }
+                                .rojo { color: #991b1b; font-weight: bold; }
+                                .footer { margin-top: 50px; text-align: center; font-size: 11px; color: #64748b; border-top: 1px solid #e2e8f0; padding-top: 20px; }
+                                @media print {
+                                  body { padding: 20px; }
+                                  button { display: none; }
+                                }
                               </style>
                             </head>
                             <body>
@@ -774,128 +779,151 @@ function ApoderadoDashboard({ apoderadoRut }) {
                                 <h2>COLEGIO ORDEN DE SAN JORGE</h2>
                                 <h1>CONCENTRADO DE CALIFICACIONES OFICIAL</h1>
                               </div>
-                              <div class="info-box">
-                                <div><strong>Estudiante:</strong> ${alumnoSeleccionado.nombreCompleto}</div>
-                                <div><strong>RUT:</strong> ${alumnoSeleccionado.rut}</div>
-                                <div><strong>Curso:</strong> ${alumnoSeleccionado.curso || 'Sin curso'}</div>
-                                <div><strong>Profesor/a Jefe:</strong> ${alumnoSeleccionado.profesorJefe || 'No registrado'}</div>
+
+                              <div class="info-container">
+                                <div><span>Estudiante:</span> <strong>${alumnoSeleccionado.nombreCompleto}</strong></div>
+                                <div><span>RUT:</span> <strong>${alumnoSeleccionado.rut}</strong></div>
+                                <div><span>Curso:</span> <strong>${alumnoSeleccionado.curso || 'Sin curso'}</strong></div>
+                                <div><span>Profesor/a Jefe:</span> <strong>${alumnoSeleccionado.profesorJefe || 'No registrado'}</strong></div>
                               </div>
+
+                              <!-- PRIMER SEMESTRE -->
+                              <h3 class="seccion-titulo">I Semestre</h3>
                               <table>
                                 <thead>
                                   <tr>
-                                    <th>Asignatura</th>
+                                    <th style="width: 35%;">Asignatura</th>
                                     <th>Calificaciones Parciales</th>
-                                    <th>Promedio Final</th>
+                                    <th style="width: 15%; text-align: center;">Promedio</th>
                                   </tr>
                                 </thead>
                                 <tbody>
                                   ${alumnoSeleccionado.asignaturas.map(a => `
                                     <tr>
                                       <td><strong>${a.nombre}</strong></td>
-                                      <td>${Array.isArray(a.notas) ? a.notas.join(' · ') : 'Sin notas'}</td>
-                                      <td><strong>${a.promedio !== null && a.promedio !== undefined ? a.promedio : '-'}</strong></td>
+                                      <td>${Array.isArray(a.notasSemestre1) && a.notasSemestre1.length > 0 ? a.notasSemestre1.join(' · ') : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)).join(' · ') : 'Sin notas')}</td>
+                                      <td style="text-align: center;"><strong>${a.promedioSemestre1 || a.promedio || '-'}</strong></td>
                                     </tr>
                                   `).join('')}
                                 </tbody>
                               </table>
+
+                              <!-- SEGUNDO SEMESTRE -->
+                              <h3 class="seccion-titulo">II Semestre</h3>
+                              <table>
+                                <thead>
+                                  <tr>
+                                    <th style="width: 35%;">Asignatura</th>
+                                    <th>Calificaciones Parciales</th>
+                                    <th style="width: 15%; text-align: center;">Promedio</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  ${alumnoSeleccionado.asignaturas.map(a => `
+                                    <tr>
+                                      <td><strong>${a.nombre}</strong></td>
+                                      <td>${Array.isArray(a.notasSemestre2) && a.notasSemestre2.length > 0 ? a.notasSemestre2.join(' · ') : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)).join(' · ') : 'Sin notas')}</td>
+                                      <td style="text-align: center;"><strong>${a.promedioSemestre2 || '-'}</strong></td>
+                                    </tr>
+                                  `).join('')}
+                                </tbody>
+                              </table>
+
+                              <div style="text-align: center; margin-top: 30px;">
+                                <button onclick="window.print()" style="background: #800020; color: white; border: none; padding: 12px 25px; border-radius: 6px; font-size: 14px; font-weight: bold; cursor: pointer;">
+                                  Guardar como PDF
+                                </button>
+                              </div>
+
                               <div class="footer">
-                                <p>Documento generado desde el Portal del Apoderado - Colegio Orden de San Jorge</p>
+                                <p>Documento oficial emitido por el Portal del Apoderado - Colegio Orden de San Jorge</p>
                               </div>
                             </body>
                           </html>
                         `);
                         ventanaImpresion.document.close();
-                        ventanaImpresion.print();
                       }}
                     >
-                      Descargar Concentrado de Notas
+                      Concentrado de Notas
                     </button>
                   </div>
 
                   {alumnoSeleccionado.asignaturas?.length > 0 ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px' }}>
-                      {alumnoSeleccionado.asignaturas.map((a) => {
-                        const promedioNum = parseFloat(a.promedio);
-                        const esReprobado = !isNaN(promedioNum) && promedioNum < 4.0;
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
 
-                        return (
-                          <div
-                            key={a.asignatura_id}
-                            style={{
-                              background: '#fff',
-                              border: '1px solid #e2e8f0',
-                              borderRadius: '12px',
-                              padding: '18px 20px',
-                              boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: '10px'
-                            }}
-                          >
-                            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px' }}>
-                              <button
-                                type="button"
-                                className="asignatura-apoderado-btn"
-                                style={{ fontSize: '16px', fontWeight: '700', color: '#17365d' }}
-                                onClick={() => {
-                                  const docente = a.docente_nombre || 'Docente no registrado';
-                                  const correo = a.docente_correo || 'Correo no registrado';
-                                  alert(`Asignatura: ${a.nombre}\n\nDocente: ${docente}\nCorreo: ${correo}`);
-                                }}
-                              >
-                                {a.nombre} ℹ️
-                              </button>
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <h4 style={{ color: '#17365d', margin: '0 0 15px 0', fontSize: '18px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
+                          Primer Semestre
+                        </h4>
 
-                              <div style={{
-                                background: esReprobado ? '#fff5f5' : '#f0fdf4',
-                                color: esReprobado ? '#9b2c2c' : '#166534',
-                                border: `1px solid ${esReprobado ? '#feb2b2' : '#bbf7d0'}`,
-                                padding: '6px 14px',
-                                borderRadius: '20px',
-                                fontSize: '13px',
-                                fontWeight: '700'
-                              }}>
-                                Promedio: {a.promedio !== null && a.promedio !== undefined ? a.promedio : 'Sin evaluar'}
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {alumnoSeleccionado.asignaturas.map((a) => {
+                            
+                            const notasS1 = Array.isArray(a.notasSemestre1) ? a.notasSemestre1 : (Array.isArray(a.notas) ? a.notas.slice(0, Math.ceil(a.notas.length / 2)) : []);
+                            const promS1 = a.promedioSemestre1 || (notasS1.length > 0 ? a.promedio : '-');
+                            const promNum = parseFloat(promS1);
+                            const esReprobado = !isNaN(promNum) && promNum < 4.0;
+
+                            return (
+                              <div key={a.asignatura_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf2f7', flexWrap: 'wrap', gap: '10px' }}>
+                                <div>
+                                  <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '15px', display: 'block', marginBottom: '4px' }}>{a.nombre}</span>
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {notasS1.length > 0 ? notasS1.map((n, i) => (
+                                      <span key={i} style={{ background: parseFloat(n) < 4 ? '#fee2e2' : '#ffffff', color: parseFloat(n) < 4 ? '#991b1b' : '#334155', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
+                                        {n}
+                                      </span>
+                                    )) : <span style={{ fontSize: '12px', color: '#94a3b8' }}>Sin notas</span>}
+                                  </div>
+                                </div>
+                                <div style={{ background: esReprobado ? '#fff5f5' : '#f0fdf4', color: esReprobado ? '#9b2c2c' : '#166534', border: `1px solid ${esReprobado ? '#feb2b2' : '#bbf7d0'}`, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
+                                  Prom: {promS1}
+                                </div>
                               </div>
-                            </div>
+                            );
+                          })}
+                        </div>
+                      </div>
 
-                            <div style={{ display: 'flex', flexWrap: 'wrap', gap: '8px', alignItems: 'center', marginTop: '5px' }}>
-                              <span style={{ fontSize: '12px', color: '#64748b', fontWeight: '600', marginRight: '5px' }}>Evaluaciones:</span>
-                              {Array.isArray(a.notas) && a.notas.filter(n => n !== null && n !== undefined).length > 0 ? (
-                                a.notas.filter(n => n !== null && n !== undefined).map((nota, idx) => {
-                                  const notaNum = parseFloat(nota);
-                                  const esRoja = !isNaN(notaNum) && notaNum < 4.0;
-                                  return (
-                                    <span
-                                      key={idx}
-                                      style={{
-                                        background: esRoja ? '#fee2e2' : '#f1f5f9',
-                                        color: esRoja ? '#991b1b' : '#334155',
-                                        border: `1px solid ${esRoja ? '#fca5a5' : '#cbd5e1'}`,
-                                        padding: '4px 10px',
-                                        borderRadius: '6px',
-                                        fontSize: '13px',
-                                        fontWeight: '600'
-                                      }}
-                                    >
-                                      {nota}
-                                    </span>
-                                  );
-                                })
-                              ) : (
-                                <span style={{ fontSize: '13px', color: '#94a3b8', fontStyle: 'italic' }}>Sin calificaciones registradas aún</span>
-                              )}
-                            </div>
-                          </div>
-                        );
-                      })}
+                      <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+                        <h4 style={{ color: '#17365d', margin: '0 0 15px 0', fontSize: '18px', borderBottom: '2px solid #f1f5f9', paddingBottom: '8px' }}>
+                          Segundo Semestre
+                        </h4>
+
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+                          {alumnoSeleccionado.asignaturas.map((a) => {
+                            const notasS2 = Array.isArray(a.notasSemestre2) ? a.notasSemestre2 : (Array.isArray(a.notas) ? a.notas.slice(Math.ceil(a.notas.length / 2)) : []);
+                            const promS2 = a.promedioSemestre2 || '-';
+                            const promNum = parseFloat(promS2);
+                            const esReprobado = !isNaN(promNum) && promNum < 4.0;
+
+                            return (
+                              <div key={a.asignatura_id} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: '#f8fafc', padding: '12px 16px', borderRadius: '10px', border: '1px solid #edf2f7', flexWrap: 'wrap', gap: '10px' }}>
+                                <div>
+                                  <span style={{ fontWeight: '700', color: '#1e293b', fontSize: '15px', display: 'block', marginBottom: '4px' }}>{a.nombre}</span>
+                                  <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap' }}>
+                                    {notasS2.length > 0 ? notasS2.map((n, i) => (
+                                      <span key={i} style={{ background: parseFloat(n) < 4 ? '#fee2e2' : '#ffffff', color: parseFloat(n) < 4 ? '#991b1b' : '#334155', border: '1px solid #cbd5e1', padding: '2px 8px', borderRadius: '4px', fontSize: '12px', fontWeight: '600' }}>
+                                        {n}
+                                      </span>
+                                    )) : <span style={{ fontSize: '12px', color: '#94a3b8' }}>Sin notas en este período</span>}
+                                  </div>
+                                </div>
+                                <div style={{ background: promS2 === '-' ? '#f1f5f9' : (esReprobado ? '#fff5f5' : '#f0fdf4'), color: promS2 === '-' ? '#64748b' : (esReprobado ? '#9b2c2c' : '#166534'), border: `1px solid ${promS2 === '-' ? '#cbd5e1' : (esReprobado ? '#feb2b2' : '#bbf7d0')}`, padding: '5px 12px', borderRadius: '20px', fontSize: '13px', fontWeight: '700' }}>
+                                  Prom: {promS2}
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      </div>
+
                     </div>
                   ) : (
                     <p>No hay notas registradas.</p>
                   )}
                 </div>
               )}
-
               {tab === 'anotaciones' && (
                 <div>
                   <h3>
