@@ -15,7 +15,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const [tab, setTab] = useState('notas');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
-
+  const [docenteModal, setDocenteModal] = useState(null);
   const [motivo, setMotivo] = useState('');
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
