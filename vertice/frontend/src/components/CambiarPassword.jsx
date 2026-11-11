@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import ReactDOM from 'react-dom';
 import { cambiarPasswordService } from '../services/authService.js';
 import logo from '../img/logo_Institucional.png';
 import './CambiarPassword.css';
@@ -60,10 +61,8 @@ export default function CambiarPassword() {
     setPasswordActual('');
     setPasswordNueva('');
     setConfirmarPassword('');
-
     setMensaje('');
     setTipoMensaje('');
-
     setMostrarActual(false);
     setMostrarNueva(false);
     setMostrarConfirmar(false);
@@ -71,7 +70,6 @@ export default function CambiarPassword() {
 
   const cerrarPanel = () => {
     if (cargando) return;
-
     setAbierto(false);
     limpiarFormulario();
   };
@@ -136,6 +134,132 @@ export default function CambiarPassword() {
     }
   };
 
+  const modalContent = abierto ? (
+    <div
+      className="cp-overlay"
+      onMouseDown={cerrarPanel}
+    >
+      <section
+        className="cp-modal"
+        onMouseDown={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          className="cp-cerrar"
+          onClick={cerrarPanel}
+          disabled={cargando}
+          aria-label="Cerrar"
+        >
+          ×
+        </button>
+
+        <div className="cp-cabecera">
+          <div className="cp-logo-contenedor">
+            <img
+              src={logo}
+              alt="Colegio Orden de San Jorge"
+            />
+          </div>
+
+          <span className="cp-etiqueta">
+            VERTICE · SEGURIDAD
+          </span>
+
+          <h2>Mi cuenta</h2>
+
+          <p>
+            Mantén protegida tu cuenta actualizando tu contraseña
+            de acceso.
+          </p>
+        </div>
+
+        <div className="cp-separador">
+          <span />
+          <div className="cp-escudo">◆</div>
+          <span />
+        </div>
+
+        <form
+          className="cp-formulario"
+          onSubmit={guardarPassword}
+        >
+          <div className="cp-titulo-formulario">
+            <h3>Cambiar contraseña</h3>
+            <p>Ingresa tus datos para realizar el cambio.</p>
+          </div>
+
+          <CampoPassword
+            label="Contraseña actual"
+            valor={passwordActual}
+            cambiar={setPasswordActual}
+            mostrar={mostrarActual}
+            alternar={() => setMostrarActual(v => !v)}
+            placeholder="Tu contraseña actual"
+            autoComplete="current-password"
+          />
+
+          <CampoPassword
+            label="Nueva contraseña"
+            valor={passwordNueva}
+            cambiar={setPasswordNueva}
+            mostrar={mostrarNueva}
+            alternar={() => setMostrarNueva(v => !v)}
+            placeholder="Mínimo 8 caracteres"
+            autoComplete="new-password"
+          />
+
+          <CampoPassword
+            label="Confirmar nueva contraseña"
+            valor={confirmarPassword}
+            cambiar={setConfirmarPassword}
+            mostrar={mostrarConfirmar}
+            alternar={() => setMostrarConfirmar(v => !v)}
+            placeholder="Repite tu nueva contraseña"
+            autoComplete="new-password"
+          />
+
+          <div className="cp-recomendacion">
+            <span>✦</span>
+            Utiliza una contraseña personal que no compartas con otras personas.
+          </div>
+
+          {mensaje && (
+            <div className={`cp-mensaje ${tipoMensaje}`}>
+              <span>
+                {tipoMensaje === 'exito' ? '✓' : '!'}
+              </span>
+              {mensaje}
+            </div>
+          )}
+
+          <div className="cp-acciones">
+            <button
+              type="button"
+              className="cp-btn-cancelar"
+              onClick={cerrarPanel}
+              disabled={cargando}
+            >
+              Cancelar
+            </button>
+
+            <button
+              type="submit"
+              className="cp-btn-guardar"
+              disabled={cargando}
+            >
+              {cargando ? 'Guardando...' : 'Guardar contraseña'}
+            </button>
+          </div>
+        </form>
+
+        <div className="cp-pie">
+          COLEGIO ORDEN DE SAN JORGE
+          <span>Plataforma de gestión Vertice</span>
+        </div>
+      </section>
+    </div>
+  ) : null;
+
   return (
     <>
       <button
@@ -148,131 +272,7 @@ export default function CambiarPassword() {
         <span className="cp-flecha">↓</span>
       </button>
 
-      {abierto && (
-        <div
-          className="cp-overlay"
-          onMouseDown={cerrarPanel}
-        >
-          <section
-            className="cp-modal"
-            onMouseDown={(e) => e.stopPropagation()}
-          >
-            <button
-              type="button"
-              className="cp-cerrar"
-              onClick={cerrarPanel}
-              disabled={cargando}
-              aria-label="Cerrar"
-            >
-              ×
-            </button>
-
-            <div className="cp-cabecera">
-              <div className="cp-logo-contenedor">
-                <img
-                  src={logo}
-                  alt="Colegio Orden de San Jorge"
-                />
-              </div>
-
-              <span className="cp-etiqueta">
-                VERTICE · SEGURIDAD
-              </span>
-
-              <h2>Mi cuenta</h2>
-
-              <p>
-                Mantén protegida tu cuenta actualizando tu contraseña
-                de acceso.
-              </p>
-            </div>
-
-            <div className="cp-separador">
-              <span />
-              <div className="cp-escudo">◆</div>
-              <span />
-            </div>
-
-            <form
-              className="cp-formulario"
-              onSubmit={guardarPassword}
-            >
-              <div className="cp-titulo-formulario">
-                <h3>Cambiar contraseña</h3>
-                <p>Ingresa tus datos para realizar el cambio.</p>
-              </div>
-
-              <CampoPassword
-                label="Contraseña actual"
-                valor={passwordActual}
-                cambiar={setPasswordActual}
-                mostrar={mostrarActual}
-                alternar={() => setMostrarActual(v => !v)}
-                placeholder="Tu contraseña actual"
-                autoComplete="current-password"
-              />
-
-              <CampoPassword
-                label="Nueva contraseña"
-                valor={passwordNueva}
-                cambiar={setPasswordNueva}
-                mostrar={mostrarNueva}
-                alternar={() => setMostrarNueva(v => !v)}
-                placeholder="Mínimo 8 caracteres"
-                autoComplete="new-password"
-              />
-
-              <CampoPassword
-                label="Confirmar nueva contraseña"
-                valor={confirmarPassword}
-                cambiar={setConfirmarPassword}
-                mostrar={mostrarConfirmar}
-                alternar={() => setMostrarConfirmar(v => !v)}
-                placeholder="Repite tu nueva contraseña"
-                autoComplete="new-password"
-              />
-
-              <div className="cp-recomendacion">
-                <span>✦</span>
-                Utiliza una contraseña personal que no compartas con otras personas.
-              </div>
-
-              {mensaje && (
-                <div className={`cp-mensaje ${tipoMensaje}`}>
-                  <span>
-                    {tipoMensaje === 'exito' ? '✓' : '!'}
-                  </span>
-                  {mensaje}
-                </div>
-              )}
-
-              <div className="cp-acciones">
-                <button
-                  type="button"
-                  className="cp-btn-cancelar"
-                  onClick={cerrarPanel}
-                  disabled={cargando}
-                >
-                  Cancelar
-                </button>
-
-                <button
-                  type="submit"
-                  className="cp-btn-guardar"
-                  disabled={cargando}
-                >
-                  {cargando ? 'Guardando...' : 'Guardar contraseña'}
-                </button>
-              </div>
-            </form>
-
-            <div className="cp-pie">
-              COLEGIO ORDEN DE SAN JORGE
-              <span>Plataforma de gestión Vertice</span>
-            </div>
-          </section>
-        </div>
-      )}
+      {ReactDOM.createPortal(modalContent, document.body)}
     </>
   );
 }
