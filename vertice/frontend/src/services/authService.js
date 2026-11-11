@@ -76,7 +76,7 @@ export const cambiarPasswordService = async (
   const token = localStorage.getItem('token');
 
   const response = await fetch(
-    `${API_URL}/cambiar-password`,
+    `${API_URL}/auth/cambiar-password`,
     {
       method: 'PUT',
       headers: {
