@@ -5,7 +5,7 @@ import "./apoderado_dashboard.css";
 import { fetchConAuth } from "../services/apiService.js";
 import { QRCodeSVG } from "qrcode.react";
 import CambiarPassword from '../components/CambiarPassword.jsx';
-import jsPDF from 'jspdf';
+import { jsPDF } from 'jspdf';
 import 'jspdf-autotable';
 
 function ApoderadoDashboard({ apoderadoRut }) {
