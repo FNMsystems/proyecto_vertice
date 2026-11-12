@@ -738,6 +738,13 @@ function ApoderadoDashboard({ apoderadoRut }) {
               >
                 Apoyo Multidisciplinario
               </button>
+
+              <button
+                className={`tab-btn ${tab === 'docentes' ? 'active' : ''}`}
+                onClick={() => setTab('docentes')}
+              >
+                Docentes
+              </button>
             </nav>
 
             <div className="tab-content">
@@ -1590,6 +1597,170 @@ function ApoderadoDashboard({ apoderadoRut }) {
                     No hay información de apoyo
                     multidisciplinario registrada actualmente.
                   </p>
+                </div>
+              )}
+
+              {tab === 'docentes' && (
+                <div>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ margin: '0 0 6px 0', color: '#800020' }}>
+                      Información Docentes
+
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                      Profesores que imparten clases actualmente a <strong>{alumnoSeleccionado.nombreCompleto}</strong> ({alumnoSeleccionado.curso || 'Sin curso'}).
+                    </p>
+                  </div>
+
+                  {(() => {
+      
+                    const asignaturasConDocente = Array.isArray(alumnoSeleccionado.asignaturas)
+                      ? alumnoSeleccionado.asignaturas.filter(
+                        (a) => a.docente_nombre && a.docente_nombre.trim() !== '' && a.docente_nombre !== 'Docente no registrado'
+                      )
+                      : [];
+
+                    if (asignaturasConDocente.length === 0) {
+                      return (
+                        <div style={{ background: '#fcf8f9', border: '1px solid #f0e6e8', borderRadius: '14px', padding: '24px', textAlign: 'center', color: '#666' }}>
+                          No hay docentes asignados registrados para las asignaturas de este estudiante.
+                        </div>
+                      );
+                    }
+
+                    const mapaDocentes = new Map();
+                    asignaturasConDocente.forEach((asig) => {
+                      const key = asig.docente_correo || asig.docente_nombre;
+                      if (!mapaDocentes.has(key)) {
+                        mapaDocentes.set(key, {
+                          nombre: asig.docente_nombre,
+                          correo: asig.docente_correo || 'Correo no registrado',
+                          asignaturas: [asig.nombre]
+                        });
+                      } else {
+                        const existente = mapaDocentes.get(key);
+                        if (!existente.asignaturas.includes(asig.nombre)) {
+                          existente.asignaturas.push(asig.nombre);
+                        }
+                      }
+                    });
+
+                    const listaDocentes = Array.from(mapaDocentes.values());
+
+                    return (
+                      <div
+                        style={{
+                          display: 'grid',
+                          gridTemplateColumns: 'repeat(auto-fill, minmax(300px, 1fr))',
+                          gap: '18px'
+                        }}
+                      >
+                        {listaDocentes.map((docente, idx) => {
+                          const estaCopiado = correoCopiado === docente.correo;
+
+                          return (
+                            <div
+                              key={idx}
+                              style={{
+                                background: '#ffffff',
+                                border: '1px solid #e2d7db',
+                                borderTop: '5px solid #800020',
+                                borderRadius: '14px',
+                                padding: '20px',
+                                boxShadow: '0 4px 12px rgba(0, 0, 0, 0.04)',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                justifyContent: 'space-between',
+                                gap: '14px'
+                              }}
+                            >
+                              <div>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', marginBottom: '10px' }}>
+                                  {docente.asignaturas.map((ramo, i) => (
+                                    <span
+                                      key={i}
+                                      style={{
+                                        background: '#f8f3f5',
+                                        color: '#800020',
+                                        fontSize: '11px',
+                                        fontWeight: '700',
+                                        padding: '3px 9px',
+                                        borderRadius: '6px',
+                                        border: '1px solid #e6d5da'
+                                      }}
+                                    >
+                                      {ramo}
+                                    </span>
+                                  ))}
+                                </div>
+
+                                <h4 style={{ margin: '0 0 4px 0', color: '#2c2c2c', fontSize: '16px', fontWeight: '700' }}>
+                                  {docente.nombre}
+                                </h4>
+                                <span style={{ fontSize: '12px', color: '#777078' }}>
+                                  Docente de Asignatura
+                                </span>
+                              </div>
+
+                              <div
+                                style={{
+                                  background: '#fcf8f9',
+                                  padding: '10px 12px',
+                                  borderRadius: '10px',
+                                  border: '1px solid #f0e6e8',
+                                  display: 'flex',
+                                  alignItems: 'center',
+                                  justifyContent: 'space-between',
+                                  gap: '8px'
+                                }}
+                              >
+                                <a
+                                  href={`mailto:${docente.correo}`}
+                                  style={{
+                                    color: '#800020',
+                                    fontSize: '13px',
+                                    fontWeight: '600',
+                                    textDecoration: 'none',
+                                    overflow: 'hidden',
+                                    textOverflow: 'ellipsis',
+                                    whiteSpace: 'nowrap'
+                                  }}
+                                  title={docente.correo}
+                                >
+                                  {docente.correo}
+                                </a>
+
+                                {docente.correo !== 'Correo no registrado' && (
+                                  <button
+                                    type="button"
+                                    onClick={() => {
+                                      navigator.clipboard.writeText(docente.correo);
+                                      setCorreoCopiado(docente.correo);
+                                      setTimeout(() => setCorreoCopiado(null), 2000);
+                                    }}
+                                    style={{
+                                      background: estaCopiado ? '#2e7d32' : '#800020',
+                                      color: '#ffffff',
+                                      border: 'none',
+                                      borderRadius: '7px',
+                                      padding: '6px 10px',
+                                      fontSize: '11px',
+                                      fontWeight: '600',
+                                      cursor: 'pointer',
+                                      whiteSpace: 'nowrap',
+                                      transition: 'background 0.2s ease'
+                                    }}
+                                  >
+                                    {estaCopiado ? '✓ Copiado' : 'Copiar'}
+                                  </button>
+                                )}
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
             </div>
