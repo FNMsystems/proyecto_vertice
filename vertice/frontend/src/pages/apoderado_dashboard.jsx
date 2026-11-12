@@ -23,6 +23,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const [archivo, setArchivo] = useState(null);
   const [enviandoJustificativo, setEnviandoJustificativo] = useState(false);
   const [motivo, setMotivo] = useState('');
+  const [tipoMotivo, setTipoMotivo] = useState('Enfermedad / Motivo Médico');
 
   const [personasRetiro, setPersonasRetiro] = useState([]);
   const [mesAsistenciaFiltro, setMesAsistenciaFiltro] = useState('TODOS');
@@ -1349,103 +1350,145 @@ function ApoderadoDashboard({ apoderadoRut }) {
 
               {tab === 'justificativo' && (
                 <div>
-                  <h3>
-                    Subir Justificativo
-                  </h3>
+                  <div style={{ marginBottom: '20px' }}>
+                    <h3 style={{ margin: '0 0 4px 0', color: '#800020' }}>
+                      Subir Justificativo de Inasistencia
+                    </h3>
+                    <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                      Selecciona el motivo de la inasistencia y adjunta el certificado médico o documento respaldatorio en formato PDF para <strong>{alumnoSeleccionado.nombreCompleto}</strong>.
+                    </p>
+                  </div>
 
-                  <p>
-                    Ingrese los datos del justificativo
-                    y adjunte el certificado correspondiente
-                    en formato PDF.
-                  </p>
+                  <form
+                    onSubmit={(e) => {
+                      e.preventDefault();
+                      const motivoFinal = tipoMotivo === 'Otro' ? motivo.trim() : tipoMotivo;
 
-                  <div className="form-justificativo">
-                    <div className="form-group">
-                      <label>
-                        Fecha de inicio:
-                      </label>
+                      if (tipoMotivo === 'Otro' && !motivoFinal) {
+                        alert('Por favor, especifica el motivo en el cuadro de texto.');
+                        return;
+                      }
 
-                      <input
-                        type="date"
-                        className="form-input"
-                        value={fechaInicio}
-                        onChange={(e) =>
-                          setFechaInicio(
-                            e.target.value
-                          )
-                        }
-                      />
+                      handleSubirJustificativo(motivoFinal);
+                    }}
+                    style={{
+                      background: '#fff',
+                      border: '1px solid #e2e8f0',
+                      borderRadius: '14px',
+                      padding: '24px',
+                      boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+                      display: 'flex',
+                      flexDirection: 'column',
+                      gap: '18px',
+                      maxWidth: '600px'
+                    }}
+                  >
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#33272c', marginBottom: '6px' }}>
+                          Fecha de Inicio *
+                        </label>
+                        <input
+                          type="date"
+                          className="form-input"
+                          value={fechaInicio}
+                          onChange={(e) => setFechaInicio(e.target.value)}
+                          required
+                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2d7db' }}
+                        />
+                      </div>
+                      <div>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#33272c', marginBottom: '6px' }}>
+                          Fecha de Término 
+                        </label>
+                        <input
+                          type="date"
+                          className="form-input"
+                          value={fechaFin}
+                          onChange={(e) => setFechaFin(e.target.value)}
+                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2d7db' }}
+                        />
+                      </div>
                     </div>
 
-                    <div className="form-group">
-                      <label>
-                        Fecha de término:
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#33272c', marginBottom: '6px' }}>
+                        Motivo de la Inasistencia *
                       </label>
-
-                      <input
-                        type="date"
+                      <select
                         className="form-input"
-                        value={fechaFin}
-                        onChange={(e) =>
-                          setFechaFin(
-                            e.target.value
-                          )
-                        }
-                      />
+                        value={tipoMotivo}
+                        onChange={(e) => {
+                          const nuevoValor = e.target.value;
+                          setTipoMotivo(nuevoValor);
+                          if (nuevoValor !== 'Otro') {
+                            setMotivo(''); 
+                          }
+                        }}
+                        style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2d7db', background: '#fff' }}
+                      >
+                        <option value="Enfermedad / Motivo Médico">Enfermedad / Motivo Médico (Requiere certificado)</option>
+                        <option value="Trámite Familiar o Personal de Fuerza Mayor">Trámite Familiar o Personal de Fuerza Mayor</option>
+                        <option value="Desafectación por Competencia Deportiva / Artística">Desafectación por Competencia Deportiva / Artística</option>
+                        <option value="Duelo Familiar">Duelo Familiar</option>
+                        <option value="Otro">Otro (Especificar)</option>
+                      </select>
                     </div>
 
-                    <div className="form-group">
-                      <label>
-                        Motivo de la inasistencia:
+                    {tipoMotivo === 'Otro' && (
+                      <div style={{ animation: 'fadeIn 0.2s ease-in-out' }}>
+                        <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#800020', marginBottom: '6px' }}>
+                          Especifique el motivo detalladamente *
+                        </label>
+                        <textarea
+                          className="form-input"
+                          rows="3"
+                          value={motivo}
+                          onChange={(e) => setMotivo(e.target.value)}
+                          placeholder="Escriba aquí el motivo de la inasistencia..."
+                          required
+                          style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #800020' }}
+                        />
+                      </div>
+                    )}
+
+                    <div>
+                      <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#33272c', marginBottom: '6px' }}>
+                        Adjuntar Certificado / Documento (PDF) *
                       </label>
-
-                      <textarea
-                        className="form-input"
-                        rows="4"
-                        value={motivo}
-                        onChange={(e) =>
-                          setMotivo(
-                            e.target.value
-                          )
-                        }
-                        placeholder="Ingrese el motivo de la inasistencia"
-                      />
-                    </div>
-
-                    <div className="form-group">
-                      <label>
-                        Adjuntar certificado PDF:
-                      </label>
-
                       <input
                         id="archivo-justificativo"
                         type="file"
                         className="form-input"
                         accept="application/pdf,.pdf"
-                        onChange={(e) =>
-                          setArchivo(
-                            e.target.files?.[0] ||
-                            null
-                          )
-                        }
+                        onChange={(e) => setArchivo(e.target.files?.[0] || null)}
+                        required
+                        style={{ width: '100%', padding: '8px', borderRadius: '8px', border: '1px solid #e2d7db', background: '#fcf8f9' }}
                       />
+                      <small style={{ fontSize: '11px', color: '#666', marginTop: '4px', display: 'block' }}>
+                        El documento debe ser legible y estar en formato PDF.
+                      </small>
                     </div>
 
                     <button
-                      type="button"
+                      type="submit"
                       className="btn-action"
-                      onClick={
-                        handleSubirJustificativo
-                      }
-                      disabled={
-                        enviandoJustificativo
-                      }
+                      disabled={enviandoJustificativo}
+                      style={{
+                        padding: '12px',
+                        background: '#800020',
+                        color: '#fff',
+                        border: 'none',
+                        borderRadius: '10px',
+                        fontWeight: 'bold',
+                        cursor: 'pointer',
+                        fontSize: '14px',
+                        transition: 'background 0.2s'
+                      }}
                     >
-                      {enviandoJustificativo
-                        ? 'Enviando...'
-                        : 'Enviar Justificativo'}
+                      {enviandoJustificativo ? 'Enviando justificativo...' : 'Enviar Justificativo Oficial'}
                     </button>
-                  </div>
+                  </form>
                 </div>
               )}
 
