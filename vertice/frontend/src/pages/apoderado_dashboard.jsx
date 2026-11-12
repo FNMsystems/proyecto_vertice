@@ -17,6 +17,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const [error, setError] = useState('');
   const [docenteModal, setDocenteModal] = useState(null);
   const [copiado, setCopiado] = useState(false);
+  const [correoCopiado, setCorreoCopiado] = useState(null);
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [archivo, setArchivo] = useState(null);
