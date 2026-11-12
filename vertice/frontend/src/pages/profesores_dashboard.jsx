@@ -285,43 +285,50 @@ export default function ProfesoresDashboard() {
 
                       </div>
 
-
                       <div className="asignaturas-container">
-
-                        <h4>
-                          Asignaturas
-                        </h4>
-
+                        <h4>Asignaturas del curso</h4>
 
                         <div className="asignaturas-list">
+                          {curso.asignaturas.map((asignatura) => {
+                            const puedeEditar = asignatura.puedeEditar !== undefined
+                              ? asignatura.puedeEditar
+                              : (asignatura.esPropia !== undefined ? asignatura.esPropia : true);
 
-                          {curso.asignaturas.map(
-                            (asignatura) => (
-
+                            return (
                               <div
-                                key={
-                                  asignatura.id
-                                }
+                                key={asignatura.id}
                                 className="asignatura-item"
+                                style={{
+                                  borderLeft: puedeEditar ? '4px solid #800020' : '4px solid #64748b',
+                                  backgroundColor: puedeEditar ? '#fff' : '#f8fafc'
+                                }}
                               >
+                                <span>{asignatura.nombre}</span>
 
-                                <span>
-                                  {asignatura.nombre}
-                                </span>
-
-                                <span className="badge-edicion">
-                                  Puede gestionar
-                                </span>
-
+                                {puedeEditar ? (
+                                  <span className="badge-edicion">
+                                    Puede gestionar
+                                  </span>
+                                ) : (
+                                  <span
+                                    className="badge-lectura"
+                                    style={{
+                                      fontSize: '11px',
+                                      padding: '3px 8px',
+                                      borderRadius: '6px',
+                                      backgroundColor: '#e2e8f0',
+                                      color: '#475569',
+                                      fontWeight: '600'
+                                    }}
+                                  >
+                                  Solo lectura (Jefatura)
+                                  </span>
+                                )}
                               </div>
-
-                            )
-                          )}
-
+                            );
+                          })}
                         </div>
-
                       </div>
-
 
                       <button
                         type="button"
