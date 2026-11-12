@@ -909,6 +909,18 @@ export default function ProfesorCurso() {
             ℹ️ Información
           </button>
 
+          {curso?.esProfesorJefe && (
+            <button
+              className={pestana === 'jefatura' ? 'curso-tab active' : 'curso-tab'}
+              onClick={() => {
+                setPestana('jefatura');
+                setAsignaturaNotas('');
+              }}
+            >
+              ⭐ Jefatura (Solo Lectura)
+            </button>
+          )}
+
         </nav>
 
         {pestana === 'alumnos' && (
@@ -2063,6 +2075,185 @@ export default function ProfesorCurso() {
               </div>
             )}
 
+          </section>
+        )}
+
+        {pestana === 'jefatura' && curso?.esProfesorJefe && (
+          <section className="curso-panel">
+            <div className="panel-header">
+              <div>
+                <h2>⭐ Panel de Jefatura ·  Situación Curso</h2>
+                <p>
+                  Puedes revisar calificaciones y rendimiento en modo lectura.                  
+                </p>
+              </div>
+            </div>
+
+            {!asignaturaNotas ? (
+              <div>
+                <p style={{ marginBottom: '15px', fontWeight: 'bold', color: '#33272c' }}>
+                  Selecciona una asignatura para supervisar sus registros:
+                </p>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' }}>
+                  {asignaturas
+                    .filter((a) => {
+                      const esPropia = a.puedeEditar !== undefined ? Boolean(a.puedeEditar) : (a.esPropia !== undefined ? Boolean(a.esPropia) : true);
+                      return !esPropia; 
+                    })
+                    .map((asig) => (
+                      <div
+                        key={asig.id}
+                        onClick={() => {
+                          setAsignaturaNotas(asig.id);
+                          setPeriodoNotas('1');
+                        }}
+                        style={{
+                          background: '#fff',
+                          border: '1px solid #e2d7db',
+                          borderLeft: '5px solid #800020',
+                          borderRadius: '12px',
+                          padding: '18px',
+                          cursor: 'pointer',
+                          boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                          transition: 'transform 0.2s ease'
+                        }}
+                      >
+                        <h3 style={{ margin: '0 0 6px 0', color: '#800020', fontSize: '16px' }}>
+                          {asig.nombre}
+                        </h3>
+                        <span style={{ fontSize: '12px', color: '#666' }}>
+                          Clic para ver notas y promedios
+                        </span>
+                      </div>
+                    ))}
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '20px' }}>
+                  <button
+                    type="button"
+                    className="btn-secondary"
+                    onClick={() => {
+                      setAsignaturaNotas('');
+                      setNotas([]);
+                    }}
+                  >
+                    ← Volver a la lista de asignaturas de Jefatura
+                  </button>
+
+                  <div className="form-group" style={{ margin: 0 }}>
+                    <select
+                      value={periodoNotas}
+                      onChange={(e) => setPeriodoNotas(e.target.value)}
+                      style={{ padding: '8px 12px', borderRadius: '8px', border: '1px solid #d0d7de' }}
+                    >
+                      <option value="1">1° Semestre</option>
+                      <option value="2">2° Semestre</option>
+                    </select>
+                  </div>
+                </div>
+
+                <div
+                  style={{
+                    backgroundColor: '#fef2f2',
+                    borderLeft: '4px solid #991b1b',
+                    color: '#991b1b',
+                    padding: '12px 16px',
+                    borderRadius: '8px',
+                    marginBottom: '20px',
+                    fontSize: '13px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '10px'
+                  }}
+                >
+                  <span style={{ fontSize: '18px' }}>🔒</span>
+                  <div>
+                    <strong>Modo Supervisión (Profesor Jefe):</strong> Estás visualizando las calificaciones de una asignatura ajena. Las notas se muestran estrictamente en formato de lectura y no pueden ser alteradas.
+                  </div>
+                </div>
+
+                {cargandoNotas ? (
+                  <div className="loading-state">Cargando calificaciones...</div>
+                ) : evaluacionesAgrupadas.length === 0 ? (
+                  <div className="empty-state">
+                    <div>📝</div>
+                    <h3>Sin evaluaciones registradas</h3>
+                    <p>El docente a cargo aún no ha ingresado calificaciones en este período.</p>
+                  </div>
+                ) : (
+                  <div className="table-wrapper" style={{ overflowX: 'auto', width: '100%' }}>
+                    <table className="curso-table">
+                      <thead>
+                        <tr>
+                          <th style={{ minWidth: '230px', position: 'sticky', left: 0, zIndex: 2, background: '#f4f6f9' }}>
+                            Alumno
+                          </th>
+                          {evaluacionesAgrupadas.map((evaluacion) => (
+                            <th key={evaluacion.clave} style={{ minWidth: '130px', textAlign: 'center' }}>
+                              <div><strong>{evaluacion.tipoEvaluacion}</strong></div>
+                              <small>{evaluacion.porcentaje}%</small>
+                              <div><small>{formatearFecha(evaluacion.fecha)}</small></div>
+                            </th>
+                          ))}
+                          <th style={{ minWidth: '130px', textAlign: 'center' }}>Promedio</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {alumnosOrdenados.map((alumno) => {
+                          const resultado = calcularPromedioAlumno(alumno.id);
+
+                          return (
+                            <tr key={alumno.id}>
+                              <td style={{ position: 'sticky', left: 0, zIndex: 1, background: '#fff' }}>
+                                <strong>{alumno.nombre}</strong>
+                                {alumno.rut && <div><small>{alumno.rut}</small></div>}
+                              </td>
+
+                              {evaluacionesAgrupadas.map((evaluacion) => {
+                                const registro = evaluacion.notas[alumno.id];
+                                const valorNota = registro?.nota;
+
+                                return (
+                                  <td key={evaluacion.clave} style={{ textAlign: 'center' }}>
+                                    <span
+                                      style={{
+                                        display: 'inline-block',
+                                        minWidth: '45px',
+                                        padding: '5px 10px',
+                                        borderRadius: '6px',
+                                        backgroundColor: valorNota !== undefined && valorNota !== null ? '#f8fafc' : 'transparent',
+                                        border: valorNota !== undefined && valorNota !== null ? '1px solid #e2e8f0' : 'none',
+                                        fontWeight: '600',
+                                        color: valorNota !== undefined && valorNota !== null && Number(valorNota) < 4 ? '#dc2626' : '#1e293b'
+                                      }}
+                                    >
+                                      {valorNota !== undefined && valorNota !== null ? Number(valorNota).toFixed(1) : '—'}
+                                    </span>
+                                  </td>
+                                );
+                              })}
+
+                              <td style={{ textAlign: 'center' }}>
+                                {resultado ? (
+                                  <strong className={resultado.promedio >= 4 ? 'nota-aprobada' : 'nota-reprobada'} style={{ fontSize: '15px' }}>
+                                    {resultado.promedio.toFixed(1)}
+                                  </strong>
+                                ) : (
+                                  <span>—</span>
+                                )}
+                              </td>
+                            </tr>
+                          );
+                        })}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+            )}
           </section>
         )}
 

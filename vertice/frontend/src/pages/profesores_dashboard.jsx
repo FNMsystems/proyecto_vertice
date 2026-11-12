@@ -286,47 +286,27 @@ export default function ProfesoresDashboard() {
                       </div>
 
                       <div className="asignaturas-container">
-                        <h4>Asignaturas del curso</h4>
+                        <h4>Mis asignaturas en este curso</h4>
 
                         <div className="asignaturas-list">
-                          {curso.asignaturas.map((asignatura) => {
-                            const puedeEditar = asignatura.puedeEditar !== undefined
-                              ? asignatura.puedeEditar
-                              : (asignatura.esPropia !== undefined ? asignatura.esPropia : true);
+                          {curso.asignaturas
+                            .filter((asignatura) => {
+                              const esPropia = asignatura.puedeEditar !== undefined
+                                ? Boolean(asignatura.puedeEditar)
+                                : (asignatura.esPropia !== undefined ? Boolean(asignatura.esPropia) : true);
 
-                            return (
-                              <div
-                                key={asignatura.id}
-                                className="asignatura-item"
-                                style={{
-                                  borderLeft: puedeEditar ? '4px solid #800020' : '4px solid #64748b',
-                                  backgroundColor: puedeEditar ? '#fff' : '#f8fafc'
-                                }}
-                              >
+                  
+                              if (curso.esProfesorJefe) {
+                                return esPropia;
+                              }
+                              return true; 
+                            })
+                            .map((asignatura) => (
+                              <div key={asignatura.id} className="asignatura-item">
                                 <span>{asignatura.nombre}</span>
-
-                                {puedeEditar ? (
-                                  <span className="badge-edicion">
-                                    Puede gestionar
-                                  </span>
-                                ) : (
-                                  <span
-                                    className="badge-lectura"
-                                    style={{
-                                      fontSize: '11px',
-                                      padding: '3px 8px',
-                                      borderRadius: '6px',
-                                      backgroundColor: '#e2e8f0',
-                                      color: '#475569',
-                                      fontWeight: '600'
-                                    }}
-                                  >
-                                  Solo lectura (Jefatura)
-                                  </span>
-                                )}
+                                <span className="badge-edicion">Puede gestionar</span>
                               </div>
-                            );
-                          })}
+                            ))}
                         </div>
                       </div>
 
