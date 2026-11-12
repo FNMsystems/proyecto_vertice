@@ -714,7 +714,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                 className={`tab-btn ${tab === 'docentes' ? 'active' : ''}`}
                 onClick={() => setTab('docentes')}
               >
-                Docentes
+                Contacto Docentes
               </button>
             </nav>
 
