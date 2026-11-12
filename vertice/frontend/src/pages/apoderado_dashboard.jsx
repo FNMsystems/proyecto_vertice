@@ -22,6 +22,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const [fechaFin, setFechaFin] = useState('');
   const [archivo, setArchivo] = useState(null);
   const [enviandoJustificativo, setEnviandoJustificativo] = useState(false);
+  const [motivo, setMotivo] = useState('');
 
   const [personasRetiro, setPersonasRetiro] = useState([]);
   const [mesAsistenciaFiltro, setMesAsistenciaFiltro] = useState('TODOS');
