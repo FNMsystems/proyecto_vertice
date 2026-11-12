@@ -1,10 +1,11 @@
 import React, { useEffect, useMemo, useState } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-
+import { getUsuarioActual } from '../services/authService.js';
 import {
   obtenerCursoDocente,
   obtenerAsistenciaCurso,
-  guardarAsistenciaCurso
+  guardarAsistenciaCurso,
+  obtenerMiDashboardDocente
 } from '../services/docenteService.js';
 
 import { fetchConAuth } from '../services/apiService.js';
@@ -21,7 +22,7 @@ export default function ProfesorCurso() {
   const [asignaturas, setAsignaturas] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
   const [horario, setHorario] = useState([]);
-
+  const [misAsignaturasIds, setMisAsignaturasIds] = useState(new Set());
   const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState('');
   const [informacionAlumno, setInformacionAlumno] = useState(null);
   const [cargandoInformacionAlumno, setCargandoInformacionAlumno] = useState(false);
@@ -73,20 +74,51 @@ export default function ProfesorCurso() {
       setCargando(true);
       setError(null);
 
-      const data = await obtenerCursoDocente(cursoId);
+      const [data, dashboardData] = await Promise.all([
+        obtenerCursoDocente(cursoId),
+        obtenerMiDashboardDocente().catch(() => null)
+      ]);
 
       setCurso(data.curso);
       setAsignaturas(data.asignaturas || []);
       setAlumnos(data.alumnos || []);
 
+      const idsPropios = new Set();
+      const usuarioActual = getUsuarioActual();
+      const docenteIdActual = dashboardData?.docente?.id || usuarioActual?.docenteId || usuarioActual?.id;
+
+      if (dashboardData?.cursos) {
+        const cursoEnDashboard = dashboardData.cursos.find(
+          (c) => String(c.id) === String(cursoId)
+        );
+        if (cursoEnDashboard?.asignaturas) {
+          cursoEnDashboard.asignaturas.forEach((a) => {
+            if (a.esPropia !== false && a.puedeEditar !== false) {
+              idsPropios.add(String(a.id));
+            }
+          });
+        }
+      }
+
+      (data.asignaturas || []).forEach((a) => {
+        if (a.esPropia === true || a.puedeEditar === true) {
+          idsPropios.add(String(a.id));
+        } else if (
+          docenteIdActual &&
+          (String(a.docenteId) === String(docenteIdActual) ||
+            String(a.docente_id) === String(docenteIdActual) ||
+            String(a.profesorId) === String(docenteIdActual) ||
+            String(a.profesor_id) === String(docenteIdActual))
+        ) {
+          idsPropios.add(String(a.id));
+        }
+      });
+
+      setMisAsignaturasIds(idsPropios);
+
     } catch (error) {
       console.error('Error cargando curso:', error);
-
-      setError(
-        error.message ||
-        'No se pudo cargar el curso.'
-      );
-
+      setError(error.message || 'No se pudo cargar el curso.');
     } finally {
       setCargando(false);
     }
