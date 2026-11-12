@@ -245,25 +245,39 @@ function ApoderadoDashboard({ apoderadoRut }) {
         `/api/apoderados/alumno/${alumnoSeleccionado.id}/personas-retiro`
       );
 
-      const lista = Array.isArray(personas)
-        ? personas
-        : [];
+      const listaTerceros = Array.isArray(personas) ? personas : [];
 
-      setPersonasRetiro(lista);
+      const listaFinal = [...listaTerceros];
 
-      if (lista.length > 0) {
-        setPersonaRetiroSeleccionada(lista[0].id);
+      if (apoderado) {
+        const yaExiste = listaFinal.some(
+          (p) =>
+            (p.rut && apoderado.rut && p.rut === apoderado.rut) ||
+            (p.nombre_completo &&
+              apoderado.nombre_completo &&
+              p.nombre_completo.toLowerCase().trim() ===
+              apoderado.nombre_completo.toLowerCase().trim())
+        );
+
+        if (!yaExiste) {
+          listaFinal.unshift({
+            id: 'APODERADO_TITULAR',
+            nombre_completo: apoderado.nombre_completo,
+            parentesco: alumnoSeleccionado.parentesco || 'Apoderado/a Titular',
+            rut: apoderado.rut,
+            esTitular: true
+          });
+        }
+      }
+
+      setPersonasRetiro(listaFinal);
+
+      if (listaFinal.length > 0) {
+        setPersonaRetiroSeleccionada(listaFinal[0].id);
       }
     } catch (err) {
-      console.error(
-        'Error cargando personas autorizadas:',
-        err
-      );
-
-      setError(
-        err.message ||
-        'No se pudieron cargar las personas autorizadas.'
-      );
+      console.error('Error cargando personas autorizadas:', err);
+      setError(err.message || 'No se pudieron cargar las personas autorizadas.');
     } finally {
       setCargandoQR(false);
     }
