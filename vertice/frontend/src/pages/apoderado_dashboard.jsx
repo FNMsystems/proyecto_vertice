@@ -967,7 +967,6 @@ function ApoderadoDashboard({ apoderadoRut }) {
                         }}
                         onClick={(e) => e.stopPropagation()}
                       >
-                        {/* Cabecera con Logo y Título */}
                         <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
                           {logoColegio && (
                             <img
@@ -1731,8 +1730,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                 <div>
                   <div style={{ marginBottom: '20px' }}>
                     <h3 style={{ margin: '0 0 6px 0', color: '#800020' }}>
-                      Información Docentes
-
+                      Cuerpo Docente del Estudiante
                     </h3>
                     <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
                       Profesores que imparten clases actualmente a <strong>{alumnoSeleccionado.nombreCompleto}</strong> ({alumnoSeleccionado.curso || 'Sin curso'}).
@@ -1740,17 +1738,31 @@ function ApoderadoDashboard({ apoderadoRut }) {
                   </div>
 
                   {(() => {
-
                     const asignaturasConDocente = Array.isArray(alumnoSeleccionado.asignaturas)
-                      ? alumnoSeleccionado.asignaturas.filter(
-                        (a) => a.docente_nombre && a.docente_nombre.trim() !== '' && a.docente_nombre !== 'Docente no registrado'
-                      )
+                      ? alumnoSeleccionado.asignaturas.filter((a) => {
+                        const tieneDocente =
+                          a.docente_nombre &&
+                          a.docente_nombre.trim() !== '' &&
+                          a.docente_nombre !== 'Docente no registrado';
+
+                        if (!tieneDocente) return false;
+
+                        const tieneNotasGenerales = Array.isArray(a.notas) && a.notas.length > 0;
+                        const tieneNotasS1 = Array.isArray(a.notasSemestre1) && a.notasSemestre1.length > 0;
+                        const tieneNotasS2 = Array.isArray(a.notasSemestre2) && a.notasSemestre2.length > 0;
+                        const tienePromedio =
+                          (a.promedio !== null && a.promedio !== undefined && a.promedio !== '' && a.promedio !== '-') ||
+                          (a.promedioSemestre1 !== null && a.promedioSemestre1 !== undefined && a.promedioSemestre1 !== '' && a.promedioSemestre1 !== '-') ||
+                          (a.promedioSemestre2 !== null && a.promedioSemestre2 !== undefined && a.promedioSemestre2 !== '' && a.promedioSemestre2 !== '-');
+
+                        return tieneNotasGenerales || tieneNotasS1 || tieneNotasS2 || tienePromedio;
+                      })
                       : [];
 
                     if (asignaturasConDocente.length === 0) {
                       return (
                         <div style={{ background: '#fcf8f9', border: '1px solid #f0e6e8', borderRadius: '14px', padding: '24px', textAlign: 'center', color: '#666' }}>
-                          No hay docentes asignados registrados para las asignaturas de este estudiante.
+                          No hay docentes asignados registrados para las asignaturas cursadas por este estudiante.
                         </div>
                       );
                     }
@@ -1878,7 +1890,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                                       transition: 'background 0.2s ease'
                                     }}
                                   >
-                                    {estaCopiado ? '✓ Copiado' : 'Copiar'}
+                                    {estaCopiado ? '✓ Copiado' : '📋 Copiar'}
                                   </button>
                                 )}
                               </div>
