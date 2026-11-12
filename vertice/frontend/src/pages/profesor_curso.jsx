@@ -243,12 +243,9 @@ export default function ProfesorCurso() {
     const jefatura = [];
 
     asignaturas.forEach((asig) => {
-      const esPropia =
-        asig.puedeEditar !== undefined
-          ? Boolean(asig.puedeEditar)
-          : asig.esPropia !== undefined
-            ? Boolean(asig.esPropia)
-            : true;
+      const esPropia = !curso?.esProfesorJefe
+        ? true
+        : misAsignaturasIds.has(String(asig.id));
 
       if (esPropia) {
         propias.push(asig);
@@ -258,21 +255,15 @@ export default function ProfesorCurso() {
     });
 
     return { asignaturasPropias: propias, asignaturasJefatura: jefatura };
-  }, [asignaturas]);
+  }, [asignaturas, curso, misAsignaturasIds]);
 
   const puedeEditarAsignaturaActual = useMemo(() => {
     if (!asignaturaNotas) return false;
-    const encontrada = asignaturas.find(
-      (a) => String(a.id) === String(asignaturaNotas)
-    );
-    if (!encontrada) return false;
+    if (!curso?.esProfesorJefe) return true;
+    return misAsignaturasIds.has(String(asignaturaNotas));
+  }, [asignaturaNotas, curso, misAsignaturasIds]);
 
-    return encontrada.puedeEditar !== undefined
-      ? Boolean(encontrada.puedeEditar)
-      : encontrada.esPropia !== undefined
-        ? Boolean(encontrada.esPropia)
-        : true;
-  }, [asignaturaNotas, asignaturas]);
+
 
   const alumnosOrdenados = useMemo(() => {
     return [...alumnos].sort((a, b) =>
