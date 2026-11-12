@@ -347,53 +347,38 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const generarQRRetiro = async () => {
     try {
       if (!alumnoSeleccionado?.id) {
-        throw new Error(
-          'No hay un alumno seleccionado.'
-        );
+        throw new Error('No hay un alumno seleccionado.');
       }
 
       if (!personaRetiroSeleccionada) {
-        throw new Error(
-          'Seleccione la persona que realizará el retiro.'
-        );
+        throw new Error('Seleccione la persona que realizará el retiro.');
       }
 
       if (!motivoRetiro.trim()) {
-        throw new Error(
-          'Ingrese el motivo del retiro.'
-        );
+        throw new Error('Ingrese el motivo del retiro.');
       }
 
       setGenerandoQR(true);
       setError('');
       setSolicitudQR(null);
 
-      const data = await fetchConAuth(
-        '/api/inspectoria/generar-qr',
-        {
-          method: 'POST',
-          body: JSON.stringify({
-            alumnoId: alumnoSeleccionado.id,
-            personaAutorizadaId:
-              personaRetiroSeleccionada,
-            motivo: motivoRetiro.trim(),
-            observacion:
-              observacionRetiro.trim() || null
-          })
-        }
-      );
+      const esApoderadoTitular = personaRetiroSeleccionada === 'APODERADO_TITULAR';
+
+      const data = await fetchConAuth('/api/inspectoria/generar-qr', {
+        method: 'POST',
+        body: JSON.stringify({
+          alumnoId: alumnoSeleccionado.id,
+          personaAutorizadaId: esApoderadoTitular ? null : personaRetiroSeleccionada,
+          retiraApoderado: esApoderadoTitular,
+          motivo: motivoRetiro.trim(),
+          observacion: observacionRetiro.trim() || null
+        })
+      });
 
       setSolicitudQR(data);
     } catch (err) {
-      console.error(
-        'Error generando QR:',
-        err
-      );
-
-      setError(
-        err.message ||
-        'No se pudo generar el código QR.'
-      );
+      console.error('Error generando QR:', err);
+      setError(err.message || 'No se pudo generar el código QR.');
     } finally {
       setGenerandoQR(false);
     }
