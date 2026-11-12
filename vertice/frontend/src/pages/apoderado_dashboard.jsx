@@ -16,7 +16,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState('');
   const [docenteModal, setDocenteModal] = useState(null);
-  const [motivo, setMotivo] = useState('');
+  const [copiado, setCopiado] = useState(false);
   const [fechaInicio, setFechaInicio] = useState('');
   const [fechaFin, setFechaFin] = useState('');
   const [archivo, setArchivo] = useState(null);
@@ -901,18 +901,32 @@ function ApoderadoDashboard({ apoderadoRut }) {
                             const pf = a.promedio || '-';
 
                             return (
-                              <tr key={a.asignatura_id}>
+                              <tr key={a.asignatura_id || a.id}>
                                 <td>
                                   <button
                                     type="button"
-                                    className="asignatura-apoderado-btn"
-                                    onClick={() => setDocenteModal({
-                                      asignatura: a.nombre,
-                                      docente: a.docente_nombre || 'Docente no registrado',
-                                      correo: a.docente_correo || 'Correo no registrado'
-                                    })}
+                                    onClick={() => {
+                                      setCopiado(false);
+                                      setDocenteModal({
+                                        asignatura: a.nombre,
+                                        docente: a.docente_nombre || 'Docente no registrado',
+                                        correo: a.docente_correo || 'correo@ordendesanjorge.cl'
+                                      });
+                                    }}
+                                    style={{
+                                      background: 'none',
+                                      border: 'none',
+                                      color: '#800020',
+                                      fontWeight: 'bold',
+                                      cursor: 'pointer',
+                                      fontSize: '14px',
+                                      display: 'inline-flex',
+                                      alignItems: 'center',
+                                      gap: '6px',
+                                      padding: 0
+                                    }}
                                   >
-                                    {a.nombre} ℹ️
+                                    {a.nombre} <span style={{ fontSize: '12px', opacity: 0.8 }}>ℹ️</span>
                                   </button>
                                 </td>
                                 <td>
@@ -947,38 +961,141 @@ function ApoderadoDashboard({ apoderadoRut }) {
                   )}
 
                   {docenteModal && (
-                    <div style={{ position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.5)', display: 'flex', justifyContent: 'center', alignItems: 'center', zIndex: 9999, padding: '20px' }}>
-                      <div style={{ background: '#fff', width: '100%', maxWidth: '420px', borderRadius: '16px', padding: '30px', boxShadow: '0 20px 40px rgba(0,0,0,0.2)', position: 'relative', borderTop: '6px solid #800020' }}>
+                    <div
+                      style={{
+                        position: 'fixed',
+                        inset: 0,
+                        backgroundColor: 'rgba(0, 0, 0, 0.55)',
+                        backdropFilter: 'blur(3px)',
+                        display: 'flex',
+                        justifyContent: 'center',
+                        alignItems: 'center',
+                        zIndex: 99999,
+                        padding: '20px'
+                      }}
+                      onClick={() => setDocenteModal(null)}
+                    >
+                      <div
+                        style={{
+                          background: '#ffffff',
+                          width: '100%',
+                          maxWidth: '440px',
+                          borderRadius: '20px',
+                          padding: '28px 30px',
+                          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.25)',
+                          position: 'relative',
+                          borderTop: '8px solid #800020',
+                          fontFamily: "'Segoe UI', system-ui, -apple-system, sans-serif"
+                        }}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        {/* Cabecera con Logo y Título */}
+                        <div style={{ display: 'flex', alignItems: 'center', gap: '14px', marginBottom: '22px' }}>
+                          {logoColegio && (
+                            <img
+                              src={logoColegio}
+                              alt="Logo Colegio Orden de San Jorge"
+                              style={{ width: '44px', height: '44px', objectFit: 'contain' }}
+                            />
+                          )}
+                          <div>
+                            <h3 style={{ margin: 0, color: '#800020', fontSize: '18px', fontWeight: '700' }}>
+                              Información del Docente
+                            </h3>
+                            <span style={{ fontSize: '12px', color: '#666', fontWeight: '500' }}>
+                              Colegio Orden de San Jorge
+                            </span>
+                          </div>
+                        </div>
 
-                        <h3 style={{ margin: '0 0 15px 0', color: '#800020', fontSize: '20px', fontFamily: 'Georgia, serif' }}>
-                          Información del Docente
-                        </h3>
-
-                        <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', fontSize: '14px', color: '#33272c', marginBottom: '25px' }}>
-                          <div style={{ background: '#fdf8f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2d7db' }}>
-                            <span style={{ display: 'block', fontSize: '11px', color: '#777078', fontWeight: 'bold', marginBottom: '2px' }}>ASIGNATURA</span>
-                            <strong>{docenteModal.asignatura}</strong>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '14px', marginBottom: '24px' }}>
+                          <div style={{ background: '#fcf8f9', padding: '12px 16px', borderRadius: '12px', border: '1px solid #f0e6e8' }}>
+                            <span style={{ display: 'block', fontSize: '11px', color: '#800020', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '3px' }}>
+                              ASIGNATURA
+                            </span>
+                            <strong style={{ fontSize: '15px', color: '#2c2c2c' }}>
+                              {docenteModal.asignatura}
+                            </strong>
                           </div>
 
-                          <div style={{ background: '#fdf8f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2d7db' }}>
-                            <span style={{ display: 'block', fontSize: '11px', color: '#777078', fontWeight: 'bold', marginBottom: '2px' }}>DOCENTE A CARGO</span>
-                            <strong>{docenteModal.docente}</strong>
+                          <div style={{ background: '#fcf8f9', padding: '12px 16px', borderRadius: '12px', border: '1px solid #f0e6e8' }}>
+                            <span style={{ display: 'block', fontSize: '11px', color: '#800020', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '3px' }}>
+                              DOCENTE A CARGO
+                            </span>
+                            <strong style={{ fontSize: '15px', color: '#2c2c2c' }}>
+                              {docenteModal.docente}
+                            </strong>
                           </div>
 
-                          <div style={{ background: '#fdf8f9', padding: '10px 14px', borderRadius: '8px', border: '1px solid #e2d7db' }}>
-                            <span style={{ display: 'block', fontSize: '11px', color: '#777078', fontWeight: 'bold', marginBottom: '2px' }}>CORREO ELECTRÓNICO</span>
-                            <a href={`mailto:${docenteModal.correo}`} style={{ color: '#800020', fontWeight: 'bold', textDecoration: 'none' }}>
-                              {docenteModal.correo}
-                            </a>
+                          <div style={{ background: '#fcf8f9', padding: '12px 16px', borderRadius: '12px', border: '1px solid #f0e6e8' }}>
+                            <span style={{ display: 'block', fontSize: '11px', color: '#800020', fontWeight: '700', letterSpacing: '0.5px', marginBottom: '6px' }}>
+                              CORREO ELECTRÓNICO INSTITUCIONAL
+                            </span>
+                            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '10px' }}>
+                              <a
+                                href={`mailto:${docenteModal.correo}`}
+                                style={{
+                                  color: '#800020',
+                                  fontWeight: '600',
+                                  fontSize: '14px',
+                                  textDecoration: 'none',
+                                  wordBreak: 'break-all'
+                                }}
+                              >
+                                {docenteModal.correo}
+                              </a>
+
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  if (docenteModal.correo) {
+                                    navigator.clipboard.writeText(docenteModal.correo);
+                                    setCopiado(true);
+                                    setTimeout(() => setCopiado(false), 2000);
+                                  }
+                                }}
+                                style={{
+                                  background: copiado ? '#2e7d32' : '#800020',
+                                  color: '#ffffff',
+                                  border: 'none',
+                                  borderRadius: '8px',
+                                  padding: '7px 12px',
+                                  fontSize: '12px',
+                                  fontWeight: '600',
+                                  cursor: 'pointer',
+                                  transition: 'all 0.2s ease',
+                                  whiteSpace: 'nowrap',
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px'
+                                }}
+                              >
+                                {copiado ? '✓ Copiado' : '📋 Copiar'}
+                              </button>
+                            </div>
                           </div>
                         </div>
 
                         <button
                           type="button"
                           onClick={() => setDocenteModal(null)}
-                          style={{ width: '100%', padding: '12px', background: '#800020', color: '#fff', border: 'none', borderRadius: '10px', fontWeight: 'bold', cursor: 'pointer', fontSize: '14px' }}
+                          style={{
+                            width: '100%',
+                            padding: '12px',
+                            background: '#800020',
+                            color: '#ffffff',
+                            border: 'none',
+                            borderRadius: '12px',
+                            fontWeight: '700',
+                            fontSize: '14px',
+                            cursor: 'pointer',
+                            boxShadow: '0 4px 12px rgba(128, 0, 32, 0.2)',
+                            transition: 'background 0.2s ease'
+                          }}
+                          onMouseEnter={(e) => (e.target.style.background = '#600018')}
+                          onMouseLeave={(e) => (e.target.style.background = '#800020')}
                         >
-                          Cerrar
+                          Entendido
                         </button>
                       </div>
                     </div>
