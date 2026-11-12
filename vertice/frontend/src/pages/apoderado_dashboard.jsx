@@ -269,57 +269,37 @@ function ApoderadoDashboard({ apoderadoRut }) {
     }
   };
 
-  const handleSubirJustificativo = async () => {
+  const handleSubirJustificativo = async (motivoRecibido) => {
     try {
       if (!alumnoSeleccionado?.id) {
-        throw new Error(
-          'No hay un alumno seleccionado.'
-        );
+        throw new Error('No hay un alumno seleccionado.');
       }
 
       if (!fechaInicio) {
-        throw new Error(
-          'Debe seleccionar la fecha de inicio.'
-        );
+        throw new Error('Debe seleccionar la fecha de inicio.');
       }
 
-      if (!motivo.trim()) {
-        throw new Error(
-          'Debe ingresar el motivo del justificativo.'
-        );
+      const motivoFinal = typeof motivoRecibido === 'string'
+        ? motivoRecibido
+        : (tipoMotivo === 'Otro' ? motivo.trim() : tipoMotivo);
+      if (tipoMotivo === 'Otro' && !motivoFinal) {
+        throw new Error('Debe especificar el motivo de la inasistencia en el cuadro de texto.');
       }
 
       if (fechaFin && fechaFin < fechaInicio) {
-        throw new Error(
-          'La fecha de término no puede ser anterior a la fecha de inicio.'
-        );
+        throw new Error('La fecha de término no puede ser anterior a la fecha de inicio.');
       }
 
       setEnviandoJustificativo(true);
       setError('');
 
       const formData = new FormData();
-
-      formData.append(
-        'fechaInicio',
-        fechaInicio
-      );
-
-      formData.append(
-        'fechaFin',
-        fechaFin || ''
-      );
-
-      formData.append(
-        'motivo',
-        motivo.trim()
-      );
+      formData.append('fechaInicio', fechaInicio);
+      formData.append('fechaFin', fechaFin || '');
+      formData.append('motivo', motivoFinal);
 
       if (archivo) {
-        formData.append(
-          'archivo',
-          archivo
-        );
+        formData.append('archivo', archivo);
       }
 
       await fetchConAuth(
@@ -330,33 +310,21 @@ function ApoderadoDashboard({ apoderadoRut }) {
         }
       );
 
+      setTipoMotivo('Enfermedad / Motivo Médico');
       setMotivo('');
       setFechaInicio('');
       setFechaFin('');
       setArchivo(null);
 
-      const inputArchivo =
-        document.getElementById(
-          'archivo-justificativo'
-        );
-
+      const inputArchivo = document.getElementById('archivo-justificativo');
       if (inputArchivo) {
         inputArchivo.value = '';
       }
 
-      alert(
-        'Justificativo enviado correctamente.'
-      );
+      alert('Justificativo enviado correctamente.');
     } catch (err) {
-      console.error(
-        'Error enviando justificativo:',
-        err
-      );
-
-      setError(
-        err.message ||
-        'No se pudo enviar el justificativo.'
-      );
+      console.error('Error enviando justificativo:', err);
+      setError(err.message || 'No se pudo enviar el justificativo.');
     } finally {
       setEnviandoJustificativo(false);
     }
@@ -1399,7 +1367,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                       </div>
                       <div>
                         <label style={{ display: 'block', fontSize: '12px', fontWeight: 'bold', color: '#33272c', marginBottom: '6px' }}>
-                          Fecha de Término 
+                          Fecha de Término
                         </label>
                         <input
                           type="date"
@@ -1422,7 +1390,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                           const nuevoValor = e.target.value;
                           setTipoMotivo(nuevoValor);
                           if (nuevoValor !== 'Otro') {
-                            setMotivo(''); 
+                            setMotivo('');
                           }
                         }}
                         style={{ width: '100%', padding: '10px', borderRadius: '8px', border: '1px solid #e2d7db', background: '#fff' }}
