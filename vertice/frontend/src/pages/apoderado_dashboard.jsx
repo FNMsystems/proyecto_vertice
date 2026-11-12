@@ -24,6 +24,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
   const [enviandoJustificativo, setEnviandoJustificativo] = useState(false);
 
   const [personasRetiro, setPersonasRetiro] = useState([]);
+  const [mesAsistenciaFiltro, setMesAsistenciaFiltro] = useState('TODOS');
   const [personaRetiroSeleccionada, setPersonaRetiroSeleccionada] = useState('');
   const [motivoRetiro, setMotivoRetiro] = useState('');
   const [observacionRetiro, setObservacionRetiro] = useState('');
@@ -1176,58 +1177,172 @@ function ApoderadoDashboard({ apoderadoRut }) {
 
               {tab === 'asistencia' && (
                 <div>
-                  <h3>
-                    Asistencia
-                  </h3>
+                  <div style={{ marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '15px' }}>
+                    <div>
+                      <h3 style={{ margin: '0 0 4px 0', color: '#800020' }}>
+                        Registro de Asistencia
+                      </h3>
+                      <p style={{ margin: 0, fontSize: '14px', color: '#666' }}>
+                        Consulta la asistencia detallada por mes de <strong>{alumnoSeleccionado.nombreCompleto}</strong>.
+                      </p>
+                    </div>
 
-                  <p className="asistencia-resumen">
-                    <strong>
-                      Porcentaje de Asistencia Anual:
-                    </strong>{' '}
-                    {alumnoSeleccionado.asistenciaPorcentaje !==
-                      null
-                      ? `${alumnoSeleccionado.asistenciaPorcentaje}%`
-                      : 'Sin datos'}
-                  </p>
+                    <div style={{ background: '#f8f3f5', padding: '10px 16px', borderRadius: '12px', border: '1px solid #e2d7db', textAlign: 'center' }}>
+                      <span style={{ display: 'block', fontSize: '11px', color: '#800020', fontWeight: 'bold' }}>ASISTENCIA ANUAL</span>
+                      <strong style={{ fontSize: '20px', color: '#800020' }}>
+                        {alumnoSeleccionado.asistenciaPorcentaje !== null ? `${alumnoSeleccionado.asistenciaPorcentaje}%` : '100%'}
+                      </strong>
+                    </div>
+                  </div>
 
-                  {alumnoSeleccionado.asistencia?.length > 0 ? (
-                    <table className="data-table">
-                      <thead>
-                        <tr>
-                          <th>Fecha</th>
-                          <th>Estado</th>
-                          <th>Observación</th>
-                        </tr>
-                      </thead>
+                  {(() => {
+                    const listaAsistencia = Array.isArray(alumnoSeleccionado.asistencia) ? alumnoSeleccionado.asistencia : [];
 
-                      <tbody>
-                        {alumnoSeleccionado.asistencia.map(
-                          (a, i) => (
-                            <tr key={i}>
-                              <td>
-                                {a.fecha ? (() => {
-                                  const [anio, mes, dia] = a.fecha.split('T')[0].split('-');
-                                  return anio && mes && dia ? `${dia}/${mes}/${anio}` : a.fecha;
-                                })() : '-'}
-                              </td>
+                    const nombresMeses = [
+                      'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                      'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+                    ];
 
-                              <td>
-                                {a.estado || '-'}
-                              </td>
+                    const asistenciaFiltrada = listaAsistencia.filter((item) => {
+                      if (mesAsistenciaFiltro === 'TODOS') return true;
+                      if (!item.fecha) return false;
+                      const partes = item.fecha.split('T')[0].split('-');
+                      if (partes.length >= 2) {
+                        const mesNumero = parseInt(partes[1], 10);
+                        return mesNumero === parseInt(mesAsistenciaFiltro, 10);
+                      }
+                      return false;
+                    });
 
-                              <td>
-                                {a.observacion || '-'}
-                              </td>
-                            </tr>
-                          )
+                    const totales = {
+                      presente: asistenciaFiltrada.filter(a => String(a.estado).toUpperCase() === 'PRESENTE').length,
+                      ausente: asistenciaFiltrada.filter(a => String(a.estado).toUpperCase() === 'AUSENTE').length,
+                      atrasado: asistenciaFiltrada.filter(a => String(a.estado).toUpperCase() === 'ATRASADO').length,
+                      justificado: asistenciaFiltrada.filter(a => String(a.estado).toUpperCase() === 'JUSTIFICADO').length,
+                    };
+
+                    return (
+                      <div>
+                        <div style={{ display: 'flex', gap: '8px', overflowX: 'auto', paddingBottom: '12px', marginBottom: '20px' }}>
+                          <button
+                            type="button"
+                            onClick={() => setMesAsistenciaFiltro('TODOS')}
+                            style={{
+                              padding: '8px 14px',
+                              borderRadius: '20px',
+                              border: '1px solid #800020',
+                              background: mesAsistenciaFiltro === 'TODOS' ? '#800020' : '#fff',
+                              color: mesAsistenciaFiltro === 'TODOS' ? '#fff' : '#800020',
+                              fontWeight: '600',
+                              fontSize: '13px',
+                              cursor: 'pointer',
+                              whiteSpace: 'nowrap',
+                              transition: 'all 0.2s ease'
+                            }}
+                          >
+                            Todo el Año
+                          </button>
+
+                          {[3, 4, 5, 6, 7, 8, 9, 10, 11, 12].map((numMes) => (
+                            <button
+                              key={numMes}
+                              type="button"
+                              onClick={() => setMesAsistenciaFiltro(String(numMes))}
+                              style={{
+                                padding: '8px 14px',
+                                borderRadius: '20px',
+                                border: '1px solid #e2d7db',
+                                background: mesAsistenciaFiltro === String(numMes) ? '#800020' : '#fcf8f9',
+                                color: mesAsistenciaFiltro === String(numMes) ? '#fff' : '#33272c',
+                                fontWeight: '600',
+                                fontSize: '13px',
+                                cursor: 'pointer',
+                                whiteSpace: 'nowrap',
+                                transition: 'all 0.2s ease'
+                              }}
+                            >
+                              {nombresMeses[numMes - 1]}
+                            </button>
+                          ))}
+                        </div>
+
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '12px', marginBottom: '20px' }}>
+                          <div style={{ background: '#ecfdf5', border: '1px solid #a7f3d0', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#065f46', fontWeight: 'bold', display: 'block' }}>PRESENTES</span>
+                            <strong style={{ fontSize: '18px', color: '#047857' }}>{totales.presente}</strong>
+                          </div>
+                          <div style={{ background: '#fef2f2', border: '1px solid #fecaca', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#991b1b', fontWeight: 'bold', display: 'block' }}>AUSENTES</span>
+                            <strong style={{ fontSize: '18px', color: '#dc2626' }}>{totales.ausente}</strong>
+                          </div>
+                          <div style={{ background: '#fffbeb', border: '1px solid #fef3c7', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#92400e', fontWeight: 'bold', display: 'block' }}>ATRASOS</span>
+                            <strong style={{ fontSize: '18px', color: '#d97706' }}>{totales.atrasado}</strong>
+                          </div>
+                          <div style={{ background: '#eff6ff', border: '1px solid #bfdbfe', padding: '12px', borderRadius: '10px', textAlign: 'center' }}>
+                            <span style={{ fontSize: '11px', color: '#1e40af', fontWeight: 'bold', display: 'block' }}>JUSTIFICADOS</span>
+                            <strong style={{ fontSize: '18px', color: '#2563eb' }}>{totales.justificado}</strong>
+                          </div>
+                        </div>
+
+                        {asistenciaFiltrada.length > 0 ? (
+                          <div style={{ background: '#fff', border: '1px solid #e2e8f0', borderRadius: '14px', padding: '15px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)', overflowX: 'auto' }}>
+                            <table className="data-table">
+                              <thead>
+                                <tr>
+                                  <th style={{ background: '#800020', color: '#fff' }}>Fecha</th>
+                                  <th style={{ background: '#800020', color: '#fff', textAlign: 'center' }}>Estado</th>
+                                  <th style={{ background: '#800020', color: '#fff' }}>Observación / Motivo</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {asistenciaFiltrada.map((a, i) => {
+                                  const fechaFormateada = a.fecha ? (() => {
+                                    const [anio, mes, dia] = a.fecha.split('T')[0].split('-');
+                                    return anio && mes && dia ? `${dia}/${mes}/${anio}` : a.fecha;
+                                  })() : '-';
+
+                                  const estadoUpper = String(a.estado || '').toUpperCase();
+
+                                  let badgeStyle = { background: '#f3f4f6', color: '#374151', border: '1px solid #d1d5db' };
+
+                                  if (estadoUpper === 'PRESENTE') {
+                                    badgeStyle = { background: '#d1fae5', color: '#065f46', border: '1px solid #a7f3d0' };
+                                  } else if (estadoUpper === 'AUSENTE') {
+                                    badgeStyle = { background: '#fee2e2', color: '#991b1b', border: '1px solid #fca5a5' };
+                                  } else if (estadoUpper === 'ATRASADO') {
+                                    badgeStyle = { background: '#fef3c7', color: '#92400e', border: '1px solid #fde68a' };
+                                  } else if (estadoUpper === 'JUSTIFICADO') {
+                                    badgeStyle = { background: '#dbeafe', color: '#1e40af', border: '1px solid #bfdbfe' };
+                                  }
+
+                                  return (
+                                    <tr key={i}>
+                                      <td style={{ fontWeight: '600', color: '#33272c' }}>
+                                        {fechaFormateada}
+                                      </td>
+                                      <td style={{ textAlign: 'center' }}>
+                                        <span style={{ ...badgeStyle, padding: '4px 10px', borderRadius: '6px', fontSize: '12px', fontWeight: 'bold', display: 'inline-block' }}>
+                                          {a.estado || '-'}
+                                        </span>
+                                      </td>
+                                      <td style={{ color: '#555', fontSize: '13px' }}>
+                                        {a.observacion || '-'}
+                                      </td>
+                                    </tr>
+                                  );
+                                })}
+                              </tbody>
+                            </table>
+                          </div>
+                        ) : (
+                          <div style={{ background: '#fcf8f9', border: '1px solid #f0e6e8', borderRadius: '14px', padding: '30px', textAlign: 'center', color: '#666' }}>
+                            No hay registros de asistencia para el mes seleccionado.
+                          </div>
                         )}
-                      </tbody>
-                    </table>
-                  ) : (
-                    <p>
-                      No hay registros de asistencia.
-                    </p>
-                  )}
+                      </div>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -1614,7 +1729,7 @@ function ApoderadoDashboard({ apoderadoRut }) {
                   </div>
 
                   {(() => {
-      
+
                     const asignaturasConDocente = Array.isArray(alumnoSeleccionado.asignaturas)
                       ? alumnoSeleccionado.asignaturas.filter(
                         (a) => a.docente_nombre && a.docente_nombre.trim() !== '' && a.docente_nombre !== 'Docente no registrado'
