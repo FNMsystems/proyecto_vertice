@@ -85,8 +85,8 @@ export default function ProfesorCurso() {
       setCurso(cursoInfo);
       setAlumnos(data.alumnos || []);
 
-      let nombresRamosPropios = new Set();
-      let idsRamosPropios = new Set();
+      const idsPropios = new Set();
+      const nombresPropios = new Set();
 
       if (dashboardData?.cursos) {
         const cursoEnDashboard = dashboardData.cursos.find(
@@ -94,8 +94,8 @@ export default function ProfesorCurso() {
         );
         if (cursoEnDashboard?.asignaturas) {
           cursoEnDashboard.asignaturas.forEach((asig) => {
-            if (asig.id) idsRamosPropios.add(String(asig.id));
-            if (asig.nombre) nombresRamosPropios.add(asig.nombre.trim().toLowerCase());
+            if (asig.id) idsPropios.add(String(asig.id));
+            if (asig.nombre) nombresPropios.add(asig.nombre.trim().toLowerCase());
           });
         }
       }
@@ -103,9 +103,11 @@ export default function ProfesorCurso() {
       const asignaturasMarcadas = todasAsignaturasCurso.map((asig) => {
         const idStr = String(asig.id);
         const nombreStr = (asig.nombre || '').trim().toLowerCase();
-        const esPropia = !cursoInfo?.esProfesorJefe
-          ? true
-          : (idsRamosPropios.has(idStr) || nombresRamosPropios.has(nombreStr));
+
+        let esPropia = true;
+        if (cursoInfo?.esProfesorJefe) {
+          esPropia = idsPropios.has(idStr) || nombresPropios.has(nombreStr);
+        }
 
         return {
           ...asig,
