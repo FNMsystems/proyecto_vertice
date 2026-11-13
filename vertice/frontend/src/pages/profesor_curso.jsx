@@ -79,42 +79,41 @@ export default function ProfesorCurso() {
         obtenerMiDashboardDocente().catch(() => null)
       ]);
 
-      setCurso(data.curso);
-      setAsignaturas(data.asignaturas || []);
+      const cursoInfo = data.curso;
+      const todasAsignaturasCurso = data.asignaturas || [];
+
+      setCurso(cursoInfo);
       setAlumnos(data.alumnos || []);
 
-      const idsPropios = new Set();
-      const usuarioActual = getUsuarioActual();
-      const docenteIdActual = dashboardData?.docente?.id || usuarioActual?.docenteId || usuarioActual?.id;
+      let nombresRamosPropios = new Set();
+      let idsRamosPropios = new Set();
 
       if (dashboardData?.cursos) {
         const cursoEnDashboard = dashboardData.cursos.find(
           (c) => String(c.id) === String(cursoId)
         );
         if (cursoEnDashboard?.asignaturas) {
-          cursoEnDashboard.asignaturas.forEach((a) => {
-            if (a.esPropia !== false && a.puedeEditar !== false) {
-              idsPropios.add(String(a.id));
-            }
+          cursoEnDashboard.asignaturas.forEach((asig) => {
+            if (asig.id) idsRamosPropios.add(String(asig.id));
+            if (asig.nombre) nombresRamosPropios.add(asig.nombre.trim().toLowerCase());
           });
         }
       }
 
-      (data.asignaturas || []).forEach((a) => {
-        if (a.esPropia === true || a.puedeEditar === true) {
-          idsPropios.add(String(a.id));
-        } else if (
-          docenteIdActual &&
-          (String(a.docenteId) === String(docenteIdActual) ||
-            String(a.docente_id) === String(docenteIdActual) ||
-            String(a.profesorId) === String(docenteIdActual) ||
-            String(a.profesor_id) === String(docenteIdActual))
-        ) {
-          idsPropios.add(String(a.id));
-        }
+      const asignaturasMarcadas = todasAsignaturasCurso.map((asig) => {
+        const idStr = String(asig.id);
+        const nombreStr = (asig.nombre || '').trim().toLowerCase();
+        const esPropia = !cursoInfo?.esProfesorJefe
+          ? true
+          : (idsRamosPropios.has(idStr) || nombresRamosPropios.has(nombreStr));
+
+        return {
+          ...asig,
+          esPropia
+        };
       });
 
-      setMisAsignaturasIds(idsPropios);
+      setAsignaturas(asignaturasMarcadas);
 
     } catch (error) {
       console.error('Error cargando curso:', error);
@@ -243,11 +242,7 @@ export default function ProfesorCurso() {
     const jefatura = [];
 
     asignaturas.forEach((asig) => {
-      const esPropia = !curso?.esProfesorJefe
-        ? true
-        : misAsignaturasIds.has(String(asig.id));
-
-      if (esPropia) {
+      if (asig.esPropia) {
         propias.push(asig);
       } else {
         jefatura.push(asig);
@@ -255,15 +250,15 @@ export default function ProfesorCurso() {
     });
 
     return { asignaturasPropias: propias, asignaturasJefatura: jefatura };
-  }, [asignaturas, curso, misAsignaturasIds]);
+  }, [asignaturas]);
 
   const puedeEditarAsignaturaActual = useMemo(() => {
     if (!asignaturaNotas) return false;
-    if (!curso?.esProfesorJefe) return true;
-    return misAsignaturasIds.has(String(asignaturaNotas));
-  }, [asignaturaNotas, curso, misAsignaturasIds]);
-
-
+    const encontrada = asignaturas.find(
+      (a) => String(a.id) === String(asignaturaNotas)
+    );
+    return encontrada ? Boolean(encontrada.esPropia) : false;
+  }, [asignaturaNotas, asignaturas]);
 
   const alumnosOrdenados = useMemo(() => {
     return [...alumnos].sort((a, b) =>
@@ -987,6 +982,7 @@ export default function ProfesorCurso() {
 
           </section>
         )}
+
         {pestana === 'notas' && (
           <section className="curso-panel">
 
@@ -994,9 +990,7 @@ export default function ProfesorCurso() {
               <div>
                 <h2>Libro de clases · Notas</h2>
                 <p>
-                  {puedeEditarAsignaturaActual || !asignaturaNotas
-                    ? 'Registra evaluaciones y calificaciones de tus asignaturas.'
-                    : 'Vista de consulta · Como Profesor Jefe puedes revisar las calificaciones de esta asignatura.'}
+                  Registra evaluaciones y calificaciones de tus asignaturas.
                 </p>
               </div>
 
@@ -1035,25 +1029,11 @@ export default function ProfesorCurso() {
                 >
                   <option value="">Seleccionar asignatura</option>
 
-                  {asignaturasPropias.length > 0 && (
-                    <optgroup label="Mis Asignaturas">
-                      {asignaturasPropias.map((asignatura) => (
-                        <option key={asignatura.id} value={asignatura.id}>
-                          {asignatura.nombre}
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
-
-                  {asignaturasJefatura.length > 0 && (
-                    <optgroup label="Otras Asignaturas (Jefatura · Solo lectura)">
-                      {asignaturasJefatura.map((asignatura) => (
-                        <option key={asignatura.id} value={asignatura.id}>
-                          {asignatura.nombre} (Solo lectura)
-                        </option>
-                      ))}
-                    </optgroup>
-                  )}
+                  {asignaturasPropias.map((asignatura) => (
+                    <option key={asignatura.id} value={asignatura.id}>
+                      {asignatura.nombre}
+                    </option>
+                  ))}
                 </select>
               </div>
 
@@ -1074,28 +1054,6 @@ export default function ProfesorCurso() {
               </div>
 
             </div>
-
-            {asignaturaNotas && !puedeEditarAsignaturaActual && (
-              <div
-                style={{
-                  backgroundColor: '#f1f5f9',
-                  borderLeft: '4px solid #475569',
-                  color: '#334155',
-                  padding: '12px 16px',
-                  borderRadius: '8px',
-                  marginBottom: '20px',
-                  fontSize: '13px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '10px'
-                }}
-              >
-                <span style={{ fontSize: '18px' }}>👁️</span>
-                <div>
-                  <strong>Modo Consulta (Profesor Jefe):</strong> Esta asignatura es impartida por otro docente. Puedes revisar las evaluaciones y promedios del curso, pero no realizar modificaciones.
-                </div>
-              </div>
-            )}
 
             {asignaturaNotas && (
               <div
@@ -1230,7 +1188,7 @@ export default function ProfesorCurso() {
                 <h3>Selecciona una asignatura</h3>
                 <p>
                   Para consultar o registrar calificaciones,
-                  primero selecciona una asignatura del listado.
+                  primero selecciona una de tus asignaturas del listado.
                 </p>
               </div>
             ) : cargandoNotas ? (
@@ -1247,9 +1205,8 @@ export default function ProfesorCurso() {
                 <div>📝</div>
                 <h3>No hay evaluaciones registradas</h3>
                 <p>
-                  {puedeEditarAsignaturaActual
-                    ? 'Utiliza el botón «Nueva evaluación» para crear la primera columna de calificaciones.'
-                    : 'El docente de esta asignatura aún no ha registrado evaluaciones en este período.'}
+                  Utiliza el botón «Nueva evaluación» para crear
+                  la primera columna de calificaciones.
                 </p>
               </div>
             ) : (
@@ -1341,46 +1298,29 @@ export default function ProfesorCurso() {
                                 title={`${evaluacion.tipoEvaluacion} · ${evaluacion.porcentaje}%`}
                                 style={{ textAlign: 'center' }}
                               >
-                                {puedeEditarAsignaturaActual ? (
-                                  <input
-                                    type="number"
-                                    min="1"
-                                    max="7"
-                                    step="0.1"
-                                    placeholder="—"
-                                    value={valorNota}
-                                    disabled={guardandoEvaluacion}
-                                    onChange={(e) =>
-                                      cambiarNotaGrilla(
-                                        evaluacion.clave,
-                                        alumno.id,
-                                        e.target.value
-                                      )
-                                    }
-                                    style={{
-                                      width: '75px',
-                                      padding: '7px',
-                                      textAlign: 'center',
-                                      border: '1px solid #d0d7de',
-                                      borderRadius: '6px'
-                                    }}
-                                  />
-                                ) : (
-                                  <span
-                                    style={{
-                                      display: 'inline-block',
-                                      minWidth: '45px',
-                                      padding: '5px 8px',
-                                      borderRadius: '6px',
-                                      backgroundColor: valorNota !== '' ? '#f8fafc' : 'transparent',
-                                      border: valorNota !== '' ? '1px solid #e2e8f0' : 'none',
-                                      fontWeight: '600',
-                                      color: valorNota !== '' && Number(valorNota) < 4 ? '#dc2626' : '#1e293b'
-                                    }}
-                                  >
-                                    {valorNota !== '' ? Number(valorNota).toFixed(1) : '—'}
-                                  </span>
-                                )}
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="7"
+                                  step="0.1"
+                                  placeholder="—"
+                                  value={valorNota}
+                                  disabled={guardandoEvaluacion || !puedeEditarAsignaturaActual}
+                                  onChange={(e) =>
+                                    cambiarNotaGrilla(
+                                      evaluacion.clave,
+                                      alumno.id,
+                                      e.target.value
+                                    )
+                                  }
+                                  style={{
+                                    width: '75px',
+                                    padding: '7px',
+                                    textAlign: 'center',
+                                    border: '1px solid #d0d7de',
+                                    borderRadius: '6px'
+                                  }}
+                                />
                               </td>
                             );
                           })}
@@ -1402,7 +1342,7 @@ export default function ProfesorCurso() {
                                 <div>
                                   <small>
                                     {resultado.definitivo
-                                      ? 'Promedio definitivo'
+                                      ? 'Promedio Final'
                                       : `Parcial · ${resultado.porcentajeIngresado.toFixed(0)}%`}
                                   </small>
                                 </div>
@@ -2084,7 +2024,7 @@ export default function ProfesorCurso() {
               <div>
                 <h2>⭐ Panel de Jefatura ·  Situación Curso</h2>
                 <p>
-                  Puedes revisar calificaciones y rendimiento en modo lectura.                  
+                  Puedes revisar calificaciones y rendimiento en modo lectura.
                 </p>
               </div>
             </div>
@@ -2099,7 +2039,7 @@ export default function ProfesorCurso() {
                   {asignaturas
                     .filter((a) => {
                       const esPropia = a.puedeEditar !== undefined ? Boolean(a.puedeEditar) : (a.esPropia !== undefined ? Boolean(a.esPropia) : true);
-                      return !esPropia; 
+                      return !esPropia;
                     })
                     .map((asig) => (
                       <div
