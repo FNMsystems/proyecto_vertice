@@ -14,7 +14,7 @@ import { logoutService } from '../services/authService.js';
 import './profesor_curso.css';
 
 const CURSOS_PRIMER_BASICO_IDS = [
-  '11000000-0000-0000-0000-000000000001', 
+  '11000000-0000-0000-0000-000000000001',
   '11000000-0000-0000-0000-000000000002'  
 ];
 
@@ -671,12 +671,41 @@ export default function ProfesorCurso() {
               </div>
             )}
 
+            {mostrarNuevaEvaluacion && puedeEditarAsignaturaActual && (
+              <form className="form-card" onSubmit={crearNuevaEvaluacion} style={{ marginBottom: '20px' }}>
+                <h3>Crear evaluación para todo el curso</h3>
+                <p>Se creará una columna para todos los alumnos. Podrás ingresar las calificaciones después.</p>
+                <div className="form-grid">
+                  <div className="form-group">
+                    <label>Nombre de la evaluación</label>
+                    <input type="text" maxLength="100" placeholder="Ej: Prueba unidad 1" value={nuevaEvaluacion.tipoEvaluacion} onChange={(e) => setNuevaEvaluacion({ ...nuevaEvaluacion, tipoEvaluacion: e.target.value })} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Ponderación (%)</label>
+                    <input type="number" min="0.01" max="100" step="0.01" placeholder="Ej: 30" value={nuevaEvaluacion.porcentaje} onChange={(e) => setNuevaEvaluacion({ ...nuevaEvaluacion, porcentaje: e.target.value })} required />
+                  </div>
+                  <div className="form-group">
+                    <label>Fecha de evaluación</label>
+                    <input type="date" value={nuevaEvaluacion.fecha} onChange={(e) => setNuevaEvaluacion({ ...nuevaEvaluacion, fecha: e.target.value })} required />
+                  </div>
+                  <div className="form-group form-group-full">
+                    <label>Observación (opcional)</label>
+                    <textarea rows="2" value={nuevaEvaluacion.observacion} onChange={(e) => setNuevaEvaluacion({ ...nuevaEvaluacion, observacion: e.target.value })} />
+                  </div>
+                </div>
+                <div className="form-actions">
+                  <button type="button" className="btn-secondary" onClick={() => setMostrarNuevaEvaluacion(false)} disabled={guardandoEvaluacion}>Cancelar</button>
+                  <button type="submit" className="btn-primary" disabled={guardandoEvaluacion}>{guardandoEvaluacion ? 'Guardando...' : 'Crear evaluación'}</button>
+                </div>
+              </form>
+            )}
+
             {!asignaturaNotas ? (
               <div className="empty-state"><div>📚</div><h3>Selecciona una asignatura</h3></div>
             ) : cargandoNotas ? (
               <div className="loading-state">Cargando notas...</div>
             ) : evaluacionesAgrupadas.length === 0 ? (
-              <div className="empty-state"><div>📝</div><h3>No hay evaluaciones registradas</h3></div>
+              <div className="empty-state"><div>📝</div><h3>No hay evaluaciones registradas</h3><p>Utiliza el botón «Nueva evaluación» para crear la primera columna.</p></div>
             ) : (
               <div className="table-wrapper" style={{ overflowX: 'auto', width: '100%' }}>
                 <table className="curso-table">
@@ -732,6 +761,27 @@ export default function ProfesorCurso() {
                     })}
                   </tbody>
                 </table>
+
+                {puedeEditarAsignaturaActual && (
+                  <>
+                    <div style={{ display: 'flex', gap: '10px', flexWrap: 'wrap', padding: '15px 0' }}>
+                      {evaluacionesAgrupadas.map((evaluacion) => (
+                        <button
+                          key={evaluacion.clave}
+                          type="button"
+                          className="btn-primary"
+                          disabled={guardandoEvaluacion}
+                          onClick={() => guardarEvaluacionMasiva(evaluacion)}
+                        >
+                          {guardandoEvaluacion ? 'Guardando...' : `Guardar: ${evaluacion.tipoEvaluacion}`}
+                        </button>
+                      ))}
+                    </div>
+                    <p style={{ fontSize: '12px', color: '#666' }}>
+                      Las notas modificadas se guardan al presionar el botón de la evaluación correspondiente.
+                    </p>
+                  </>
+                )}
               </div>
             )}
           </section>
@@ -839,26 +889,123 @@ export default function ProfesorCurso() {
 
         {pestana === 'informacion-alumno' && (
           <section className="curso-panel">
-            <div className="panel-header"><div><h2>👤 Información del alumno</h2><p>Consulta datos personales y apoderados.</p></div></div>
+            <div className="panel-header">
+              <div>
+                <h2>👤 Información del alumno</h2>
+                <p>Consulta los datos personales, apoderados, autorizados de retiro y antecedentes de salud.</p>
+              </div>
+            </div>
+
             <div className="form-card">
               <div className="form-group form-group-full">
                 <label>Seleccionar alumno</label>
                 <select value={alumnoSeleccionadoId} onChange={(e) => { setAlumnoSeleccionadoId(e.target.value); if (!e.target.value) setInformacionAlumno(null); }}>
                   <option value="">Seleccionar alumno</option>
-                  {alumnos.map((alumno) => (<option key={alumno.id} value={alumno.id}>{alumno.nombre} {alumno.rut ? `· ${alumno.rut}` : ''}</option>))}
+                  {alumnos.map((alumno) => (
+                    <option key={alumno.id} value={alumno.id}>{alumno.nombre} {alumno.rut ? `· ${alumno.rut}` : ''}</option>
+                  ))}
                 </select>
               </div>
             </div>
-            {informacionAlumno && (
-              <div className="information-section">
-                <h3>Datos del alumno</h3>
-                <div className="info-grid">
-                  <div className="info-box"><span>Nombre completo</span><strong>{informacionAlumno.nombre || '-'}</strong></div>
-                  <div className="info-box"><span>RUT</span><strong>{informacionAlumno.rut || '-'}</strong></div>
-                  <div className="info-box"><span>Fecha de nacimiento</span><strong>{formatearFecha(informacionAlumno.fechaNacimiento)}</strong></div>
-                  <div className="info-box"><span>Sexo</span><strong>{informacionAlumno.sexo || '-'}</strong></div>
-                </div>
+
+            {cargandoInformacionAlumno && <div className="loading-state">Cargando información...</div>}
+
+            {!cargandoInformacionAlumno && !informacionAlumno && (
+              <div className="empty-state">
+                <div>👤</div>
+                <h3>Selecciona un alumno</h3>
+                <p>Selecciona un estudiante para consultar su detalle completo.</p>
               </div>
+            )}
+
+            {!cargandoInformacionAlumno && informacionAlumno && (
+              <>
+                <div className="information-section">
+                  <h3>Datos personales</h3>
+                  <div className="info-grid">
+                    <div className="info-box"><span>Nombre completo</span><strong>{informacionAlumno.nombre || '-'}</strong></div>
+                    <div className="info-box"><span>RUT</span><strong>{informacionAlumno.rut || '-'}</strong></div>
+                    <div className="info-box"><span>Fecha de nacimiento</span><strong>{formatearFecha(informacionAlumno.fechaNacimiento)}</strong></div>
+                    <div className="info-box"><span>Sexo</span><strong>{informacionAlumno.sexo || '-'}</strong></div>
+                  </div>
+                </div>
+
+                <div className="information-section">
+                  <h3>Apoderados</h3>
+                  {informacionAlumno.apoderados?.length ? (
+                    <div className="table-wrapper">
+                      <table className="curso-table">
+                        <thead>
+                          <tr><th>Nombre</th><th>RUT</th><th>Parentesco</th><th>Teléfono</th><th>Correo</th><th>Principal</th></tr>
+                        </thead>
+                        <tbody>
+                          {informacionAlumno.apoderados.map((apoderado) => (
+                            <tr key={apoderado.id}>
+                              <td><strong>{apoderado.nombre || '-'}</strong></td>
+                              <td>{apoderado.rut || '-'}</td>
+                              <td>{apoderado.parentesco || '-'}</td>
+                              <td>{apoderado.telefono || '-'}</td>
+                              <td>{apoderado.correo || '-'}</td>
+                              <td>{apoderado.esApoderadoPrincipal ? 'Sí' : 'No'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="empty-state"><div>👨‍👩‍👧</div><h3>Sin apoderados registrados</h3></div>
+                  )}
+                </div>
+
+                <div className="information-section">
+                  <h3>Personas autorizadas para retirar</h3>
+                  {informacionAlumno.autorizadosRetiro?.length ? (
+                    <div className="table-wrapper">
+                      <table className="curso-table">
+                        <thead>
+                          <tr><th>Nombre</th><th>RUT</th><th>Parentesco / Relación</th><th>Teléfono</th></tr>
+                        </thead>
+                        <tbody>
+                          {informacionAlumno.autorizadosRetiro.map((aut, idx) => (
+                            <tr key={idx}>
+                              <td><strong>{aut.nombre || '-'}</strong></td>
+                              <td>{aut.rut || '-'}</td>
+                              <td>{aut.parentesco || '-'}</td>
+                              <td>{aut.telefono || '-'}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  ) : (
+                    <div className="empty-state">
+                      <p>No registra personas autorizadas adicionales (los apoderados principales tienen autorización por defecto).</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="information-section">
+                  <h3>Salud · Enfermedades y Alergias</h3>
+                  <div className="info-grid">
+                    <div className="info-box">
+                      <span>Enfermedades crónicas o condiciones médicas</span>
+                      <strong>{informacionAlumno.enfermedades || informacionAlumno.condicionMedica || 'No registra enfermedades informadas.'}</strong>
+                    </div>
+                    <div className="info-box">
+                      <span>Alergias (medicamentos, alimentos, etc.)</span>
+                      <strong>{informacionAlumno.alergias || 'No registra alergias informadas.'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="information-section">
+                  <h3>Observaciones relevantes / Matrícula</h3>
+                  <div className="info-box">
+                    <span>Antecedentes especiales</span>
+                    <strong>{informacionAlumno.observacionesRelevantes || 'No registra información especial.'}</strong>
+                  </div>
+                </div>
+              </>
             )}
           </section>
         )}
@@ -1073,7 +1220,6 @@ export default function ProfesorCurso() {
                     </div>
                   )}
                 </div>
-
               </div>
             )}
           </section>
@@ -1094,7 +1240,6 @@ function obtenerFechaActual() {
 
 function formatearFecha(fecha) {
   if (!fecha) return '-';
-  
   if (String(fecha).includes('T')) {
     const soloFecha = String(fecha).split('T')[0];
     const partes = soloFecha.split('-');
@@ -1106,7 +1251,6 @@ function formatearFecha(fecha) {
   if (partes.length === 3) {
     return `${partes[2]}/${partes[1]}/${partes[0]}`;
   }
-
   return fecha;
 }
 
