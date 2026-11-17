@@ -1094,8 +1094,19 @@ function obtenerFechaActual() {
 
 function formatearFecha(fecha) {
   if (!fecha) return '-';
+  
+  if (String(fecha).includes('T')) {
+    const soloFecha = String(fecha).split('T')[0];
+    const partes = soloFecha.split('-');
+    if (partes.length === 3) {
+      return `${partes[2]}/${partes[1]}/${partes[0]}`;
+    }
+  }
   const partes = String(fecha).split('-');
-  if (partes.length === 3) return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  if (partes.length === 3) {
+    return `${partes[2]}/${partes[1]}/${partes[0]}`;
+  }
+
   return fecha;
 }
 
