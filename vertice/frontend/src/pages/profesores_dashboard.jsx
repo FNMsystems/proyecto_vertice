@@ -291,15 +291,14 @@ export default function ProfesoresDashboard() {
                         <div className="asignaturas-list">
                           {curso.asignaturas
                             .filter((asignatura) => {
-                              const esPropia = asignatura.puedeEditar !== undefined
-                                ? Boolean(asignatura.puedeEditar)
+                              const esPropia = asignatura.puedeGestionar !== undefined
+                                ? Boolean(asignatura.puedeGestionar)
                                 : (asignatura.esPropia !== undefined ? Boolean(asignatura.esPropia) : true);
 
-                  
                               if (curso.esProfesorJefe) {
                                 return esPropia;
                               }
-                              return true; 
+                              return true;
                             })
                             .map((asignatura) => (
                               <div key={asignatura.id} className="asignatura-item">

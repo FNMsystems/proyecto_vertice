@@ -1,5 +1,17 @@
 import { query } from "../config/db.js";
 
+const CURSOS_PRIMER_BASICO_IDS = [
+  "11000000-0000-0000-0000-000000000001", 
+  "11000000-0000-0000-0000-000000000002", 
+];
+
+const esCursoGeneralista = (curso) => {
+  return (
+    String(curso?.codigoNivel || curso?.codigo_nivel || "").trim() === "010" ||
+    CURSOS_PRIMER_BASICO_IDS.includes(String(curso?.id || ""))
+  );
+};
+
 export const getMiDashboard = async (req, res) => {
   try {
     const docenteId = req.usuario.id;
@@ -105,6 +117,8 @@ export const getMiDashboard = async (req, res) => {
         continue;
       }
 
+      const generalista = esCursoGeneralista(curso);
+
       const asignaturasCursoResult = await query(
         `
           SELECT
@@ -144,7 +158,8 @@ export const getMiDashboard = async (req, res) => {
         docenteId: asignatura.docente_id,
         docente: asignatura.docente_nombre,
         correoDocente: asignatura.docente_correo,
-        puedeGestionar: String(asignatura.docente_id) === String(docenteId),
+        puedeGestionar:
+          generalista || String(asignatura.docente_id) === String(docenteId),
       }));
     }
 
@@ -222,6 +237,8 @@ export const getCursoDocente = async (req, res) => {
     }
 
     const curso = cursoResult.rows[0];
+    const esJefeGeneralista =
+      Boolean(curso.es_profesor_jefe) && esCursoGeneralista(curso);
 
     let horario = [];
 
@@ -279,55 +296,53 @@ export const getCursoDocente = async (req, res) => {
 
     const asignaturasResult = await query(
       `
-    SELECT
-      a.id,
-      a.codigo,
-      a.nombre,
-      d.id AS docente_id,
-      CONCAT(
-        d.nombres,
-        ' ',
-        d.apellido_paterno,
-        CASE
-          WHEN d.apellido_materno IS NOT NULL
-            AND TRIM(d.apellido_materno) <> ''
-          THEN ' ' || d.apellido_materno
-          ELSE ''
-        END
-      ) AS docente_nombre,
-      d.correo AS docente_correo
+        SELECT
+          a.id,
+          a.codigo,
+          a.nombre,
+          d.id AS docente_id,
+          CONCAT(
+            d.nombres,
+            ' ',
+            d.apellido_paterno,
+            CASE
+              WHEN d.apellido_materno IS NOT NULL
+                AND TRIM(d.apellido_materno) <> ''
+              THEN ' ' || d.apellido_materno
+              ELSE ''
+            END
+          ) AS docente_nombre,
+          d.correo AS docente_correo
 
-    FROM docente_curso dc
+        FROM docente_curso dc
 
-    INNER JOIN asignaturas a
-      ON a.id = dc.asignatura_id
+        INNER JOIN asignaturas a
+          ON a.id = dc.asignatura_id
 
-    LEFT JOIN docentes d
-      ON d.id = dc.docente_id
+        LEFT JOIN docentes d
+          ON d.id = dc.docente_id
 
-    WHERE dc.curso_id = $1
-      AND dc.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
-      AND a.activo = TRUE
+        WHERE dc.curso_id = $1
+          AND dc.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+          AND a.activo = TRUE
 
-      AND (
-        -- Si es profesor jefe, puede ver todas las asignaturas.
-        EXISTS (
-          SELECT 1
-          FROM docente_curso dc_jefe
-          WHERE dc_jefe.docente_id = $2
-            AND dc_jefe.curso_id = dc.curso_id
-            AND dc_jefe.anio = dc.anio
-            AND dc_jefe.es_profesor_jefe = TRUE
-        )
+          AND (
+            EXISTS (
+              SELECT 1
+              FROM docente_curso dc_jefe
+              WHERE dc_jefe.docente_id = $2
+                AND dc_jefe.curso_id = dc.curso_id
+                AND dc_jefe.anio = dc.anio
+                AND dc_jefe.es_profesor_jefe = TRUE
+            )
+            OR dc.docente_id = $2
+          )
 
-        -- Si no es profesor jefe, solamente ve las propias.
-        OR dc.docente_id = $2
-      )
-
-    ORDER BY a.nombre;
-  `,
+        ORDER BY a.nombre;
+      `,
       [cursoId, docenteId],
     );
+
     const alumnosResult = await query(
       `
         SELECT
@@ -396,7 +411,9 @@ export const getCursoDocente = async (req, res) => {
         docenteId: asignatura.docente_id,
         docente: asignatura.docente_nombre,
         correoDocente: asignatura.docente_correo,
-        puedeGestionar: String(asignatura.docente_id) === String(docenteId),
+        puedeGestionar:
+          esJefeGeneralista ||
+          String(asignatura.docente_id) === String(docenteId),
       })),
 
       horario,

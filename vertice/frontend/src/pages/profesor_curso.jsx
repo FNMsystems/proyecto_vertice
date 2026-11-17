@@ -13,6 +13,18 @@ import { logoutService } from '../services/authService.js';
 
 import './profesor_curso.css';
 
+const CURSOS_PRIMER_BASICO_IDS = [
+  '11000000-0000-0000-0000-000000000001', 
+  '11000000-0000-0000-0000-000000000002'  
+];
+
+const esCursoGeneralista = (cursoInfo) => {
+  return (
+    String(cursoInfo?.codigoNivel || '').trim() === '010' ||
+    CURSOS_PRIMER_BASICO_IDS.includes(String(cursoInfo?.id || ''))
+  );
+};
+
 export default function ProfesorCurso() {
 
   const navigate = useNavigate();
@@ -84,6 +96,7 @@ export default function ProfesorCurso() {
 
       setCurso(cursoInfo);
       setAlumnos(data.alumnos || []);
+      setHorario(data.horario || []);
 
       const idsPropios = new Set();
       const nombresPropios = new Set();
@@ -94,11 +107,15 @@ export default function ProfesorCurso() {
         );
         if (cursoEnDashboard?.asignaturas) {
           cursoEnDashboard.asignaturas.forEach((asig) => {
-            if (asig.id) idsPropios.add(String(asig.id));
-            if (asig.nombre) nombresPropios.add(asig.nombre.trim().toLowerCase());
+            if (asig.puedeGestionar !== false) {
+              if (asig.id) idsPropios.add(String(asig.id));
+              if (asig.nombre) nombresPropios.add(asig.nombre.trim().toLowerCase());
+            }
           });
         }
       }
+
+      const generalista = esCursoGeneralista(cursoInfo);
 
       const asignaturasMarcadas = todasAsignaturasCurso.map((asig) => {
         const idStr = String(asig.id);
@@ -106,7 +123,13 @@ export default function ProfesorCurso() {
 
         let esPropia = true;
         if (cursoInfo?.esProfesorJefe) {
-          esPropia = idsPropios.has(idStr) || nombresPropios.has(nombreStr);
+          if (generalista) {
+            esPropia = true;
+          } else if (asig.puedeGestionar !== undefined) {
+            esPropia = Boolean(asig.puedeGestionar);
+          } else {
+            esPropia = idsPropios.has(idStr) || nombresPropios.has(nombreStr);
+          }
         }
 
         return {
@@ -593,7 +616,7 @@ export default function ProfesorCurso() {
 
   const obtenerEstadoAlumno = (alumnoId) => {
     const registro = asistencia.find(
-      (item) => item.alumnoId === alumnoId
+      (item) => item.alumnoId === alumnoId || item.id === alumnoId
     );
 
     return registro?.estado || null;
@@ -868,35 +891,35 @@ export default function ProfesorCurso() {
             className={pestana === 'alumnos' ? 'curso-tab active' : 'curso-tab'}
             onClick={() => setPestana('alumnos')}
           >
-            👥 Alumnos
+            Alumnos
           </button>
 
           <button
             className={pestana === 'notas' ? 'curso-tab active' : 'curso-tab'}
             onClick={() => setPestana('notas')}
           >
-            📝 Notas
+            Notas
           </button>
 
           <button
             className={pestana === 'asistencia' ? 'curso-tab active' : 'curso-tab'}
             onClick={() => setPestana('asistencia')}
           >
-            📅 Asistencia
+            Asistencia
           </button>
 
           <button
             className={pestana === 'anotaciones' ? 'curso-tab active' : 'curso-tab'}
             onClick={() => setPestana('anotaciones')}
           >
-            📋 Anotaciones
+            Anotaciones
           </button>
 
           <button
             className={pestana === 'informacion-alumno' ? 'curso-tab active' : 'curso-tab'}
             onClick={() => setPestana('informacion-alumno')}
           >
-            👤 Información del alumno
+            Información del alumno
           </button>
 
           <button
@@ -906,7 +929,7 @@ export default function ProfesorCurso() {
             ℹ️ Información
           </button>
 
-          {curso?.esProfesorJefe && (
+          {curso?.esProfesorJefe && asignaturasJefatura.length > 0 && (
             <button
               className={pestana === 'jefatura' ? 'curso-tab active' : 'curso-tab'}
               onClick={() => {
@@ -2020,7 +2043,7 @@ export default function ProfesorCurso() {
           </section>
         )}
 
-        {pestana === 'jefatura' && curso?.esProfesorJefe && (
+        {pestana === 'jefatura' && curso?.esProfesorJefe && asignaturasJefatura.length > 0 && (
           <section className="curso-panel">
             <div className="panel-header">
               <div>
@@ -2038,37 +2061,32 @@ export default function ProfesorCurso() {
                 </p>
 
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(240px, 1fr))', gap: '15px' }}>
-                  {asignaturas
-                    .filter((a) => {
-                      const esPropia = a.puedeEditar !== undefined ? Boolean(a.puedeEditar) : (a.esPropia !== undefined ? Boolean(a.esPropia) : true);
-                      return !esPropia;
-                    })
-                    .map((asig) => (
-                      <div
-                        key={asig.id}
-                        onClick={() => {
-                          setAsignaturaNotas(asig.id);
-                          setPeriodoNotas('1');
-                        }}
-                        style={{
-                          background: '#fff',
-                          border: '1px solid #e2d7db',
-                          borderLeft: '5px solid #800020',
-                          borderRadius: '12px',
-                          padding: '18px',
-                          cursor: 'pointer',
-                          boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
-                          transition: 'transform 0.2s ease'
-                        }}
-                      >
-                        <h3 style={{ margin: '0 0 6px 0', color: '#800020', fontSize: '16px' }}>
-                          {asig.nombre}
-                        </h3>
-                        <span style={{ fontSize: '12px', color: '#666' }}>
-                          Clic para ver notas y promedios
-                        </span>
-                      </div>
-                    ))}
+                  {asignaturasJefatura.map((asig) => (
+                    <div
+                      key={asig.id}
+                      onClick={() => {
+                        setAsignaturaNotas(asig.id);
+                        setPeriodoNotas('1');
+                      }}
+                      style={{
+                        background: '#fff',
+                        border: '1px solid #e2d7db',
+                        borderLeft: '5px solid #800020',
+                        borderRadius: '12px',
+                        padding: '18px',
+                        cursor: 'pointer',
+                        boxShadow: '0 2px 6px rgba(0,0,0,0.02)',
+                        transition: 'transform 0.2s ease'
+                      }}
+                    >
+                      <h3 style={{ margin: '0 0 6px 0', color: '#800020', fontSize: '16px' }}>
+                        {asig.nombre}
+                      </h3>
+                      <span style={{ fontSize: '12px', color: '#666' }}>
+                        Clic para ver notas y promedios
+                      </span>
+                    </div>
+                  ))}
                 </div>
               </div>
             ) : (
