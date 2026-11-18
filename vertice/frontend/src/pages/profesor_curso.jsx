@@ -891,13 +891,13 @@ export default function ProfesorCurso() {
           <section className="curso-panel">
             <div className="panel-header">
               <div>
-                <h2>👤 Información del alumno</h2>
-                <p>Consulta los datos personales, apoderados, autorizados de retiro y antecedentes de salud.</p>
+                <h2>👤 Ficha Completa del Alumno</h2>
+                <p>Antecedentes académicos, familiares, de salud y socioeconómicos registrados en matrícula.</p>
               </div>
             </div>
 
-            <div className="form-card">
-              <div className="form-group form-group-full">
+            <div className="form-card" style={{ marginBottom: '20px' }}>
+              <div className="form-group form-group-full" style={{ margin: 0 }}>
                 <label>Seleccionar alumno</label>
                 <select value={alumnoSeleccionadoId} onChange={(e) => { setAlumnoSeleccionadoId(e.target.value); if (!e.target.value) setInformacionAlumno(null); }}>
                   <option value="">Seleccionar alumno</option>
@@ -914,29 +914,33 @@ export default function ProfesorCurso() {
               <div className="empty-state">
                 <div>👤</div>
                 <h3>Selecciona un alumno</h3>
-                <p>Selecciona un estudiante para consultar su detalle completo.</p>
+                <p>Selecciona un estudiante para consultar su ficha completa.</p>
               </div>
             )}
 
             {!cargandoInformacionAlumno && informacionAlumno && (
-              <>
-                <div className="information-section">
-                  <h3>Datos personales</h3>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '25px' }}>
+                <div className="information-section" style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2d7db' }}>
+                  <h3 style={{ color: '#800020', borderBottom: '2px solid #f4f2f3', paddingBottom: '8px', marginBottom: '15px' }}>📋 1. Datos Personales y Académicos</h3>
                   <div className="info-grid">
                     <div className="info-box"><span>Nombre completo</span><strong>{informacionAlumno.nombre || '-'}</strong></div>
                     <div className="info-box"><span>RUT</span><strong>{informacionAlumno.rut || '-'}</strong></div>
                     <div className="info-box"><span>Fecha de nacimiento</span><strong>{formatearFecha(informacionAlumno.fechaNacimiento)}</strong></div>
                     <div className="info-box"><span>Sexo</span><strong>{informacionAlumno.sexo || '-'}</strong></div>
+                    <div className="info-box"><span>Procedencia escolar</span><strong>{informacionAlumno.procedenciaEscolar || 'No especificada'}</strong></div>
+                    <div className="info-box"><span>¿Ha repetido curso?</span><strong>{informacionAlumno.haRepetido ? 'Sí' : 'No'}</strong></div>
+                    <div className="info-box"><span>Pueblo indígena</span><strong>{informacionAlumno.pertenecePuebloIndigena ? 'Sí' : 'No'}</strong></div>
+                    <div className="info-box"><span>Clases de Religión</span><strong>{informacionAlumno.optaReligion ? `Sí (${informacionAlumno.credoReligioso || 'No especificado'})` : 'No'}</strong></div>
                   </div>
                 </div>
 
-                <div className="information-section">
-                  <h3>Apoderados</h3>
+                <div className="information-section" style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2d7db' }}>
+                  <h3 style={{ color: '#800020', borderBottom: '2px solid #f4f2f3', paddingBottom: '8px', marginBottom: '15px' }}>👨‍👩‍👧 2. Apoderados y Contacto</h3>
                   {informacionAlumno.apoderados?.length ? (
                     <div className="table-wrapper">
                       <table className="curso-table">
                         <thead>
-                          <tr><th>Nombre</th><th>RUT</th><th>Parentesco</th><th>Teléfono</th><th>Correo</th><th>Principal</th></tr>
+                          <tr><th>Nombre</th><th>RUT</th><th>Parentesco</th><th>Teléfono</th><th>Correo</th><th>Dirección / Comuna</th><th>Principal</th></tr>
                         </thead>
                         <tbody>
                           {informacionAlumno.apoderados.map((apoderado) => (
@@ -946,6 +950,7 @@ export default function ProfesorCurso() {
                               <td>{apoderado.parentesco || '-'}</td>
                               <td>{apoderado.telefono || '-'}</td>
                               <td>{apoderado.correo || '-'}</td>
+                              <td>{apoderado.direccion ? `${apoderado.direccion}, ${apoderado.comuna || ''}` : '-'}</td>
                               <td>{apoderado.esApoderadoPrincipal ? 'Sí' : 'No'}</td>
                             </tr>
                           ))}
@@ -953,59 +958,50 @@ export default function ProfesorCurso() {
                       </table>
                     </div>
                   ) : (
-                    <div className="empty-state"><div>👨‍👩‍👧</div><h3>Sin apoderados registrados</h3></div>
+                    <div className="empty-state"><p>Sin apoderados registrados.</p></div>
                   )}
                 </div>
 
-                <div className="information-section">
-                  <h3>Personas autorizadas para retirar</h3>
-                  {informacionAlumno.autorizadosRetiro?.length ? (
-                    <div className="table-wrapper">
-                      <table className="curso-table">
-                        <thead>
-                          <tr><th>Nombre</th><th>RUT</th><th>Parentesco / Relación</th><th>Teléfono</th></tr>
-                        </thead>
-                        <tbody>
-                          {informacionAlumno.autorizadosRetiro.map((aut, idx) => (
-                            <tr key={idx}>
-                              <td><strong>{aut.nombre || '-'}</strong></td>
-                              <td>{aut.rut || '-'}</td>
-                              <td>{aut.parentesco || '-'}</td>
-                              <td>{aut.telefono || '-'}</td>
-                            </tr>
-                          ))}
-                        </tbody>
-                      </table>
-                    </div>
-                  ) : (
-                    <div className="empty-state">
-                      <p>No registra personas autorizadas adicionales (los apoderados principales tienen autorización por defecto).</p>
-                    </div>
-                  )}
-                </div>
-
-                <div className="information-section">
-                  <h3>Salud · Enfermedades y Alergias</h3>
+                <div className="information-section" style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2d7db' }}>
+                  <h3 style={{ color: '#800020', borderBottom: '2px solid #f4f2f3', paddingBottom: '8px', marginBottom: '15px' }}>🏥 3. Salud y Previsión</h3>
                   <div className="info-grid">
-                    <div className="info-box">
-                      <span>Enfermedades crónicas o condiciones médicas</span>
-                      <strong>{informacionAlumno.enfermedades || informacionAlumno.condicionMedica || 'No registra enfermedades informadas.'}</strong>
-                    </div>
-                    <div className="info-box">
-                      <span>Alergias (medicamentos, alimentos, etc.)</span>
-                      <strong>{informacionAlumno.alergias || 'No registra alergias informadas.'}</strong>
+                    <div className="info-box"><span>Sistema de salud (Isapre / Fonasa)</span><strong>{informacionAlumno.sistema_salud || 'No especificado'}</strong></div>
+                    <div className="info-box"><span>Atención en Centro de Salud</span><strong>{informacionAlumno.seAtiendeCentroSalud ? `Sí (${informacionAlumno.nombreCentroSalud || 'Sin nombre'})` : 'No'}</strong></div>
+                    <div className="info-box" style={{ gridColumn: '1 / -1' }}>
+                      <span>Observaciones de salud / Antecedentes relevantes</span>
+                      <strong>{informacionAlumno.observacionesRelevantes || 'No registra información especial.'}</strong>
                     </div>
                   </div>
                 </div>
 
-                <div className="information-section">
-                  <h3>Observaciones relevantes / Matrícula</h3>
-                  <div className="info-box">
-                    <span>Antecedentes especiales</span>
-                    <strong>{informacionAlumno.observacionesRelevantes || 'No registra información especial.'}</strong>
+                <div className="information-section" style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2d7db' }}>
+                  <h3 style={{ color: '#800020', borderBottom: '2px solid #f4f2f3', paddingBottom: '8px', marginBottom: '15px' }}>🏡 4. Hogar y Situación Socioeconómica</h3>
+                  <div className="info-grid">
+                    <div className="info-box"><span>Con quién vive</span><strong>{informacionAlumno.conQuienVive || '-'}</strong></div>
+                    <div className="info-box"><span>Tipo de vivienda</span><strong>{informacionAlumno.vivienda || '-'}</strong></div>
+                    <div className="info-box"><span>Registro Social de Hogares (%)</span><strong>{informacionAlumno.porcentajeRegistroSocial || 'No informado'}%</strong></div>
+                    <div className="info-box"><span>Programa social</span><strong>{informacionAlumno.perteneceProgramaSocial ? 'Sí' : 'No'}</strong></div>
+                    <div className="info-box"><span>Personas en el hogar</span><strong>{informacionAlumno.numeroPersonasHogar ?? '-'}</strong></div>
+                    <div className="info-box"><span>Personas trabajando</span><strong>{informacionAlumno.personasTrabajandoHogar ?? '-'}</strong></div>
+                    <div className="info-box"><span>Ingreso mensual aprox.</span><strong>{informacionAlumno.ingreso_mensual_hogar ? `$${Number(informacionAlumno.ingreso_mensual_hogar).toLocaleString('es-CL')}` : 'No informado'}</strong></div>
+                    <div className="info-box"><span>Habitaciones en el hogar</span><strong>{informacionAlumno.numeroHabitaciones ?? '-'}</strong></div>
+                    <div className="info-box"><span>Servicios básicos</span><strong>{`Agua: ${informacionAlumno.tieneAgua ? 'Sí' : 'No'} | Luz: ${informacionAlumno.tieneElectricidad ? 'Sí' : 'No'} | Alcantarillado: ${informacionAlumno.tieneAlcantarillado ? 'Sí' : 'No'}`}</strong></div>
                   </div>
                 </div>
-              </>
+
+                <div className="information-section" style={{ background: '#fff', padding: '20px', borderRadius: '12px', border: '1px solid #e2d7db' }}>
+                  <h3 style={{ color: '#800020', borderBottom: '2px solid #f4f2f3', paddingBottom: '8px', marginBottom: '15px' }}>📝 5. Autorizaciones y Matrícula</h3>
+                  <div className="info-grid">
+                    <div className="info-box"><span>¿Autorizado para salir solo?</span><strong>{informacionAlumno.autorizadoSalirSolo ? 'Sí' : 'No'}</strong></div>
+                    <div className="info-box"><span>Estado de matrícula</span><strong>{informacionAlumno.estadoMatricula || 'ACTIVA'}</strong></div>
+                    <div className="info-box" style={{ gridColumn: '1 / -1' }}>
+                      <span>Observaciones generales de matrícula</span>
+                      <strong>{informacionAlumno.observacionesMatricula || 'Sin observaciones.'}</strong>
+                    </div>
+                  </div>
+                </div>
+
+              </div>
             )}
           </section>
         )}
