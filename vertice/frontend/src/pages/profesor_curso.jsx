@@ -29,7 +29,7 @@ export default function ProfesorCurso() {
 
   const navigate = useNavigate();
   const { cursoId } = useParams();
-
+  const [mesAsistencia, setMesAsistencia] = useState(obtenerMesActual());
   const [curso, setCurso] = useState(null);
   const [asignaturas, setAsignaturas] = useState([]);
   const [alumnos, setAlumnos] = useState([]);
@@ -37,7 +37,6 @@ export default function ProfesorCurso() {
   const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState('');
   const [informacionAlumno, setInformacionAlumno] = useState(null);
   const [cargandoInformacionAlumno, setCargandoInformacionAlumno] = useState(false);
-  const [mesAsistencia, setMesAsistencia] = useState('');
   const [asignaturaAsistencia, setAsignaturaAsistencia] = useState('');
   const [estadisticasMesCurso, setEstadisticasMesCurso] = useState(null);
   const [pestana, setPestana] = useState('alumnos');
