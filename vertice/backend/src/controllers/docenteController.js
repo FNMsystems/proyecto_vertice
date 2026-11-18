@@ -599,7 +599,7 @@ export const getAsistenciaCurso = async (req, res) => {
     const { cursoId } = req.params;
 
     const fecha = req.query.fecha || new Date().toISOString().slice(0, 10);
-    const mesFiltro = req.query.mes || new Date().toISOString().slice(0, 7); 
+    const mesFiltro = req.query.mes || new Date().toISOString().slice(0, 7);
     const asignaturaFiltro = req.query.asignaturaId;
 
     if (!cursoId) {
@@ -629,8 +629,7 @@ export const getAsistenciaCurso = async (req, res) => {
       });
     }
 
-    const asistenciaDiaResult = await query(
-      `
+    let queryAsistenciaDia = `
         SELECT
           al.id AS alumno_id,
           al.nombres,
@@ -657,35 +656,50 @@ export const getAsistenciaCurso = async (req, res) => {
           ON asi.alumno_id = al.id
           AND asi.curso_id = m.curso_id
           AND asi.fecha = $2
-          ${asignaturaFiltro ? "AND asi.asignatura_id = $3" : ""}
+    `;
+
+    let paramsDia = [cursoId, fecha];
+
+    if (asignaturaFiltro) {
+      queryAsistenciaDia += ` AND asi.asignatura_id = $3 `;
+      paramsDia.push(asignaturaFiltro);
+    }
+
+    queryAsistenciaDia += `
         WHERE m.curso_id = $1
           AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
         ORDER BY
           al.apellido_paterno,
           al.apellido_materno,
           al.nombres;
-      `,
-      asignaturaFiltro ? [cursoId, fecha, asignaturaFiltro] : [cursoId, fecha],
-    );
+    `;
 
-    const statsMesResult = await query(
-      `
+    const asistenciaDiaResult = await query(queryAsistenciaDia, paramsDia);
+
+    let queryStats = `
         SELECT
           COUNT(*) AS total_registros,
-          SUM(CASE WHEN estado = 'PRESENTE' THEN 1 ELSE 0 END) AS total_presentes,
-          SUM(CASE WHEN estado = 'AUSENTE' THEN 1 ELSE 0 END) AS total_ausentes,
-          SUM(CASE WHEN estado = 'ATRASADO' THEN 1 ELSE 0 END) AS total_atrasados,
-          SUM(CASE WHEN estado = 'JUSTIFICADO' THEN 1 ELSE 0 END) AS total_justificados
+          SUM(CASE WHEN asi.estado = 'PRESENTE' THEN 1 ELSE 0 END) AS total_presentes,
+          SUM(CASE WHEN asi.estado = 'AUSENTE' THEN 1 ELSE 0 END) AS total_ausentes,
+          SUM(CASE WHEN asi.estado = 'ATRASADO' THEN 1 ELSE 0 END) AS total_atrasados,
+          SUM(CASE WHEN asi.estado = 'JUSTIFICADO' THEN 1 ELSE 0 END) AS total_justificados
         FROM asistencia asi
-        INNER JOIN matriculas m ON m.alumno_id = asi.alumno_id AND m.curso_id = asi.curso_id AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+        INNER JOIN matriculas m 
+          ON m.alumno_id = asi.alumno_id 
+          AND m.curso_id = asi.curso_id 
+          AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
         WHERE asi.curso_id = $1
           AND TO_CHAR(asi.fecha, 'YYYY-MM') = $2
-          ${asignaturaFiltro ? "AND asi.asignatura_id = $3" : ""}
-      `,
-      asignaturaFiltro
-        ? [cursoId, mesFiltro, asignaturaFiltro]
-        : [cursoId, mesFiltro],
-    );
+    `;
+
+    let paramsStats = [cursoId, mesFiltro];
+
+    if (asignaturaFiltro) {
+      queryStats += ` AND asi.asignatura_id = $3 `;
+      paramsStats.push(asignaturaFiltro);
+    }
+
+    const statsMesResult = await query(queryStats, paramsStats);
 
     const statsRow = statsMesResult.rows[0] || {};
     const totalReg = Number(statsRow.total_registros || 0);
@@ -722,7 +736,6 @@ export const getAsistenciaCurso = async (req, res) => {
     });
   } catch (error) {
     console.error("Error al obtener asistencia del curso:", error);
-
     return res.status(500).json({
       error: "Error al obtener la asistencia.",
     });
