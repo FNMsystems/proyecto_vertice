@@ -1,8 +1,8 @@
 import { query } from "../config/db.js";
 
 const CURSOS_PRIMER_BASICO_IDS = [
-  "11000000-0000-0000-0000-000000000001", 
-  "11000000-0000-0000-0000-000000000002", 
+  "11000000-0000-0000-0000-000000000001",
+  "11000000-0000-0000-0000-000000000002",
 ];
 
 const esCursoGeneralista = (curso) => {
@@ -599,6 +599,8 @@ export const getAsistenciaCurso = async (req, res) => {
     const { cursoId } = req.params;
 
     const fecha = req.query.fecha || new Date().toISOString().slice(0, 10);
+    const mesFiltro = req.query.mes; 
+    const asignaturaFiltro = req.query.asignaturaId;
 
     if (!cursoId) {
       return res.status(400).json({
@@ -627,6 +629,19 @@ export const getAsistenciaCurso = async (req, res) => {
       });
     }
 
+    let condicionFecha = "asi.fecha = $2";
+    let parametrosQuery = [cursoId, fecha];
+
+    if (mesFiltro) {
+      condicionFecha = "TO_CHAR(asi.fecha, 'YYYY-MM') = $2";
+      parametrosQuery = [cursoId, mesFiltro];
+    }
+
+    if (asignaturaFiltro) {
+      condicionFecha += " AND asi.asignatura_id = $3";
+      parametrosQuery.push(asignaturaFiltro);
+    }
+
     const asistenciaResult = await query(
       `
         SELECT
@@ -638,14 +653,23 @@ export const getAsistenciaCurso = async (req, res) => {
           asi.id AS asistencia_id,
           asi.fecha,
           asi.estado,
-          asi.observacion
+          asi.observacion,
+          (
+            SELECT 
+              CASE 
+                WHEN COUNT(*) = 0 THEN 100.0
+                ELSE ROUND((SUM(CASE WHEN estado = 'PRESENTE' THEN 1 ELSE 0 END)::NUMERIC / COUNT(*)) * 100, 1)
+              END
+            FROM asistencia 
+            WHERE alumno_id = al.id AND curso_id = m.curso_id
+          ) AS porcentaje_asistencia
         FROM matriculas m
         INNER JOIN alumnos al
           ON al.id = m.alumno_id
         LEFT JOIN asistencia asi
           ON asi.alumno_id = al.id
           AND asi.curso_id = m.curso_id
-          AND asi.fecha = $2
+          AND (${condicionFecha})
         WHERE m.curso_id = $1
           AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
         ORDER BY
@@ -653,15 +677,13 @@ export const getAsistenciaCurso = async (req, res) => {
           al.apellido_materno,
           al.nombres;
       `,
-      [cursoId, fecha],
+      parametrosQuery,
     );
 
     return res.json({
       fecha,
-
       alumnos: asistenciaResult.rows.map((alumno) => ({
         id: alumno.alumno_id,
-
         nombre: [
           alumno.nombres,
           alumno.apellido_paterno,
@@ -669,14 +691,11 @@ export const getAsistenciaCurso = async (req, res) => {
         ]
           .filter(Boolean)
           .join(" "),
-
         rut: alumno.rut,
-
         asistenciaId: alumno.asistencia_id || null,
-
         estado: alumno.estado || null,
-
         observacion: alumno.observacion || "",
+        porcentajeAsistencia: Number(alumno.porcentaje_asistencia ?? 100.0),
       })),
     });
   } catch (error) {

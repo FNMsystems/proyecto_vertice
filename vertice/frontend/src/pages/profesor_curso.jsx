@@ -15,7 +15,7 @@ import './profesor_curso.css';
 
 const CURSOS_PRIMER_BASICO_IDS = [
   '11000000-0000-0000-0000-000000000001',
-  '11000000-0000-0000-0000-000000000002'  
+  '11000000-0000-0000-0000-000000000002'
 ];
 
 const esCursoGeneralista = (cursoInfo) => {
@@ -37,7 +37,8 @@ export default function ProfesorCurso() {
   const [alumnoSeleccionadoId, setAlumnoSeleccionadoId] = useState('');
   const [informacionAlumno, setInformacionAlumno] = useState(null);
   const [cargandoInformacionAlumno, setCargandoInformacionAlumno] = useState(false);
-
+  const [mesAsistencia, setMesAsistencia] = useState('');
+  const [asignaturaAsistencia, setAsignaturaAsistencia] = useState('');
   const [pestana, setPestana] = useState('alumnos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -408,7 +409,14 @@ export default function ProfesorCurso() {
   const cargarAsistencia = async () => {
     try {
       setCargandoAsistencia(true);
-      const data = await obtenerAsistenciaCurso(cursoId, fechaAsistencia);
+      let url = `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fechaAsistencia)}`;
+      if (mesAsistencia) {
+        url += `&mes=${encodeURIComponent(mesAsistencia)}`;
+      }
+      if (asignaturaAsistencia) {
+        url += `&asignaturaId=${encodeURIComponent(asignaturaAsistencia)}`;
+      }
+      const data = await fetchConAuth(url);
       setAsistencia(data.alumnos || []);
     } catch (error) {
       console.error('Error cargando asistencia:', error);
@@ -417,6 +425,12 @@ export default function ProfesorCurso() {
       setCargandoAsistencia(false);
     }
   };
+
+  useEffect(() => {
+    if (pestana === 'asistencia' && cursoId) {
+      cargarAsistencia();
+    }
+  }, [pestana, cursoId, fechaAsistencia, mesAsistencia, asignaturaAsistencia]);
 
   const guardarEstadoAsistencia = async (alumnoId, estado, observacion = '') => {
     try {
@@ -789,35 +803,127 @@ export default function ProfesorCurso() {
 
         {pestana === 'asistencia' && (
           <section className="curso-panel">
-            <div className="panel-header"><div><h2>📅 Asistencia</h2><p>Registra la asistencia de tus alumnos.</p></div></div>
-            <div className="attendance-date">
-              <div className="form-group"><label>Fecha</label><input type="date" value={fechaAsistencia} onChange={(e) => setFechaAsistencia(e.target.value)} /></div>
+            <div className="panel-header">
+              <div>
+                <h2>📅 Asistencia</h2>
+                <p>Registra y supervisa la asistencia de los alumnos.</p>
+              </div>
             </div>
+
+            <div className="filter-row" style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'end', marginBottom: '20px' }}>
+              <div className="form-group">
+                <label>Filtrar por Día específico</label>
+                <input
+                  type="date"
+                  value={fechaAsistencia}
+                  onChange={(e) => {
+                    setFechaAsistencia(e.target.value);
+                    setMesAsistencia(''); 
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>O filtrar por Mes completo</label>
+                <input
+                  type="month"
+                  value={mesAsistencia}
+                  onChange={(e) => {
+                    setMesAsistencia(e.target.value);
+                  }}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>Asignatura</label>
+                <select
+                  value={asignaturaAsistencia}
+                  onChange={(e) => setAsignaturaAsistencia(e.target.value)}
+                >
+                  <option value="">Todas las asignaturas / General</option>
+                  {asignaturasPropias.map((asig) => (
+                    <option key={asig.id} value={asig.id}>{asig.nombre}</option>
+                  ))}
+                </select>
+              </div>
+            </div>
+
             <div className="attendance-stats">
-              <div><strong>{estadisticasAsistencia.presentes}</strong><span>Presentes</span></div>
-              <div><strong>{estadisticasAsistencia.ausentes}</strong><span>Ausentes</span></div>
-              <div><strong>{estadisticasAsistencia.atrasados}</strong><span>Atrasados</span></div>
-              <div><strong>{estadisticasAsistencia.justificados}</strong><span>Justificados</span></div>
+              <div><strong>{estadisticasAsistencia.presentes}</strong><span>Presentes (Día)</span></div>
+              <div><strong>{estadisticasAsistencia.ausentes}</strong><span>Ausentes (Día)</span></div>
+              <div><strong>{estadisticasAsistencia.atrasados}</strong><span>Atrasados (Día)</span></div>
+              <div><strong>{estadisticasAsistencia.justificados}</strong><span>Justificados (Día)</span></div>
             </div>
-            {cargandoAsistencia ? <div className="loading-state">Cargando asistencia...</div> : (
-              <div className="attendance-list">
-                {alumnos.map((alumno, index) => {
-                  const estado = obtenerEstadoAlumno(alumno.id);
-                  return (
-                    <div className="attendance-row" key={alumno.id}>
-                      <div className="attendance-student">
-                        <span className="student-number">{index + 1}</span>
-                        <div><strong>{alumno.nombre}</strong><small>{alumno.rut}</small></div>
-                      </div>
-                      <div className="attendance-buttons">
-                        <button className={estado === 'PRESENTE' ? 'attendance-btn selected present' : 'attendance-btn present'} onClick={() => guardarEstadoAsistencia(alumno.id, 'PRESENTE')}>✓ Presente</button>
-                        <button className={estado === 'AUSENTE' ? 'attendance-btn selected absent' : 'attendance-btn absent'} onClick={() => guardarEstadoAsistencia(alumno.id, 'AUSENTE')}>✕ Ausente</button>
-                        <button className={estado === 'ATRASADO' ? 'attendance-btn selected late' : 'attendance-btn late'} onClick={() => guardarEstadoAsistencia(alumno.id, 'ATRASADO')}>⏰ Atrasado</button>
-                        <button className={estado === 'JUSTIFICADO' ? 'attendance-btn selected justified' : 'attendance-btn justified'} onClick={() => guardarEstadoAsistencia(alumno.id, 'JUSTIFICADO')}>📄 Justificado</button>
-                      </div>
-                    </div>
-                  );
-                })}
+
+            {cargandoAsistencia ? (
+              <div className="loading-state">Cargando asistencia...</div>
+            ) : (
+              <div className="table-wrapper" style={{ marginTop: '20px' }}>
+                <table className="curso-table">
+                  <thead>
+                    <tr>
+                      <th>#</th>
+                      <th>Alumno</th>
+                      <th>RUT</th>
+                      <th style={{ textAlign: 'center' }}>% Asistencia Total</th>
+                      <th style={{ textAlign: 'center' }}>Estado (Fecha seleccionada)</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {alumnos.map((alumno, index) => {
+                      const estado = obtenerEstadoAlumno(alumno.id);
+                      const registroAsistencia = asistencia.find(item => item.id === alumno.id || item.alumnoId === alumno.id);
+                      const porcentajeTotal = registroAsistencia?.porcentajeAsistencia ?? 100.0;
+
+                      return (
+                        <tr key={alumno.id}>
+                          <td>{index + 1}</td>
+                          <td><strong>{alumno.nombre}</strong></td>
+                          <td>{alumno.rut || '-'}</td>
+
+                          <td style={{ textAlign: 'center' }}>
+                            <strong style={{ color: porcentajeTotal >= 85 ? '#16a34a' : '#dc2626' }}>
+                              {porcentajeTotal.toFixed(1)}%
+                            </strong>
+                          </td>
+
+                          <td style={{ textAlign: 'center' }}>
+                            <div className="attendance-buttons" style={{ display: 'inline-flex', gap: '5px' }}>
+                              <button
+                                className={estado === 'PRESENTE' ? 'attendance-btn selected present' : 'attendance-btn present'}
+                                onClick={() => guardarEstadoAsistencia(alumno.id, 'PRESENTE')}
+                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                              >
+                                P
+                              </button>
+                              <button
+                                className={estado === 'AUSENTE' ? 'attendance-btn selected absent' : 'attendance-btn absent'}
+                                onClick={() => guardarEstadoAsistencia(alumno.id, 'AUSENTE')}
+                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                              >
+                                A
+                              </button>
+                              <button
+                                className={estado === 'ATRASADO' ? 'attendance-btn selected late' : 'attendance-btn late'}
+                                onClick={() => guardarEstadoAsistencia(alumno.id, 'ATRASADO')}
+                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                              >
+                                T
+                              </button>
+                              <button
+                                className={estado === 'JUSTIFICADO' ? 'attendance-btn selected justified' : 'attendance-btn justified'}
+                                onClick={() => guardarEstadoAsistencia(alumno.id, 'JUSTIFICADO')}
+                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                              >
+                                J
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
               </div>
             )}
           </section>
