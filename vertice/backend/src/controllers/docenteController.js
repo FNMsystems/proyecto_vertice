@@ -599,7 +599,7 @@ export const getAsistenciaCurso = async (req, res) => {
     const { cursoId } = req.params;
 
     const fecha = req.query.fecha || new Date().toISOString().slice(0, 10);
-    const mesFiltro = req.query.mes; 
+    const mesFiltro = req.query.mes || new Date().toISOString().slice(0, 7); 
     const asignaturaFiltro = req.query.asignaturaId;
 
     if (!cursoId) {
@@ -629,20 +629,7 @@ export const getAsistenciaCurso = async (req, res) => {
       });
     }
 
-    let condicionFecha = "asi.fecha = $2";
-    let parametrosQuery = [cursoId, fecha];
-
-    if (mesFiltro) {
-      condicionFecha = "TO_CHAR(asi.fecha, 'YYYY-MM') = $2";
-      parametrosQuery = [cursoId, mesFiltro];
-    }
-
-    if (asignaturaFiltro) {
-      condicionFecha += " AND asi.asignatura_id = $3";
-      parametrosQuery.push(asignaturaFiltro);
-    }
-
-    const asistenciaResult = await query(
+    const asistenciaDiaResult = await query(
       `
         SELECT
           al.id AS alumno_id,
@@ -669,7 +656,8 @@ export const getAsistenciaCurso = async (req, res) => {
         LEFT JOIN asistencia asi
           ON asi.alumno_id = al.id
           AND asi.curso_id = m.curso_id
-          AND (${condicionFecha})
+          AND asi.fecha = $2
+          ${asignaturaFiltro ? "AND asi.asignatura_id = $3" : ""}
         WHERE m.curso_id = $1
           AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
         ORDER BY
@@ -677,12 +665,46 @@ export const getAsistenciaCurso = async (req, res) => {
           al.apellido_materno,
           al.nombres;
       `,
-      parametrosQuery,
+      asignaturaFiltro ? [cursoId, fecha, asignaturaFiltro] : [cursoId, fecha],
     );
+
+    const statsMesResult = await query(
+      `
+        SELECT
+          COUNT(*) AS total_registros,
+          SUM(CASE WHEN estado = 'PRESENTE' THEN 1 ELSE 0 END) AS total_presentes,
+          SUM(CASE WHEN estado = 'AUSENTE' THEN 1 ELSE 0 END) AS total_ausentes,
+          SUM(CASE WHEN estado = 'ATRASADO' THEN 1 ELSE 0 END) AS total_atrasados,
+          SUM(CASE WHEN estado = 'JUSTIFICADO' THEN 1 ELSE 0 END) AS total_justificados
+        FROM asistencia asi
+        INNER JOIN matriculas m ON m.alumno_id = asi.alumno_id AND m.curso_id = asi.curso_id AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+        WHERE asi.curso_id = $1
+          AND TO_CHAR(asi.fecha, 'YYYY-MM') = $2
+          ${asignaturaFiltro ? "AND asi.asignatura_id = $3" : ""}
+      `,
+      asignaturaFiltro
+        ? [cursoId, mesFiltro, asignaturaFiltro]
+        : [cursoId, mesFiltro],
+    );
+
+    const statsRow = statsMesResult.rows[0] || {};
+    const totalReg = Number(statsRow.total_registros || 0);
+    const totalPres = Number(statsRow.total_presentes || 0);
+    const porcentajeCursoMes =
+      totalReg > 0 ? Number(((totalPres / totalReg) * 100).toFixed(1)) : 100.0;
 
     return res.json({
       fecha,
-      alumnos: asistenciaResult.rows.map((alumno) => ({
+      mesFiltro,
+      estadisticasMes: {
+        porcentajeCurso: porcentajeCursoMes,
+        presentes: totalPres,
+        ausentes: Number(statsRow.total_ausentes || 0),
+        atrasados: Number(statsRow.total_atrasados || 0),
+        justificados: Number(statsRow.total_justificados || 0),
+        totalClasesEvaluadas: totalReg,
+      },
+      alumnos: asistenciaDiaResult.rows.map((alumno) => ({
         id: alumno.alumno_id,
         nombre: [
           alumno.nombres,

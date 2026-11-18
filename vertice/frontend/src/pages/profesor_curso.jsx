@@ -39,6 +39,7 @@ export default function ProfesorCurso() {
   const [cargandoInformacionAlumno, setCargandoInformacionAlumno] = useState(false);
   const [mesAsistencia, setMesAsistencia] = useState('');
   const [asignaturaAsistencia, setAsignaturaAsistencia] = useState('');
+  const [estadisticasMesCurso, setEstadisticasMesCurso] = useState(null);
   const [pestana, setPestana] = useState('alumnos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -409,15 +410,13 @@ export default function ProfesorCurso() {
   const cargarAsistencia = async () => {
     try {
       setCargandoAsistencia(true);
-      let url = `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fechaAsistencia)}`;
-      if (mesAsistencia) {
-        url += `&mes=${encodeURIComponent(mesAsistencia)}`;
-      }
+      let url = `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fechaAsistencia)}&mes=${encodeURIComponent(mesAsistencia)}`;
       if (asignaturaAsistencia) {
         url += `&asignaturaId=${encodeURIComponent(asignaturaAsistencia)}`;
       }
       const data = await fetchConAuth(url);
       setAsistencia(data.alumnos || []);
+      setEstadisticasMesCurso(data.estadisticasMes || null);
     } catch (error) {
       console.error('Error cargando asistencia:', error);
       alert(error.message || 'No se pudo cargar la asistencia.');
@@ -805,42 +804,67 @@ export default function ProfesorCurso() {
           <section className="curso-panel">
             <div className="panel-header">
               <div>
-                <h2>📅 Asistencia</h2>
-                <p>Registra y supervisa la asistencia de los alumnos.</p>
+                <h2>📅 Control y Registro de Asistencia</h2>
+                <p>Pasa la asistencia diaria del curso y supervisa los indicadores mensuales.</p>
               </div>
             </div>
 
-            <div className="filter-row" style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'end', marginBottom: '20px' }}>
-              <div className="form-group">
-                <label>Filtrar por Día específico</label>
+            {estadisticasMesCurso && (
+              <div style={{ background: 'linear-gradient(135deg, #800020 0%, #5a0016 100%)', color: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+                <div>
+                  <span style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.85 }}>Resumen del Mes Seleccionado</span>
+                  <h3 style={{ margin: '5px 0 0 0', fontSize: '24px' }}>Porcentaje general del curso: {estadisticasMesCurso.porcentajeCurso}%</h3>
+                </div>
+                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
+                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.presentes}</strong>
+                    <span style={{ fontSize: '11px' }}>Presentes</span>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
+                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.ausentes}</strong>
+                    <span style={{ fontSize: '11px' }}>Ausentes</span>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
+                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.atrasados}</strong>
+                    <span style={{ fontSize: '11px' }}>Atrasados</span>
+                  </div>
+                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
+                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.justificados}</strong>
+                    <span style={{ fontSize: '11px' }}>Justificados</span>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            <div className="filter-row" style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'end', marginBottom: '25px', background: '#f8fafc', padding: '15px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>📅 Fecha para pasar lista (Día)</label>
                 <input
                   type="date"
                   value={fechaAsistencia}
-                  onChange={(e) => {
-                    setFechaAsistencia(e.target.value);
-                    setMesAsistencia(''); 
-                  }}
+                  onChange={(e) => setFechaAsistencia(e.target.value)}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>O filtrar por Mes completo</label>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>📊 Mes a evaluar estadísticas</label>
                 <input
                   type="month"
                   value={mesAsistencia}
-                  onChange={(e) => {
-                    setMesAsistencia(e.target.value);
-                  }}
+                  onChange={(e) => setMesAsistencia(e.target.value)}
+                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
                 />
               </div>
 
-              <div className="form-group">
-                <label>Asignatura</label>
+              <div className="form-group" style={{ margin: 0 }}>
+                <label>📚 Filtrar por Asignatura</label>
                 <select
                   value={asignaturaAsistencia}
                   onChange={(e) => setAsignaturaAsistencia(e.target.value)}
+                  style={{ padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff' }}
                 >
-                  <option value="">Todas las asignaturas / General</option>
+                  <option value="">Todas / General del curso</option>
                   {asignaturasPropias.map((asig) => (
                     <option key={asig.id} value={asig.id}>{asig.nombre}</option>
                   ))}
@@ -848,74 +872,90 @@ export default function ProfesorCurso() {
               </div>
             </div>
 
-            <div className="attendance-stats">
-              <div><strong>{estadisticasAsistencia.presentes}</strong><span>Presentes (Día)</span></div>
-              <div><strong>{estadisticasAsistencia.ausentes}</strong><span>Ausentes (Día)</span></div>
-              <div><strong>{estadisticasAsistencia.atrasados}</strong><span>Atrasados (Día)</span></div>
-              <div><strong>{estadisticasAsistencia.justificados}</strong><span>Justificados (Día)</span></div>
-            </div>
-
             {cargandoAsistencia ? (
-              <div className="loading-state">Cargando asistencia...</div>
+              <div className="loading-state">Cargando lista de asistencia...</div>
             ) : (
-              <div className="table-wrapper" style={{ marginTop: '20px' }}>
+              <div className="table-wrapper">
                 <table className="curso-table">
                   <thead>
                     <tr>
-                      <th>#</th>
-                      <th>Alumno</th>
-                      <th>RUT</th>
-                      <th style={{ textAlign: 'center' }}>% Asistencia Total</th>
-                      <th style={{ textAlign: 'center' }}>Estado (Fecha seleccionada)</th>
+                      <th style={{ width: '50px' }}>#</th>
+                      <th>Alumno y RUT</th>
+                      <th style={{ textAlign: 'center', width: '140px' }}>% Asistencia Total</th>
+                      <th style={{ textAlign: 'center' }}>Pasar asistencia (Día: {formatearFecha(fechaAsistencia)})</th>
                     </tr>
                   </thead>
                   <tbody>
                     {alumnos.map((alumno, index) => {
                       const estado = obtenerEstadoAlumno(alumno.id);
-                      const registroAsistencia = asistencia.find(item => item.id === alumno.id || item.alumnoId === alumno.id);
-                      const porcentajeTotal = registroAsistencia?.porcentajeAsistencia ?? 100.0;
+                      const porcentajeAlumno = alumno.porcentajeAsistencia ?? 100.0;
 
                       return (
                         <tr key={alumno.id}>
                           <td>{index + 1}</td>
-                          <td><strong>{alumno.nombre}</strong></td>
-                          <td>{alumno.rut || '-'}</td>
-
-                          <td style={{ textAlign: 'center' }}>
-                            <strong style={{ color: porcentajeTotal >= 85 ? '#16a34a' : '#dc2626' }}>
-                              {porcentajeTotal.toFixed(1)}%
-                            </strong>
+                          <td>
+                            <strong>{alumno.nombre}</strong>
+                            {alumno.rut && <div><small style={{ color: '#666' }}>{alumno.rut}</small></div>}
                           </td>
 
                           <td style={{ textAlign: 'center' }}>
-                            <div className="attendance-buttons" style={{ display: 'inline-flex', gap: '5px' }}>
+                            <span style={{ padding: '5px 10px', borderRadius: '6px', background: porcentajeAlumno >= 85 ? '#dcfce7' : '#fee2e2', color: porcentajeAlumno >= 85 ? '#166534' : '#991b1b', fontWeight: 'bold' }}>
+                              {porcentajeAlumno.toFixed(1)}%
+                            </span>
+                          </td>
+
+                          <td style={{ textAlign: 'center' }}>
+                            <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'center' }}>
                               <button
-                                className={estado === 'PRESENTE' ? 'attendance-btn selected present' : 'attendance-btn present'}
+                                type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'PRESENTE')}
-                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                                style={{
+                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #16a34a',
+                                  background: estado === 'PRESENTE' ? '#16a34a' : '#f0fdf4',
+                                  color: estado === 'PRESENTE' ? '#fff' : '#16a34a',
+                                  transition: 'all 0.2s'
+                                }}
                               >
-                                P
+                                ✓ Presente
                               </button>
+
                               <button
-                                className={estado === 'AUSENTE' ? 'attendance-btn selected absent' : 'attendance-btn absent'}
+                                type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'AUSENTE')}
-                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                                style={{
+                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #dc2626',
+                                  background: estado === 'AUSENTE' ? '#dc2626' : '#fef2f2',
+                                  color: estado === 'AUSENTE' ? '#fff' : '#dc2626',
+                                  transition: 'all 0.2s'
+                                }}
                               >
-                                A
+                                ✕ Ausente
                               </button>
+
                               <button
-                                className={estado === 'ATRASADO' ? 'attendance-btn selected late' : 'attendance-btn late'}
+                                type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'ATRASADO')}
-                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                                style={{
+                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #d97706',
+                                  background: estado === 'ATRASADO' ? '#d97706' : '#fffbeb',
+                                  color: estado === 'ATRASADO' ? '#fff' : '#d97706',
+                                  transition: 'all 0.2s'
+                                }}
                               >
-                                T
+                                ⏰ Atrasado
                               </button>
+
                               <button
-                                className={estado === 'JUSTIFICADO' ? 'attendance-btn selected justified' : 'attendance-btn justified'}
+                                type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'JUSTIFICADO')}
-                                style={{ padding: '4px 8px', fontSize: '12px' }}
+                                style={{
+                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #2563eb',
+                                  background: estado === 'JUSTIFICADO' ? '#2563eb' : '#eff6ff',
+                                  color: estado === 'JUSTIFICADO' ? '#fff' : '#2563eb',
+                                  transition: 'all 0.2s'
+                                }}
                               >
-                                J
+                                📄 Justificado
                               </button>
                             </div>
                           </td>
@@ -1338,6 +1378,13 @@ function obtenerFechaActual() {
   const mes = String(fecha.getMonth() + 1).padStart(2, '0');
   const dia = String(fecha.getDate()).padStart(2, '0');
   return `${anio}-${mes}-${dia}`;
+}
+
+function obtenerMesActual() {
+  const fecha = new Date();
+  const anio = fecha.getFullYear();
+  const mes = String(fecha.getMonth() + 1).padStart(2, '0');
+  return `${anio}-${mes}`;
 }
 
 function formatearFecha(fecha) {
