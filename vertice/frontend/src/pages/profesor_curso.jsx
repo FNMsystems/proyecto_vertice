@@ -260,6 +260,70 @@ export default function ProfesorCurso() {
     return Array.from(agrupadas.values()).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   }, [notas, periodoNotas, asignaturaNotas]);
 
+  const { asignaturasPropias, asignaturasJefatura } = useMemo(() => {
+    const propias = [];
+    const jefatura = [];
+    asignaturas.forEach((asig) => {
+      if (asig.esPropia) propias.push(asig);
+      else jefatura.push(asig);
+    });
+    return { asignaturasPropias: propias, asignaturasJefatura: jefatura };
+  }, [asignaturas]);
+
+  const asignaturaJefaturaActual = useMemo(() => {
+    if (!asignaturaNotas) return null;
+    return asignaturas.find((a) => String(a.id) === String(asignaturaNotas)) || null;
+  }, [asignaturaNotas, asignaturas]);
+
+  const puedeEditarAsignaturaActual = useMemo(() => {
+    if (!asignaturaNotas) return false;
+    const encontrada = asignaturas.find((a) => String(a.id) === String(asignaturaNotas));
+    return encontrada ? Boolean(encontrada.esPropia) : false;
+  }, [asignaturaNotas, asignaturas]);
+
+  const alumnosOrdenados = useMemo(() => {
+    return [...alumnos].sort((a, b) =>
+      String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' })
+    );
+  }, [alumnos]);
+
+  const porcentajePeriodo = useMemo(() => {
+    return evaluacionesAgrupadas.reduce(
+      (total, evaluacion) => total + Number(evaluacion.porcentaje || 0),
+      0
+    );
+  }, [evaluacionesAgrupadas]);
+
+  const calcularPromedioAlumno = (alumnoId) => {
+    let sumaPonderada = 0;
+    let porcentajeIngresado = 0;
+
+    evaluacionesAgrupadas.forEach((evaluacion) => {
+      const registro = evaluacion.notas[alumnoId];
+      const claveCelda = `${evaluacion.clave}_${alumnoId}`;
+      const valorEditado = edicionesNotas[claveCelda];
+      const valorNota = valorEditado !== undefined ? valorEditado : registro?.nota;
+
+      if (valorNota !== null && valorNota !== undefined && valorNota !== '') {
+        const nota = Number(valorNota);
+        const porcentaje = Number(evaluacion.porcentaje || 0);
+        if (Number.isFinite(nota) && nota >= 1 && nota <= 7 && porcentaje > 0) {
+          sumaPonderada += nota * porcentaje;
+          porcentajeIngresado += porcentaje;
+        }
+      }
+    });
+
+    if (porcentajeIngresado === 0) return null;
+
+    return {
+      promedio: sumaPonderada / porcentajeIngresado,
+      porcentajeIngresado,
+      porcentajePendiente: Math.max(0, 100 - porcentajeIngresado),
+      definitivo: porcentajeIngresado >= 99.9999
+    };
+  };
+
   const resumenLogroJefatura = useMemo(() => {
     const clasificarNota = (valor) => {
       const n = Number(valor);
@@ -326,70 +390,6 @@ export default function ProfesorCurso() {
       alumnosNoLogrados: Array.from(alumnosNoLogradosMap.values())
     };
   }, [alumnosOrdenados, evaluacionesAgrupadas, edicionesNotas]);
-
-  const { asignaturasPropias, asignaturasJefatura } = useMemo(() => {
-    const propias = [];
-    const jefatura = [];
-    asignaturas.forEach((asig) => {
-      if (asig.esPropia) propias.push(asig);
-      else jefatura.push(asig);
-    });
-    return { asignaturasPropias: propias, asignaturasJefatura: jefatura };
-  }, [asignaturas]);
-
-  const asignaturaJefaturaActual = useMemo(() => {
-    if (!asignaturaNotas) return null;
-    return asignaturas.find((a) => String(a.id) === String(asignaturaNotas)) || null;
-  }, [asignaturaNotas, asignaturas]);
-
-  const puedeEditarAsignaturaActual = useMemo(() => {
-    if (!asignaturaNotas) return false;
-    const encontrada = asignaturas.find((a) => String(a.id) === String(asignaturaNotas));
-    return encontrada ? Boolean(encontrada.esPropia) : false;
-  }, [asignaturaNotas, asignaturas]);
-
-  const alumnosOrdenados = useMemo(() => {
-    return [...alumnos].sort((a, b) =>
-      String(a.nombre || '').localeCompare(String(b.nombre || ''), 'es', { sensitivity: 'base' })
-    );
-  }, [alumnos]);
-
-  const porcentajePeriodo = useMemo(() => {
-    return evaluacionesAgrupadas.reduce(
-      (total, evaluacion) => total + Number(evaluacion.porcentaje || 0),
-      0
-    );
-  }, [evaluacionesAgrupadas]);
-
-  const calcularPromedioAlumno = (alumnoId) => {
-    let sumaPonderada = 0;
-    let porcentajeIngresado = 0;
-
-    evaluacionesAgrupadas.forEach((evaluacion) => {
-      const registro = evaluacion.notas[alumnoId];
-      const claveCelda = `${evaluacion.clave}_${alumnoId}`;
-      const valorEditado = edicionesNotas[claveCelda];
-      const valorNota = valorEditado !== undefined ? valorEditado : registro?.nota;
-
-      if (valorNota !== null && valorNota !== undefined && valorNota !== '') {
-        const nota = Number(valorNota);
-        const porcentaje = Number(evaluacion.porcentaje || 0);
-        if (Number.isFinite(nota) && nota >= 1 && nota <= 7 && porcentaje > 0) {
-          sumaPonderada += nota * porcentaje;
-          porcentajeIngresado += porcentaje;
-        }
-      }
-    });
-
-    if (porcentajeIngresado === 0) return null;
-
-    return {
-      promedio: sumaPonderada / porcentajeIngresado,
-      porcentajeIngresado,
-      porcentajePendiente: Math.max(0, 100 - porcentajeIngresado),
-      definitivo: porcentajeIngresado >= 99.9999
-    };
-  };
 
   const cambiarNotaGrilla = (claveEvaluacion, alumnoId, valor) => {
     const claveCelda = `${claveEvaluacion}_${alumnoId}`;
