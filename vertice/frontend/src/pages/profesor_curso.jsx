@@ -433,6 +433,7 @@ export default function ProfesorCurso() {
   const guardarEstadoAsistencia = async (alumnoId, estado, observacion = '') => {
     try {
       await guardarAsistenciaCurso(cursoId, fechaAsistencia, alumnoId, estado, observacion || '');
+
       setAsistencia((actual) => {
         const copia = [...actual];
         const indice = copia.findIndex((item) => item.id === alumnoId || item.alumnoId === alumnoId);
@@ -441,6 +442,12 @@ export default function ProfesorCurso() {
         }
         return copia;
       });
+
+      const url = `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fechaAsistencia)}&mes=${encodeURIComponent(mesAsistencia)}`;
+      const dataActualizada = await fetchConAuth(url);
+      if (dataActualizada?.alumnos) setAsistencia(dataActualizada.alumnos);
+      if (dataActualizada?.estadisticasMes) setEstadisticasMesCurso(dataActualizada.estadisticasMes);
+
     } catch (error) {
       console.error('Error guardando asistencia:', error);
       alert(error.message || 'No se pudo guardar la asistencia.');
@@ -809,65 +816,57 @@ export default function ProfesorCurso() {
             </div>
 
             {estadisticasMesCurso && (
-              <div style={{ background: 'linear-gradient(135deg, #800020 0%, #5a0016 100%)', color: '#fff', padding: '20px', borderRadius: '12px', marginBottom: '20px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px' }}>
+              <div style={{ background: 'linear-gradient(135deg, #800020 0%, #5a0016 100%)', color: '#fff', padding: '22px 26px', borderRadius: '14px', marginBottom: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', boxShadow: '0 4px 12px rgba(128, 0, 32, 0.15)' }}>
                 <div>
-                  <span style={{ fontSize: '13px', textTransform: 'uppercase', letterSpacing: '1px', opacity: 0.85 }}>Resumen del Mes Seleccionado</span>
-                  <h3 style={{ margin: '5px 0 0 0', fontSize: '24px' }}>Porcentaje general del curso: {estadisticasMesCurso.porcentajeCurso}%</h3>
+                  <span style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.2px', opacity: 0.85, fontWeight: '600' }}>Resumen del Mes Seleccionado</span>
+                  <h3 style={{ margin: '6px 0 0 0', fontSize: '26px', fontWeight: '700' }}>Porcentaje general del curso: {estadisticasMesCurso.porcentajeCurso}%</h3>
                 </div>
-                <div style={{ display: 'flex', gap: '15px', flexWrap: 'wrap' }}>
-                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
-                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.presentes}</strong>
-                    <span style={{ fontSize: '11px' }}>Presentes</span>
+                <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
+                  <div style={{ background: 'rgba(255,255,255,0.14)', padding: '12px 18px', borderRadius: '10px', textAlign: 'center', minWidth: '85px' }}>
+                    <strong style={{ display: 'block', fontSize: '20px' }}>{estadisticasMesCurso.presentes}</strong>
+                    <span style={{ fontSize: '12px', opacity: 0.9 }}>Presentes</span>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
-                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.ausentes}</strong>
-                    <span style={{ fontSize: '11px' }}>Ausentes</span>
+                  <div style={{ background: 'rgba(255,255,255,0.14)', padding: '12px 18px', borderRadius: '10px', textAlign: 'center', minWidth: '85px' }}>
+                    <strong style={{ display: 'block', fontSize: '20px' }}>{estadisticasMesCurso.ausentes}</strong>
+                    <span style={{ fontSize: '12px', opacity: 0.9 }}>Ausentes</span>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
-                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.atrasados}</strong>
-                    <span style={{ fontSize: '11px' }}>Atrasados</span>
+                  <div style={{ background: 'rgba(255,255,255,0.14)', padding: '12px 18px', borderRadius: '10px', textAlign: 'center', minWidth: '85px' }}>
+                    <strong style={{ display: 'block', fontSize: '20px' }}>{estadisticasMesCurso.atrasados}</strong>
+                    <span style={{ fontSize: '12px', opacity: 0.9 }}>Atrasados</span>
                   </div>
-                  <div style={{ background: 'rgba(255,255,255,0.15)', padding: '10px 15px', borderRadius: '8px', textAlign: 'center' }}>
-                    <strong style={{ display: 'block', fontSize: '18px' }}>{estadisticasMesCurso.justificados}</strong>
-                    <span style={{ fontSize: '11px' }}>Justificados</span>
+                  <div style={{ background: 'rgba(255,255,255,0.14)', padding: '12px 18px', borderRadius: '10px', textAlign: 'center', minWidth: '85px' }}>
+                    <strong style={{ display: 'block', fontSize: '20px' }}>{estadisticasMesCurso.justificados}</strong>
+                    <span style={{ fontSize: '12px', opacity: 0.9 }}>Justificados</span>
                   </div>
                 </div>
               </div>
             )}
 
-            <div className="filter-row" style={{ display: 'flex', gap: '18px', flexWrap: 'wrap', alignItems: 'end', marginBottom: '25px', background: '#f8fafc', padding: '15px', borderRadius: '10px', border: '1px solid #e2e8f0' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '25px', background: '#f8fafc', padding: '18px 22px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
               <div className="form-group" style={{ margin: 0 }}>
-                <label>📅 Fecha para pasar lista (Día)</label>
+                <label style={{ fontWeight: '600', color: '#334155', marginBottom: '6px', display: 'block' }}>📅 Fecha para pasar lista (Día)</label>
                 <input
                   type="date"
                   value={fechaAsistencia}
-                  onChange={(e) => setFechaAsistencia(e.target.value)}
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  onChange={(e) => {
+                    const nuevaFecha = e.target.value;
+                    setFechaAsistencia(nuevaFecha);
+                    if (nuevaFecha) {
+                      setMesAsistencia(nuevaFecha.slice(0, 7));
+                    }
+                  }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '14px' }}
                 />
               </div>
 
               <div className="form-group" style={{ margin: 0 }}>
-                <label>📊 Mes a evaluar estadísticas</label>
+                <label style={{ fontWeight: '600', color: '#334155', marginBottom: '6px', display: 'block' }}>📊 Mes a evaluar estadísticas</label>
                 <input
                   type="month"
                   value={mesAsistencia}
                   onChange={(e) => setMesAsistencia(e.target.value)}
-                  style={{ padding: '8px', borderRadius: '6px', border: '1px solid #cbd5e1' }}
+                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '14px' }}
                 />
-              </div>
-
-              <div className="form-group" style={{ margin: 0 }}>
-                <label>📚 Filtrar por Asignatura</label>
-                <select
-                  value={asignaturaAsistencia}
-                  onChange={(e) => setAsignaturaAsistencia(e.target.value)}
-                  style={{ padding: '9px', borderRadius: '6px', border: '1px solid #cbd5e1', background: '#fff' }}
-                >
-                  <option value="">Todas / General del curso</option>
-                  {asignaturasPropias.map((asig) => (
-                    <option key={asig.id} value={asig.id}>{asig.nombre}</option>
-                  ))}
-                </select>
               </div>
             </div>
 
@@ -880,39 +879,53 @@ export default function ProfesorCurso() {
                     <tr>
                       <th style={{ width: '50px' }}>#</th>
                       <th>Alumno y RUT</th>
-                      <th style={{ textAlign: 'center', width: '140px' }}>% Asistencia Total</th>
+                      <th style={{ textAlign: 'center', width: '160px' }}>% Asistencia Total</th>
                       <th style={{ textAlign: 'center' }}>Pasar asistencia (Día: {formatearFecha(fechaAsistencia)})</th>
                     </tr>
                   </thead>
                   <tbody>
                     {alumnos.map((alumno, index) => {
-                      const estado = obtenerEstadoAlumno(alumno.id);
-                      const porcentajeAlumno = alumno.porcentajeAsistencia ?? 100.0;
+                      const registroAsistencia = asistencia.find(
+                        (item) => String(item.id || item.alumnoId) === String(alumno.id)
+                      );
+                      const estado = registroAsistencia?.estado || null;
+                      const porcentajeAlumno = registroAsistencia?.porcentajeAsistencia !== undefined
+                        ? Number(registroAsistencia.porcentajeAsistencia)
+                        : 0.0;
 
                       return (
                         <tr key={alumno.id}>
                           <td>{index + 1}</td>
                           <td>
                             <strong>{alumno.nombre}</strong>
-                            {alumno.rut && <div><small style={{ color: '#666' }}>{alumno.rut}</small></div>}
+                            {alumno.rut && <div><small style={{ color: '#64748b' }}>{alumno.rut}</small></div>}
                           </td>
 
                           <td style={{ textAlign: 'center' }}>
-                            <span style={{ padding: '5px 10px', borderRadius: '6px', background: porcentajeAlumno >= 85 ? '#dcfce7' : '#fee2e2', color: porcentajeAlumno >= 85 ? '#166534' : '#991b1b', fontWeight: 'bold' }}>
+                            <span style={{
+                              display: 'inline-block',
+                              minWidth: '72px',
+                              padding: '6px 12px',
+                              borderRadius: '8px',
+                              background: porcentajeAlumno >= 85 ? '#dcfce7' : porcentajeAlumno >= 75 ? '#fef9c3' : '#fee2e2',
+                              color: porcentajeAlumno >= 85 ? '#166534' : porcentajeAlumno >= 75 ? '#854d0e' : '#991b1b',
+                              fontWeight: '700',
+                              fontSize: '14px'
+                            }}>
                               {porcentajeAlumno.toFixed(1)}%
                             </span>
                           </td>
 
                           <td style={{ textAlign: 'center' }}>
-                            <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'center' }}>
+                            <div style={{ display: 'inline-flex', gap: '8px', justifyContent: 'center', flexWrap: 'wrap' }}>
                               <button
                                 type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'PRESENTE')}
                                 style={{
-                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #16a34a',
+                                  padding: '7px 13px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: '1px solid #16a34a',
                                   background: estado === 'PRESENTE' ? '#16a34a' : '#f0fdf4',
                                   color: estado === 'PRESENTE' ? '#fff' : '#16a34a',
-                                  transition: 'all 0.2s'
+                                  transition: 'all 0.15s ease'
                                 }}
                               >
                                 ✓ Presente
@@ -922,10 +935,10 @@ export default function ProfesorCurso() {
                                 type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'AUSENTE')}
                                 style={{
-                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #dc2626',
+                                  padding: '7px 13px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: '1px solid #dc2626',
                                   background: estado === 'AUSENTE' ? '#dc2626' : '#fef2f2',
                                   color: estado === 'AUSENTE' ? '#fff' : '#dc2626',
-                                  transition: 'all 0.2s'
+                                  transition: 'all 0.15s ease'
                                 }}
                               >
                                 ✕ Ausente
@@ -935,10 +948,10 @@ export default function ProfesorCurso() {
                                 type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'ATRASADO')}
                                 style={{
-                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #d97706',
+                                  padding: '7px 13px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: '1px solid #d97706',
                                   background: estado === 'ATRASADO' ? '#d97706' : '#fffbeb',
                                   color: estado === 'ATRASADO' ? '#fff' : '#d97706',
-                                  transition: 'all 0.2s'
+                                  transition: 'all 0.15s ease'
                                 }}
                               >
                                 ⏰ Atrasado
@@ -948,10 +961,10 @@ export default function ProfesorCurso() {
                                 type="button"
                                 onClick={() => guardarEstadoAsistencia(alumno.id, 'JUSTIFICADO')}
                                 style={{
-                                  padding: '6px 12px', borderRadius: '6px', fontWeight: 'bold', cursor: 'pointer', border: '1px solid #2563eb',
+                                  padding: '7px 13px', borderRadius: '8px', fontWeight: '600', cursor: 'pointer', border: '1px solid #2563eb',
                                   background: estado === 'JUSTIFICADO' ? '#2563eb' : '#eff6ff',
                                   color: estado === 'JUSTIFICADO' ? '#fff' : '#2563eb',
-                                  transition: 'all 0.2s'
+                                  transition: 'all 0.15s ease'
                                 }}
                               >
                                 📄 Justificado
