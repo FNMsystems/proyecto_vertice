@@ -42,7 +42,8 @@ export default function ProfesorCurso() {
   const [pestana, setPestana] = useState('alumnos');
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
-
+  const [porcentajeGeneralCurso, setPorcentajeGeneralCurso] = useState(0);
+  const [mesSeleccionadoActivo, setMesSeleccionadoActivo] = useState(true);
   const [notas, setNotas] = useState([]);
   const [asignaturaNotas, setAsignaturaNotas] = useState('');
   const [periodoNotas, setPeriodoNotas] = useState('1');
@@ -409,13 +410,13 @@ export default function ProfesorCurso() {
   const cargarAsistencia = async () => {
     try {
       setCargandoAsistencia(true);
-      let url = `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fechaAsistencia)}&mes=${encodeURIComponent(mesAsistencia)}`;
-      if (asignaturaAsistencia) {
-        url += `&asignaturaId=${encodeURIComponent(asignaturaAsistencia)}`;
-      }
+      const url = `/api/docentes/me/cursos/${cursoId}/asistencia?fecha=${encodeURIComponent(fechaAsistencia)}&mes=${encodeURIComponent(mesAsistencia)}`;
       const data = await fetchConAuth(url);
       setAsistencia(data.alumnos || []);
       setEstadisticasMesCurso(data.estadisticasMes || null);
+      setPorcentajeGeneralCurso(
+        data.porcentajeGeneralCurso !== undefined ? Number(data.porcentajeGeneralCurso) : 0
+      );
     } catch (error) {
       console.error('Error cargando asistencia:', error);
       alert(error.message || 'No se pudo cargar la asistencia.');
@@ -425,10 +426,10 @@ export default function ProfesorCurso() {
   };
 
   useEffect(() => {
-    if (pestana === 'asistencia' && cursoId) {
+    if (pestana === 'asistencia' && cursoId && fechaAsistencia) {
       cargarAsistencia();
     }
-  }, [pestana, cursoId, fechaAsistencia, mesAsistencia, asignaturaAsistencia]);
+  }, [pestana, cursoId, fechaAsistencia, mesAsistencia]);
 
   const guardarEstadoAsistencia = async (alumnoId, estado, observacion = '') => {
     try {
@@ -447,7 +448,9 @@ export default function ProfesorCurso() {
       const dataActualizada = await fetchConAuth(url);
       if (dataActualizada?.alumnos) setAsistencia(dataActualizada.alumnos);
       if (dataActualizada?.estadisticasMes) setEstadisticasMesCurso(dataActualizada.estadisticasMes);
-
+      if (dataActualizada?.porcentajeGeneralCurso !== undefined) {
+        setPorcentajeGeneralCurso(Number(dataActualizada.porcentajeGeneralCurso));
+      }
     } catch (error) {
       console.error('Error guardando asistencia:', error);
       alert(error.message || 'No se pudo guardar la asistencia.');
@@ -811,16 +814,23 @@ export default function ProfesorCurso() {
             <div className="panel-header">
               <div>
                 <h2>📅 Control y Registro de Asistencia</h2>
-                <p>Pasa la asistencia diaria del curso y supervisa los indicadores mensuales.</p>
+                <p>Pasa la asistencia diaria del curso y revisa el porcentaje general y mensual.</p>
               </div>
             </div>
 
-            {estadisticasMesCurso && (
-              <div style={{ background: 'linear-gradient(135deg, #800020 0%, #5a0016 100%)', color: '#fff', padding: '22px 26px', borderRadius: '14px', marginBottom: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', boxShadow: '0 4px 12px rgba(128, 0, 32, 0.15)' }}>
-                <div>
-                  <span style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.2px', opacity: 0.85, fontWeight: '600' }}>Resumen del Mes Seleccionado</span>
-                  <h3 style={{ margin: '6px 0 0 0', fontSize: '26px', fontWeight: '700' }}>Porcentaje general del curso: {estadisticasMesCurso.porcentajeCurso}%</h3>
-                </div>
+            <div style={{ background: 'linear-gradient(135deg, #800020 0%, #5a0016 100%)', color: '#fff', padding: '22px 26px', borderRadius: '14px', marginBottom: '22px', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '20px', boxShadow: '0 4px 12px rgba(128, 0, 32, 0.15)' }}>
+              <div>
+                <span style={{ fontSize: '12px', textTransform: 'uppercase', letterSpacing: '1.2px', opacity: 0.85, fontWeight: '600' }}>
+                  Porcentaje general del curso: {porcentajeGeneralCurso.toFixed(1)}%
+                </span>
+                <h3 style={{ margin: '6px 0 0 0', fontSize: '25px', fontWeight: '700' }}>
+                  {mesSeleccionadoActivo && estadisticasMesCurso
+                    ? `Porcentaje de ${obtenerNombreMes(mesAsistencia)}: ${Number(estadisticasMesCurso.porcentajeCurso || 0).toFixed(1)}%`
+                    : `Porcentaje general del curso: ${porcentajeGeneralCurso.toFixed(1)}%`}
+                </h3>
+              </div>
+
+              {mesSeleccionadoActivo && estadisticasMesCurso && (
                 <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
                   <div style={{ background: 'rgba(255,255,255,0.14)', padding: '12px 18px', borderRadius: '10px', textAlign: 'center', minWidth: '85px' }}>
                     <strong style={{ display: 'block', fontSize: '20px' }}>{estadisticasMesCurso.presentes}</strong>
@@ -839,11 +849,11 @@ export default function ProfesorCurso() {
                     <span style={{ fontSize: '12px', opacity: 0.9 }}>Justificados</span>
                   </div>
                 </div>
-              </div>
-            )}
+              )}
+            </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(240px, 1fr))', gap: '20px', marginBottom: '25px', background: '#f8fafc', padding: '18px 22px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
-              <div className="form-group" style={{ margin: 0 }}>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', marginBottom: '25px', background: '#f8fafc', padding: '18px 22px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div className="form-group" style={{ margin: 0, maxWidth: '280px' }}>
                 <label style={{ fontWeight: '600', color: '#334155', marginBottom: '6px', display: 'block' }}>📅 Fecha para pasar lista (Día)</label>
                 <input
                   type="date"
@@ -853,20 +863,46 @@ export default function ProfesorCurso() {
                     setFechaAsistencia(nuevaFecha);
                     if (nuevaFecha) {
                       setMesAsistencia(nuevaFecha.slice(0, 7));
+                      setMesSeleccionadoActivo(true);
                     }
                   }}
                   style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '14px' }}
                 />
               </div>
 
-              <div className="form-group" style={{ margin: 0 }}>
-                <label style={{ fontWeight: '600', color: '#334155', marginBottom: '6px', display: 'block' }}>📊 Mes a evaluar estadísticas</label>
-                <input
-                  type="month"
-                  value={mesAsistencia}
-                  onChange={(e) => setMesAsistencia(e.target.value)}
-                  style={{ width: '100%', padding: '10px 12px', borderRadius: '8px', border: '1px solid #cbd5e1', background: '#fff', fontSize: '14px' }}
-                />
+              <div>
+                <label style={{ fontWeight: '600', color: '#334155', marginBottom: '8px', display: 'block' }}>
+                  Seleccionar mes:
+                </label>
+                <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+                  {mesesDisponibles.map((m) => {
+                    const activo = mesSeleccionadoActivo && mesAsistencia === m.value;
+                    return (
+                      <button
+                        key={m.value}
+                        type="button"
+                        onClick={() => {
+                          setMesAsistencia(m.value);
+                          setMesSeleccionadoActivo(true);
+                        }}
+                        style={{
+                          padding: '8px 14px',
+                          borderRadius: '8px',
+                          border: activo ? '2px solid #450a18' : '1px solid #800020',
+                          backgroundColor: activo ? '#5a0016' : '#dc2626',
+                          color: '#ffffff',
+                          fontWeight: '700',
+                          fontSize: '13px',
+                          cursor: 'pointer',
+                          boxShadow: activo ? '0 0 0 2px rgba(220, 38, 38, 0.35)' : 'none',
+                          transition: 'all 0.15s ease'
+                        }}
+                      >
+                        {m.label}
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             </div>
 
@@ -1433,3 +1469,39 @@ function textoTipoAnotacion(tipo) {
     default: return tipo || 'Observación';
   }
 }
+
+const obtenerNombreMes = (ym) => {
+  if (!ym || !String(ym).includes('-')) return '';
+  const [, mesNum] = String(ym).split('-');
+  const nombres = {
+    '01': 'Enero',
+    '02': 'Febrero',
+    '03': 'Marzo',
+    '04': 'Abril',
+    '05': 'Mayo',
+    '06': 'Junio',
+    '07': 'Julio',
+    '08': 'Agosto',
+    '09': 'Septiembre',
+    '10': 'Octubre',
+    '11': 'Noviembre',
+    '12': 'Diciembre'
+  };
+  return nombres[mesNum] || '';
+};
+
+const mesesDisponibles = useMemo(() => {
+  const anioActual = (fechaAsistencia || obtenerFechaActual()).slice(0, 4);
+  return [
+    { value: `${anioActual}-03`, label: 'Marzo' },
+    { value: `${anioActual}-04`, label: 'Abril' },
+    { value: `${anioActual}-05`, label: 'Mayo' },
+    { value: `${anioActual}-06`, label: 'Junio' },
+    { value: `${anioActual}-07`, label: 'Julio' },
+    { value: `${anioActual}-08`, label: 'Agosto' },
+    { value: `${anioActual}-09`, label: 'Septiembre' },
+    { value: `${anioActual}-10`, label: 'Octubre' },
+    { value: `${anioActual}-11`, label: 'Noviembre' },
+    { value: `${anioActual}-12`, label: 'Diciembre' }
+  ];
+}, [fechaAsistencia]);

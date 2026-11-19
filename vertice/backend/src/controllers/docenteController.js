@@ -682,6 +682,28 @@ export const getAsistenciaCurso = async (req, res) => {
       [cursoId, fecha],
     );
 
+    const statsGeneralResult = await query(
+      `
+        SELECT
+          COUNT(*) AS total_registros,
+          COUNT(*) FILTER (WHERE asi.estado IN ('PRESENTE', 'ATRASADO', 'JUSTIFICADO')) AS total_asistidos
+        FROM asistencia asi
+        INNER JOIN matriculas m
+          ON m.alumno_id = asi.alumno_id
+          AND m.curso_id = asi.curso_id
+          AND m.anio = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER
+        WHERE asi.curso_id = $1
+          AND EXTRACT(YEAR FROM asi.fecha)::INTEGER = EXTRACT(YEAR FROM CURRENT_DATE)::INTEGER;
+      `,
+      [cursoId],
+    );
+
+    const genRow = statsGeneralResult.rows[0] || {};
+    const totalGen = Number(genRow.total_registros || 0);
+    const asistidosGen = Number(genRow.total_asistidos || 0);
+    const porcentajeGeneralCurso =
+      totalGen > 0 ? Number(((asistidosGen / totalGen) * 100).toFixed(1)) : 0.0;
+
     const statsMesResult = await query(
       `
         SELECT
@@ -709,11 +731,14 @@ export const getAsistenciaCurso = async (req, res) => {
       Number(statsRow.total_justificados || 0);
 
     const porcentajeCursoMes =
-      totalReg > 0 ? Number(((totalAsistidos / totalReg) * 100).toFixed(1)) : 0.0;
+      totalReg > 0
+        ? Number(((totalAsistidos / totalReg) * 100).toFixed(1))
+        : 0.0;
 
     return res.json({
       fecha,
       mesFiltro,
+      porcentajeGeneralCurso,
       estadisticasMes: {
         porcentajeCurso: porcentajeCursoMes,
         presentes: Number(statsRow.total_presentes || 0),
