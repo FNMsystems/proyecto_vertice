@@ -190,6 +190,42 @@ export default function ProfesorCurso() {
     }
   };
 
+  const obtenerNombreMes = (ym) => {
+    if (!ym || !String(ym).includes('-')) return '';
+    const [, mesNum] = String(ym).split('-');
+    const nombres = {
+      '01': 'Enero',
+      '02': 'Febrero',
+      '03': 'Marzo',
+      '04': 'Abril',
+      '05': 'Mayo',
+      '06': 'Junio',
+      '07': 'Julio',
+      '08': 'Agosto',
+      '09': 'Septiembre',
+      '10': 'Octubre',
+      '11': 'Noviembre',
+      '12': 'Diciembre'
+    };
+    return nombres[mesNum] || '';
+  };
+
+  const mesesDisponibles = useMemo(() => {
+    const anioActual = (fechaAsistencia || obtenerFechaActual()).slice(0, 4);
+    return [
+      { value: `${anioActual}-03`, label: 'Marzo' },
+      { value: `${anioActual}-04`, label: 'Abril' },
+      { value: `${anioActual}-05`, label: 'Mayo' },
+      { value: `${anioActual}-06`, label: 'Junio' },
+      { value: `${anioActual}-07`, label: 'Julio' },
+      { value: `${anioActual}-08`, label: 'Agosto' },
+      { value: `${anioActual}-09`, label: 'Septiembre' },
+      { value: `${anioActual}-10`, label: 'Octubre' },
+      { value: `${anioActual}-11`, label: 'Noviembre' },
+      { value: `${anioActual}-12`, label: 'Diciembre' }
+    ];
+  }, [fechaAsistencia]);
+  
   const evaluacionesAgrupadas = useMemo(() => {
     const agrupadas = new Map();
     const notasFiltradas = notas.filter((nota) => {
@@ -1469,39 +1505,3 @@ function textoTipoAnotacion(tipo) {
     default: return tipo || 'Observación';
   }
 }
-
-const obtenerNombreMes = (ym) => {
-  if (!ym || !String(ym).includes('-')) return '';
-  const [, mesNum] = String(ym).split('-');
-  const nombres = {
-    '01': 'Enero',
-    '02': 'Febrero',
-    '03': 'Marzo',
-    '04': 'Abril',
-    '05': 'Mayo',
-    '06': 'Junio',
-    '07': 'Julio',
-    '08': 'Agosto',
-    '09': 'Septiembre',
-    '10': 'Octubre',
-    '11': 'Noviembre',
-    '12': 'Diciembre'
-  };
-  return nombres[mesNum] || '';
-};
-
-const mesesDisponibles = useMemo(() => {
-  const anioActual = (fechaAsistencia || obtenerFechaActual()).slice(0, 4);
-  return [
-    { value: `${anioActual}-03`, label: 'Marzo' },
-    { value: `${anioActual}-04`, label: 'Abril' },
-    { value: `${anioActual}-05`, label: 'Mayo' },
-    { value: `${anioActual}-06`, label: 'Junio' },
-    { value: `${anioActual}-07`, label: 'Julio' },
-    { value: `${anioActual}-08`, label: 'Agosto' },
-    { value: `${anioActual}-09`, label: 'Septiembre' },
-    { value: `${anioActual}-10`, label: 'Octubre' },
-    { value: `${anioActual}-11`, label: 'Noviembre' },
-    { value: `${anioActual}-12`, label: 'Diciembre' }
-  ];
-}, [fechaAsistencia]);
