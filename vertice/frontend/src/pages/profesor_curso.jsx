@@ -225,7 +225,7 @@ export default function ProfesorCurso() {
       { value: `${anioActual}-12`, label: 'Diciembre' }
     ];
   }, [fechaAsistencia]);
-  
+
   const evaluacionesAgrupadas = useMemo(() => {
     const agrupadas = new Map();
     const notasFiltradas = notas.filter((nota) => {
@@ -259,6 +259,73 @@ export default function ProfesorCurso() {
 
     return Array.from(agrupadas.values()).sort((a, b) => (a.fecha || '').localeCompare(b.fecha || ''));
   }, [notas, periodoNotas, asignaturaNotas]);
+
+  const resumenLogroJefatura = useMemo(() => {
+    const clasificarNota = (valor) => {
+      const n = Number(valor);
+      if (!Number.isFinite(n) || n < 1 || n > 7) return null;
+      if (n < 4.0) return 'NO_LOGRADO';
+      if (n < 6.0) return 'MEDIANAMENTE_LOGRADO';
+      return 'LOGRADO';
+    };
+
+    let noLogrado = 0;
+    let medianamenteLogrado = 0;
+    let logrado = 0;
+    const alumnosNoLogradosMap = new Map();
+
+    alumnosOrdenados.forEach((alumno) => {
+      const resultadoPromedio = calcularPromedioAlumno(alumno.id);
+      const notasAlumno = [];
+
+      evaluacionesAgrupadas.forEach((evaluacion) => {
+        const registro = evaluacion.notas[alumno.id];
+        if (registro?.nota !== null && registro?.nota !== undefined && registro?.nota !== '') {
+          const numNota = Number(registro.nota);
+          if (Number.isFinite(numNota)) {
+            notasAlumno.push({
+              evaluacion: evaluacion.tipoEvaluacion,
+              nota: numNota
+            });
+            const cat = clasificarNota(numNota);
+            if (cat === 'NO_LOGRADO') noLogrado += 1;
+            else if (cat === 'MEDIANAMENTE_LOGRADO') medianamenteLogrado += 1;
+            else if (cat === 'LOGRADO') logrado += 1;
+          }
+        }
+      });
+
+      const promedioNum = resultadoPromedio ? Number(resultadoPromedio.promedio) : null;
+      const notasBajas = notasAlumno.filter((item) => item.nota < 4.0);
+      const promedioEnNoLogrado = promedioNum !== null && promedioNum < 4.0;
+
+      if (promedioEnNoLogrado || notasBajas.length > 0) {
+        alumnosNoLogradosMap.set(alumno.id, {
+          id: alumno.id,
+          nombre: alumno.nombre,
+          rut: alumno.rut,
+          promedio: promedioNum,
+          notasBajas
+        });
+      }
+    });
+
+    const totalCalificaciones = noLogrado + medianamenteLogrado + logrado;
+    const pctNoLogrado = totalCalificaciones > 0 ? ((noLogrado / totalCalificaciones) * 100).toFixed(1) : '0.0';
+    const pctMedianamente = totalCalificaciones > 0 ? ((medianamenteLogrado / totalCalificaciones) * 100).toFixed(1) : '0.0';
+    const pctLogrado = totalCalificaciones > 0 ? ((logrado / totalCalificaciones) * 100).toFixed(1) : '0.0';
+
+    return {
+      noLogrado,
+      medianamenteLogrado,
+      logrado,
+      totalCalificaciones,
+      pctNoLogrado,
+      pctMedianamente,
+      pctLogrado,
+      alumnosNoLogrados: Array.from(alumnosNoLogradosMap.values())
+    };
+  }, [alumnosOrdenados, evaluacionesAgrupadas, edicionesNotas]);
 
   const { asignaturasPropias, asignaturasJefatura } = useMemo(() => {
     const propias = [];
@@ -1422,6 +1489,112 @@ export default function ProfesorCurso() {
                         })}
                       </tbody>
                     </table>
+                  </div>
+                )}
+
+                {evaluacionesAgrupadas.length > 0 && (
+                  <div style={{ marginTop: '24px', marginBottom: '28px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                    <div style={{ background: '#fff', border: '1px solid #e2d7db', borderRadius: '12px', padding: '20px', boxShadow: '0 2px 8px rgba(0,0,0,0.03)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '10px', marginBottom: '16px' }}>
+                        <div>
+                          <h3 style={{ margin: 0, color: '#33272c' }}>📊 Nivel de Logro de la Asignatura</h3>
+                          <p style={{ margin: '4px 0 0 0', fontSize: '13px', color: '#64748b' }}>
+                            No logrado: 1,0–3,9 · Medianamente logrado: 4,0–5,9 · Logrado: 6,0–7,0
+                          </p>
+                        </div>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#475569', background: '#f1f5f9', padding: '6px 12px', borderRadius: '8px' }}>
+                          {resumenLogroJefatura.totalCalificaciones} calificaciones evaluadas
+                        </span>
+                      </div>
+
+                      <div style={{ width: '100%', height: '26px', borderRadius: '999px', overflow: 'hidden', display: 'flex', background: '#f1f5f9', marginBottom: '18px' }}>
+                        <div
+                          title={`Logrado (6.0 - 7.0): ${resumenLogroJefatura.pctLogrado}%`}
+                          style={{ width: `${resumenLogroJefatura.pctLogrado}%`, backgroundColor: '#16a34a', transition: 'width 0.3s ease' }}
+                        />
+                        <div
+                          title={`Medianamente logrado (4.0 - 5.9): ${resumenLogroJefatura.pctMedianamente}%`}
+                          style={{ width: `${resumenLogroJefatura.pctMedianamente}%`, backgroundColor: '#d97706', transition: 'width 0.3s ease' }}
+                        />
+                        <div
+                          title={`No logrado (1.0 - 3.9): ${resumenLogroJefatura.pctNoLogrado}%`}
+                          style={{ width: `${resumenLogroJefatura.pctNoLogrado}%`, backgroundColor: '#dc2626', transition: 'width 0.3s ease' }}
+                        />
+                      </div>
+
+                      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px' }}>
+                        <div style={{ background: '#fef2f2', border: '1px solid #fecaca', borderRadius: '10px', padding: '14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: '700', color: '#991b1b', fontSize: '13px' }}>No logrado (1.0–3.9)</span>
+                            <strong style={{ color: '#dc2626', fontSize: '16px' }}>{resumenLogroJefatura.pctNoLogrado}%</strong>
+                          </div>
+                          <div style={{ width: '100%', height: '10px', background: '#fee2e2', borderRadius: '6px', overflow: 'hidden', marginBottom: '6px' }}>
+                            <div style={{ width: `${resumenLogroJefatura.pctNoLogrado}%`, height: '100%', background: '#dc2626' }} />
+                          </div>
+                          <small style={{ color: '#7f1d1d' }}>{resumenLogroJefatura.noLogrado} calificaciones</small>
+                        </div>
+
+                        <div style={{ background: '#fffbeb', border: '1px solid #fde68a', borderRadius: '10px', padding: '14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: '700', color: '#92400e', fontSize: '13px' }}>Medianamente logrado (4.0–5.9)</span>
+                            <strong style={{ color: '#d97706', fontSize: '16px' }}>{resumenLogroJefatura.pctMedianamente}%</strong>
+                          </div>
+                          <div style={{ width: '100%', height: '10px', background: '#fef3c7', borderRadius: '6px', overflow: 'hidden', marginBottom: '6px' }}>
+                            <div style={{ width: `${resumenLogroJefatura.pctMedianamente}%`, height: '100%', background: '#d97706' }} />
+                          </div>
+                          <small style={{ color: '#78350f' }}>{resumenLogroJefatura.medianamenteLogrado} calificaciones</small>
+                        </div>
+
+                        <div style={{ background: '#f0fdf4', border: '1px solid #bbf7d0', borderRadius: '10px', padding: '14px' }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '8px' }}>
+                            <span style={{ fontWeight: '700', color: '#166534', fontSize: '13px' }}>Logrado (6.0–7.0)</span>
+                            <strong style={{ color: '#16a34a', fontSize: '16px' }}>{resumenLogroJefatura.pctLogrado}%</strong>
+                          </div>
+                          <div style={{ width: '100%', height: '10px', background: '#dcfce7', borderRadius: '6px', overflow: 'hidden', marginBottom: '6px' }}>
+                            <div style={{ width: `${resumenLogroJefatura.pctLogrado}%`, height: '100%', background: '#16a34a' }} />
+                          </div>
+                          <small style={{ color: '#14532d' }}>{resumenLogroJefatura.logrado} calificaciones</small>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div style={{ background: '#fff', border: '1px solid #fecaca', borderLeft: '5px solid #dc2626', borderRadius: '12px', padding: '20px' }}>
+                      <h3 style={{ margin: '0 0 6px 0', color: '#991b1b' }}>
+                        ⚠️ Alumnos en No Logrado ({resumenLogroJefatura.alumnosNoLogrados.length})
+                      </h3>
+                      <p style={{ margin: '0 0 14px 0', fontSize: '13px', color: '#64748b' }}>
+                        Estudiantes con promedio o calificaciones en el rango <strong>1,0 a 3,9</strong> en esta asignatura.
+                      </p>
+
+                      {resumenLogroJefatura.alumnosNoLogrados.length === 0 ? (
+                        <div style={{ background: '#f0fdf4', color: '#166534', padding: '12px 16px', borderRadius: '8px', fontSize: '14px', fontWeight: '600' }}>
+                          ✓ No hay alumnos en rango No Logrado en esta asignatura.
+                        </div>
+                      ) : (
+                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: '12px' }}>
+                          {resumenLogroJefatura.alumnosNoLogrados.map((est) => (
+                            <div key={est.id} style={{ background: '#fef2f2', border: '1px solid #fca5a5', borderRadius: '10px', padding: '14px' }}>
+                              <strong style={{ display: 'block', color: '#7f1d1d', fontSize: '14px' }}>{est.nombre}</strong>
+                              {est.rut && <small style={{ color: '#991b1b', display: 'block', marginBottom: '8px' }}>{est.rut}</small>}
+                              {est.promedio !== null && (
+                                <div style={{ fontSize: '13px', marginBottom: '6px', color: '#450a0a' }}>
+                                  Promedio período: <strong style={{ color: est.promedio < 4 ? '#dc2626' : '#1e293b' }}>{est.promedio.toFixed(1)}</strong>
+                                </div>
+                              )}
+                              {est.notasBajas.length > 0 && (
+                                <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', marginTop: '6px' }}>
+                                  {est.notasBajas.map((nb, idx) => (
+                                    <span key={idx} style={{ background: '#dc2626', color: '#fff', padding: '3px 8px', borderRadius: '6px', fontSize: '12px', fontWeight: '700' }}>
+                                      {nb.evaluacion}: {nb.nota.toFixed(1)}
+                                    </span>
+                                  ))}
+                                </div>
+                              )}
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
                   </div>
                 )}
 
