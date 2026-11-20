@@ -12,7 +12,7 @@ import {
 
 import logoColegio from '../img/logo_Institucional.png';
 import fondoInstitucional from '../img/fondo_institucional.jpeg';
-
+import CambiarPassword from './CambiarPassword';
 import './profesores_dashboard.css';
 
 
@@ -134,7 +134,6 @@ export default function ProfesoresDashboard() {
 
         </div>
 
-
         <div className="user-info">
 
           <span>
@@ -143,6 +142,8 @@ export default function ProfesoresDashboard() {
               {nombreDocente}
             </strong>
           </span>
+
+          <CambiarPassword />
 
           <button
             onClick={handleLogout}
@@ -311,6 +312,7 @@ export default function ProfesoresDashboard() {
 
                       <button
                         type="button"
+                        className="btn-ingresar-curso"
                         onClick={() =>
                           navigate(`/profesores/cursos/${curso.id}`)
                         }
