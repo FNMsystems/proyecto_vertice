@@ -316,7 +316,9 @@ export const getJustificativos = async (req, res) => {
       `SELECT id, TRIM(CONCAT(nombres, ' ', apellido_paterno, ' ', COALESCE(apellido_materno, ''))) AS nombre_completo FROM alumnos;`,
     );
     const alumnosMap = new Map();
-    alumnosRes.rows.forEach((a) => alumnosMap.set(a.id, a.nombre_completo));
+    alumnosRes.rows.forEach((a) =>
+      alumnosMap.set(String(a.id), a.nombre_completo),
+    );
 
     const justificativosFormateados = result.rows.map((item) => {
       const aId =
@@ -325,16 +327,29 @@ export const getJustificativos = async (req, res) => {
         item.id_alumno ||
         item.usuario_id;
       const nombreAlumno =
-        alumnosMap.get(aId) ||
+        alumnosMap.get(String(aId)) ||
+        item.alumno_nombre ||
+        item.nombre_alumno ||
         item.estudiante ||
         item.nombre_estudiante ||
         "Estudiante";
+
+      const rutaArchivo =
+        item.archivo_pdf ||
+        item.archivo_url ||
+        item.archivo ||
+        item.documento_url ||
+        item.url_archivo ||
+        null;
 
       return {
         ...item,
         fecha_inicio: formatearCreadoEn(item.fecha_inicio),
         fecha_fin: formatearCreadoEn(item.fecha_fin),
         estudiante: nombreAlumno,
+        alumno_nombre: nombreAlumno,
+        archivo_pdf: rutaArchivo,
+        tiene_archivo: Boolean(rutaArchivo),
       };
     });
 

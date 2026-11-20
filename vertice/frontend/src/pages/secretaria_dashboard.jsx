@@ -7,6 +7,14 @@ import {
   API_URL
 } from "../services/apiService.js";
 
+const obtenerFechaHoyLocal = () => {
+  const ahora = new Date();
+  const anio = ahora.getFullYear();
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+};
+
 const extraerLista = (respuesta, claves = []) => {
   if (Array.isArray(respuesta)) return respuesta;
   if (!respuesta || typeof respuesta !== 'object') return [];
@@ -75,14 +83,6 @@ const obtenerCursoSiguiente = (cursoActualObj, listaDeCursos) => {
   }
 
   return candidatos[0];
-};
-
-const obtenerFechaHoyLocal = () => {
-  const ahora = new Date();
-  const anio = ahora.getFullYear();
-  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
-  const dia = String(ahora.getDate()).padStart(2, '0');
-  return `${anio}-${mes}-${dia}`;
 };
 
 function SecretariaDashboard() {
@@ -276,6 +276,44 @@ function SecretariaDashboard() {
       setListaJustificativos([]);
     } finally {
       setCargandoJustificativos(false);
+    }
+  };
+
+  const verJustificativoArchivo = async (item) => {
+    if (!item?.id) return;
+    try {
+      const blob = await fetchArchivoConAuth(
+        `/api/secretaria/justificativos/${encodeURIComponent(item.id)}/pdf`
+      );
+      const url = window.URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener,noreferrer');
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      console.error('Error al ver justificativo:', err);
+      alert(err.message || 'No se pudo abrir el justificativo adjunto.');
+    }
+  };
+
+  const descargarJustificativoArchivo = async (item) => {
+    if (!item?.id) return;
+    try {
+      const blob = await fetchArchivoConAuth(
+        `/api/secretaria/justificativos/${encodeURIComponent(item.id)}/pdf`
+      );
+      const url = window.URL.createObjectURL(blob);
+      const enlace = document.createElement('a');
+      const nombreLimpio = String(item.estudiante || item.alumno_nombre || 'justificativo')
+        .trim()
+        .replace(/\s+/g, '_');
+      enlace.href = url;
+      enlace.download = `justificativo_${nombreLimpio}_${item.id}.pdf`;
+      document.body.appendChild(enlace);
+      enlace.click();
+      enlace.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (err) {
+      console.error('Error al descargar justificativo:', err);
+      alert(err.message || 'No se pudo descargar el justificativo.');
     }
   };
 
@@ -1340,31 +1378,103 @@ function SecretariaDashboard() {
                     <span className="sec-badge-tag">Justificativos</span>
                   </div>
                   <div className="sec-card-body">
-                    {cargandoJustificativos ? <p>Cargando justificativos...</p> : errorJustificativos ? <p style={{ color: 'red' }}>{errorJustificativos}</p> : (
+                    {cargandoJustificativos ? (
+                      <p>Cargando justificativos...</p>
+                    ) : errorJustificativos ? (
+                      <p style={{ color: 'red' }}>{errorJustificativos}</p>
+                    ) : (
                       <div style={{ overflowX: 'auto' }}>
                         <table className="sec-table">
-                          <thead><tr><th>Estudiante</th><th>Fechas</th><th>Motivo</th><th>Estado</th><th>Acciones</th></tr></thead>
+                          <thead>
+                            <tr>
+                              <th>Estudiante</th>
+                              <th>Fechas</th>
+                              <th>Motivo</th>
+                              <th>Estado</th>
+                              <th>Acciones</th>
+                            </tr>
+                          </thead>
                           <tbody>
-                            {listaJustificativos.map(item => (
-                              <tr key={item.id}>
-                                <td>{item.alumno_nombre || item.nombre_alumno || '-'}</td>
-                                <td>{item.fecha_inicio} al {item.fecha_fin || item.fecha_inicio}</td>
-                                <td>{item.motivo}</td>
-                                <td><strong>{item.estado || 'PENDIENTE'}</strong></td>
-                                <td>
-                                  {(!item.estado || item.estado === 'PENDIENTE') ? (
-                                    <div style={{ display: 'flex', gap: '8px' }}>
-                                      <button type="button" className="sec-btn-outline" onClick={() => cambiarEstadoJustificativo(item, 'APROBADO')} disabled={actualizandoJustificativo === item.id}>Aprobar</button>
-                                      <button type="button" className="sec-btn-outline" style={{ borderColor: '#800020', color: '#800020' }} onClick={() => cambiarEstadoJustificativo(item, 'RECHAZADO')} disabled={actualizandoJustificativo === item.id}>Rechazar</button>
+                            {listaJustificativos.map((item) => {
+                              const nombreEstudiante =
+                                item.estudiante ||
+                                item.alumno_nombre ||
+                                item.nombre_alumno ||
+                                item.nombre_estudiante ||
+                                '-';
+                              const estadoActual = String(item.estado || 'PENDIENTE').toUpperCase();
+                              const tieneArchivo =
+                                item.tiene_archivo !== undefined
+                                  ? Boolean(item.tiene_archivo)
+                                  : Boolean(
+                                      item.archivo_pdf ||
+                                      item.archivo_url ||
+                                      item.archivo ||
+                                      item.documento_url ||
+                                      item.url_archivo
+                                    );
+
+                              return (
+                                <tr key={item.id}>
+                                  <td><strong>{nombreEstudiante}</strong></td>
+                                  <td>{item.fecha_inicio} al {item.fecha_fin || item.fecha_inicio}</td>
+                                  <td>{item.motivo}</td>
+                                  <td><strong>{estadoActual}</strong></td>
+                                  <td>
+                                    <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '8px' }}>
+                                      {tieneArchivo && (
+                                        <>
+                                          <button
+                                            type="button"
+                                            className="sec-btn-outline"
+                                            onClick={() => verJustificativoArchivo(item)}
+                                          >
+                                            Ver
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="sec-btn-outline"
+                                            onClick={() => descargarJustificativoArchivo(item)}
+                                          >
+                                            Descargar
+                                          </button>
+                                        </>
+                                      )}
+
+                                      {estadoActual === 'PENDIENTE' ? (
+                                        <>
+                                          <button
+                                            type="button"
+                                            className="sec-btn-outline"
+                                            onClick={() => cambiarEstadoJustificativo(item, 'APROBADO')}
+                                            disabled={actualizandoJustificativo === item.id}
+                                          >
+                                            Aprobar
+                                          </button>
+                                          <button
+                                            type="button"
+                                            className="sec-btn-outline"
+                                            style={{ borderColor: '#800020', color: '#800020' }}
+                                            onClick={() => cambiarEstadoJustificativo(item, 'RECHAZADO')}
+                                            disabled={actualizandoJustificativo === item.id}
+                                          >
+                                            Rechazar
+                                          </button>
+                                        </>
+                                      ) : (
+                                        <span>Gestionado</span>
+                                      )}
                                     </div>
-                                  ) : (
-                                    <span>Gestionado</span>
-                                  )}
+                                  </td>
+                                </tr>
+                              );
+                            })}
+                            {listaJustificativos.length === 0 && (
+                              <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: 20 }}>
+                                  No hay justificativos pendientes.
                                 </td>
                               </tr>
-                            ))}
-                            {listaJustificativos.length === 0 && (
-                              <tr><td colSpan="5" style={{ textAlign: 'center', padding: 20 }}>No hay justificativos pendientes.</td></tr>
                             )}
                           </tbody>
                         </table>
