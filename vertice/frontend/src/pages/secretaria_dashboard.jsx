@@ -77,6 +77,14 @@ const obtenerCursoSiguiente = (cursoActualObj, listaDeCursos) => {
   return candidatos[0];
 };
 
+const obtenerFechaHoyLocal = () => {
+  const ahora = new Date();
+  const anio = ahora.getFullYear();
+  const mes = String(ahora.getMonth() + 1).padStart(2, '0');
+  const dia = String(ahora.getDate()).padStart(2, '0');
+  return `${anio}-${mes}-${dia}`;
+};
+
 function SecretariaDashboard() {
   const [tab, setTab] = useState('estudiantes');
   const [usuarioSecretaria, setUsuarioSecretaria] = useState('Lorena Morales');
@@ -108,7 +116,7 @@ function SecretariaDashboard() {
   const [cursoFiltroEstudiante, setCursoFiltroEstudiante] = useState('');
   const [listaRetiros, setListaRetiros] = useState([]);
   const [cargandoRetiros, setCargandoRetiros] = useState(false);
-  const [fechaFiltroRetiro, setFechaFiltroRetiro] = useState('');
+  const [fechaFiltroRetiro, setFechaFiltroRetiro] = useState(obtenerFechaHoyLocal());
   const [cursoFiltroRetiro, setCursoFiltroRetiro] = useState('');
   const [busquedaRetiro, setBusquedaRetiro] = useState('');
   const [actualizandoJustificativo, setActualizandoJustificativo] = useState(null);
