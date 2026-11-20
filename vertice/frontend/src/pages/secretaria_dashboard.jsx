@@ -18,6 +18,65 @@ const extraerLista = (respuesta, claves = []) => {
   return [];
 };
 
+const obtenerCursoSiguiente = (cursoActualObj, listaDeCursos) => {
+  if (!cursoActualObj?.nombre || !Array.isArray(listaDeCursos)) return null;
+
+  const nombreOriginal = String(cursoActualObj.nombre).trim();
+  const match = nombreOriginal.match(
+    /^(pre\s*k[íi]nder|k[íi]nder|[1-8])\s*°?\s*(b[áa]sico|medio)?\s*(.*)$/i
+  );
+
+  if (!match) return null;
+
+  const nivelRaw = match[1].toLowerCase().replace(/\s+/g, '');
+  const tipoRaw = (match[2] || '').toLowerCase();
+  const letraOColegio = (match[3] || '').trim();
+
+  let siguienteNivel = null;
+  let siguienteTipo = tipoRaw;
+
+  if (nivelRaw === 'prekínder' || nivelRaw === 'prekinder') {
+    siguienteNivel = 'kínder';
+    siguienteTipo = '';
+  } else if (nivelRaw === 'kínder' || nivelRaw === 'kinder') {
+    siguienteNivel = '1';
+    siguienteTipo = 'básico';
+  } else {
+    const num = Number(nivelRaw);
+    if (num >= 1 && num < 8) {
+      siguienteNivel = String(num + 1);
+      siguienteTipo = 'básico';
+    } else if (num === 8) {
+      siguienteNivel = '1';
+      siguienteTipo = 'medio';
+    }
+  }
+
+  if (!siguienteNivel) return null;
+
+  const candidatos = listaDeCursos.filter((c) => {
+    if (String(c.id) === String(cursoActualObj.id)) return false;
+    const n = String(c.nombre || '').toLowerCase();
+    const coincideNivel =
+      siguienteNivel === 'kínder'
+        ? n.includes('kínder') || n.includes('kinder')
+        : new RegExp(`(^|\\s)${siguienteNivel}\\s*°?`).test(n);
+    const coincideTipo = !siguienteTipo || n.includes(siguienteTipo.slice(0, 5));
+    return coincideNivel && coincideTipo;
+  });
+
+  if (candidatos.length === 0) return null;
+
+  if (letraOColegio) {
+    const porLetra = candidatos.find((c) =>
+      String(c.nombre || '').toLowerCase().endsWith(letraOColegio.toLowerCase())
+    );
+    if (porLetra) return porLetra;
+  }
+
+  return candidatos[0];
+};
+
 function SecretariaDashboard() {
   const [tab, setTab] = useState('estudiantes');
   const [usuarioSecretaria, setUsuarioSecretaria] = useState('Lorena Morales');
@@ -72,6 +131,11 @@ function SecretariaDashboard() {
   const [mensajeMatricula, setMensajeMatricula] = useState({ tipo: '', texto: '' });
   const [busquedaAlumnoMatricula, setBusquedaAlumnoMatricula] = useState('');
   const [mostrarDropdownAlumnos, setMostrarDropdownAlumnos] = useState(false);
+
+  const [cursoActualAntiguoId, setCursoActualAntiguoId] = useState('');
+  const [matriculasActivasCurso, setMatriculasActivasCurso] = useState([]);
+  const [cargandoMatriculasActivas, setCargandoMatriculasActivas] = useState(false);
+  const [repiteCurso, setRepiteCurso] = useState(false);
 
   const [formMatricula, setFormMatricula] = useState({
     es_nuevo: false,
@@ -437,6 +501,54 @@ function SecretariaDashboard() {
     }));
   };
 
+  const handleSeleccionarCursoAntiguo = async (e) => {
+    const seleccionadoId = e.target.value;
+    setCursoActualAntiguoId(seleccionadoId);
+    setMatriculasActivasCurso([]);
+
+    const cursoObj = listaCursos.find((c) => String(c.id) === String(seleccionadoId));
+    const cursoDestino = repiteCurso
+      ? cursoObj
+      : (obtenerCursoSiguiente(cursoObj, listaCursos) || cursoObj);
+
+    setFormMatricula((prev) => ({
+      ...prev,
+      alumno_id: '',
+      ha_repetido: repiteCurso,
+      curso_id: cursoDestino?.id || ''
+    }));
+    setBusquedaAlumnoMatricula('');
+
+    if (!seleccionadoId) return;
+
+    try {
+      setCargandoMatriculasActivas(true);
+      const res = await fetchConAuth(
+        `/api/secretaria/cursos/${encodeURIComponent(seleccionadoId)}/matriculas-activas?anio=2026`
+      );
+      setMatriculasActivasCurso(extraerLista(res, ['matriculas', 'alumnos', 'data', 'resultado']));
+    } catch (err) {
+      console.error('Error cargando matrículas activas del curso:', err);
+      setMatriculasActivasCurso([]);
+    } finally {
+      setCargandoMatriculasActivas(false);
+    }
+  };
+
+  const handleCambioRepite = (repiteVal) => {
+    setRepiteCurso(repiteVal);
+    const cursoObj = listaCursos.find((c) => String(c.id) === String(cursoActualAntiguoId));
+    const cursoDestino = repiteVal
+      ? cursoObj
+      : (obtenerCursoSiguiente(cursoObj, listaCursos) || cursoObj);
+
+    setFormMatricula((prev) => ({
+      ...prev,
+      ha_repetido: repiteVal,
+      curso_id: cursoDestino?.id || prev.curso_id
+    }));
+  };
+
   const handleMatriculaChange = (e) => {
     const { name, value, type, checked } = e.target;
 
@@ -444,11 +556,16 @@ function SecretariaDashboard() {
       const esNuevoVal = value === 'true';
       setBusquedaAlumnoMatricula('');
       setMostrarDropdownAlumnos(false);
+      setCursoActualAntiguoId('');
+      setMatriculasActivasCurso([]);
+      setRepiteCurso(false);
 
       setFormMatricula((prev) => ({
         ...prev,
         es_nuevo: esNuevoVal,
-        alumno_id: esNuevoVal ? '' : prev.alumno_id
+        alumno_id: esNuevoVal ? '' : prev.alumno_id,
+        curso_id: '',
+        ha_repetido: false
       }));
       return;
     }
@@ -468,12 +585,21 @@ function SecretariaDashboard() {
     }
 
     if (!formMatricula.es_nuevo && !formMatricula.alumno_id) {
-      setMensajeMatricula({ tipo: 'error', texto: 'Debes seleccionar un estudiante de la lista.' });
+      setMensajeMatricula({ tipo: 'error', texto: 'Debes seleccionar un alumno con matrícula activa del curso.' });
       return;
     }
 
-    if (formMatricula.es_nuevo && (!formMatricula.nuevo_nombres || !formMatricula.nuevo_apellido_paterno || !formMatricula.nuevo_rut)) {
-      setMensajeMatricula({ tipo: 'error', texto: 'Debes completar los nombres, primer apellido y RUT del nuevo estudiante.' });
+    if (
+      formMatricula.es_nuevo &&
+      (!formMatricula.nuevo_nombres ||
+        !formMatricula.nuevo_apellido_paterno ||
+        !formMatricula.nuevo_apellido_materno ||
+        !formMatricula.nuevo_rut)
+    ) {
+      setMensajeMatricula({
+        tipo: 'error',
+        texto: 'Debes completar nombres, apellido paterno, apellido materno y RUT del nuevo estudiante.'
+      });
       return;
     }
 
@@ -481,16 +607,24 @@ function SecretariaDashboard() {
       setGuardandoMatricula(true);
       setMensajeMatricula({ tipo: '', texto: '' });
 
+      const payloadMatricula = {
+        ...formMatricula,
+        ha_repetido: !formMatricula.es_nuevo ? repiteCurso : Boolean(formMatricula.ha_repetido)
+      };
+
       const res = await fetchConAuth('/api/secretaria/matriculas', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formMatricula)
+        body: JSON.stringify(payloadMatricula)
       });
 
       if (res && (res.ok || res.id || res.message)) {
         setMensajeMatricula({ tipo: 'exito', texto: '¡Matrícula registrada exitosamente en la Base de Datos!' });
         setPasoMatricula(1);
         setBusquedaAlumnoMatricula('');
+        setCursoActualAntiguoId('');
+        setMatriculasActivasCurso([]);
+        setRepiteCurso(false);
 
         setFormMatricula({
           es_nuevo: false,
@@ -812,78 +946,216 @@ function SecretariaDashboard() {
                   <div className="sec-card-topbar">
                     <div>
                       <h3>Proceso de Matrícula</h3>
-                      <p>Registre una nueva matrícula o actualice la ficha del estudiante.</p>
+                      <p>Filtre por alumno antiguo o nuevo y complete los datos de matrícula.</p>
                     </div>
                     <span className="sec-badge-tag">Matrícula</span>
                   </div>
                   <div className="sec-card-body">
                     <form onSubmit={handleGuardarMatricula}>
                       <div className="sec-form-group">
-                        <label>Tipo de alumno</label>
-                        <select className="sec-input-full" name="es_nuevo" value={formMatricula.es_nuevo} onChange={handleMatriculaChange}>
-                          <option value="false">Estudiante existente / Antiguo</option>
-                          <option value="true">Estudiante Nuevo</option>
+                        <label>Tipo de alumno *</label>
+                        <select
+                          className="sec-input-full"
+                          name="es_nuevo"
+                          value={String(formMatricula.es_nuevo)}
+                          onChange={handleMatriculaChange}
+                          required
+                        >
+                          <option value="false">Alumno Antiguo</option>
+                          <option value="true">Alumno Nuevo</option>
                         </select>
                       </div>
 
                       {!formMatricula.es_nuevo ? (
-                        <div className="sec-form-group">
-                          <label>Buscar estudiante</label>
-                          <input
-                            type="text"
-                            className="sec-input-full"
-                            placeholder="Escriba nombre o RUT del alumno..."
-                            value={busquedaAlumnoMatricula}
-                            onChange={(e) => {
-                              setBusquedaAlumnoMatricula(e.target.value);
-                              setMostrarDropdownAlumnos(true);
-                            }}
-                            onFocus={() => setMostrarDropdownAlumnos(true)}
-                          />
-                          {mostrarDropdownAlumnos && (
-                            <div className="sec-dropdown-list">
-                              {listaEstudiantes
-                                .filter(a => {
-                                  const text = `${a.nombres || ''} ${a.apellido_paterno || ''} ${a.rut || ''}`.toLowerCase();
-                                  return text.includes(busquedaAlumnoMatricula.toLowerCase());
-                                })
-                                .slice(0, 5)
-                                .map(a => (
-                                  <div key={a.id} className="sec-dropdown-item" onClick={() => seleccioarAlumnoBuscador(a)}>
-                                    {a.nombres} {a.apellido_paterno} - RUT: {a.rut}
-                                  </div>
-                                ))}
-                            </div>
-                          )}
-                        </div>
-                      ) : (
-                        <div className="sec-filter-row">
+                        <>
                           <div className="sec-form-group">
-                            <label>Nombres</label>
-                            <input className="sec-input-full" type="text" name="nuevo_nombres" value={formMatricula.nuevo_nombres} onChange={handleMatriculaChange} />
+                            <label>Curso actual del alumno *</label>
+                            <select
+                              className="sec-input-full"
+                              value={cursoActualAntiguoId}
+                              onChange={handleSeleccionarCursoAntiguo}
+                              required
+                            >
+                              <option value="">Seleccione curso actual...</option>
+                              {listaCursos.map((c) => (
+                                <option key={c.id} value={c.id}>{c.nombre}</option>
+                              ))}
+                            </select>
                           </div>
-                          <div className="sec-form-group">
-                            <label>Apellido Paterno</label>
-                            <input className="sec-input-full" type="text" name="nuevo_apellido_paterno" value={formMatricula.nuevo_apellido_paterno} onChange={handleMatriculaChange} />
-                          </div>
-                          <div className="sec-form-group">
-                            <label>Apellido Materno</label>
-                            <input className="sec-input-full" type="text" name="nuevo_apellido_materno" value={formMatricula.nuevo_apellido_materno} onChange={handleMatriculaChange} />
-                          </div>
-                          <div className="sec-form-group">
-                            <label>RUT</label>
-                            <input className="sec-input-full" type="text" name="nuevo_rut" value={formMatricula.nuevo_rut} onChange={handleMatriculaChange} placeholder="12345678-9" />
-                          </div>
-                        </div>
-                      )}
 
-                      <div className="sec-form-group">
-                        <label>Seleccionar Curso</label>
-                        <select className="sec-input-full" name="curso_id" value={formMatricula.curso_id} onChange={handleMatriculaChange}>
-                          <option value="">Seleccione curso...</option>
-                          {listaCursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
-                        </select>
-                      </div>
+                          {cursoActualAntiguoId && (
+                            <>
+                              <div className="sec-form-group">
+                                <label>Matrículas activas del curso *</label>
+                                {cargandoMatriculasActivas ? (
+                                  <p>Cargando matrículas activas...</p>
+                                ) : (
+                                  <select
+                                    className="sec-input-full"
+                                    name="alumno_id"
+                                    value={formMatricula.alumno_id}
+                                    onChange={handleMatriculaChange}
+                                    required
+                                  >
+                                    <option value="">
+                                      {matriculasActivasCurso.length > 0
+                                        ? 'Seleccione alumno con matrícula activa...'
+                                        : 'No hay matrículas activas en este curso'}
+                                    </option>
+                                    {matriculasActivasCurso.map((mat) => (
+                                      <option key={mat.matricula_id || mat.alumno_id} value={mat.alumno_id}>
+                                        {mat.nombre_completo} — RUT: {mat.rut || 'Sin RUT'}
+                                      </option>
+                                    ))}
+                                  </select>
+                                )}
+                              </div>
+
+                              <div className="sec-form-group">
+                                <label>¿El alumno repite o pasa de curso? *</label>
+                                <div style={{ display: 'flex', gap: '16px', marginTop: '6px' }}>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                                    <input
+                                      type="radio"
+                                      name="estado_promocion"
+                                      checked={!repiteCurso}
+                                      onChange={() => handleCambioRepite(false)}
+                                    />
+                                    No repite (Pasa de curso)
+                                  </label>
+                                  <label style={{ display: 'flex', alignItems: 'center', gap: '6px', cursor: 'pointer' }}>
+                                    <input
+                                      type="radio"
+                                      name="estado_promocion"
+                                      checked={repiteCurso}
+                                      onChange={() => handleCambioRepite(true)}
+                                    />
+                                    Sí repite (Mismo curso el próximo año)
+                                  </label>
+                                </div>
+                              </div>
+
+                              <div className="sec-form-group">
+                                <label>Curso destino para matrícula {formMatricula.anio} *</label>
+                                <select
+                                  className="sec-input-full"
+                                  name="curso_id"
+                                  value={formMatricula.curso_id}
+                                  onChange={handleMatriculaChange}
+                                  required
+                                >
+                                  <option value="">Seleccione curso destino...</option>
+                                  {listaCursos.map((c) => (
+                                    <option key={c.id} value={c.id}>{c.nombre}</option>
+                                  ))}
+                                </select>
+                              </div>
+                            </>
+                          )}
+                        </>
+                      ) : (
+                        <>
+                          <div className="sec-filter-row">
+                            <div className="sec-form-group">
+                              <label>Nombres *</label>
+                              <input className="sec-input-full" type="text" name="nuevo_nombres" value={formMatricula.nuevo_nombres} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Apellido Paterno *</label>
+                              <input className="sec-input-full" type="text" name="nuevo_apellido_paterno" value={formMatricula.nuevo_apellido_paterno} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Apellido Materno *</label>
+                              <input className="sec-input-full" type="text" name="nuevo_apellido_materno" value={formMatricula.nuevo_apellido_materno} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>RUT *</label>
+                              <input className="sec-input-full" type="text" name="nuevo_rut" value={formMatricula.nuevo_rut} onChange={handleMatriculaChange} placeholder="12345678-9" required />
+                            </div>
+                          </div>
+
+                          <div className="sec-form-group">
+                            <label>Seleccionar Curso *</label>
+                            <select className="sec-input-full" name="curso_id" value={formMatricula.curso_id} onChange={handleMatriculaChange} required>
+                              <option value="">Seleccione curso...</option>
+                              {listaCursos.map(c => <option key={c.id} value={c.id}>{c.nombre}</option>)}
+                            </select>
+                          </div>
+
+                          <div className="sec-filter-row">
+                            <div className="sec-form-group">
+                              <label>Año *</label>
+                              <input className="sec-input-full" type="number" name="anio" value={formMatricula.anio} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Procedencia escolar *</label>
+                              <input className="sec-input-full" type="text" name="procedencia_escolar" value={formMatricula.procedencia_escolar} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Credo religioso *</label>
+                              <input className="sec-input-full" type="text" name="credo_religioso" value={formMatricula.credo_religioso} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Nombre centro de salud *</label>
+                              <input className="sec-input-full" type="text" name="nombre_centro_salud" value={formMatricula.nombre_centro_salud} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Porcentaje Registro Social *</label>
+                              <input className="sec-input-full" type="text" name="porcentaje_registro_social" value={formMatricula.porcentaje_registro_social} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Vivienda *</label>
+                              <input className="sec-input-full" type="text" name="vivienda" value={formMatricula.vivienda} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Número personas hogar *</label>
+                              <input className="sec-input-full" type="number" name="numero_personas_hogar" value={formMatricula.numero_personas_hogar} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Personas trabajando en hogar *</label>
+                              <input className="sec-input-full" type="number" name="personas_trabajando_hogar" value={formMatricula.personas_trabajando_hogar} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Ingreso mensual hogar *</label>
+                              <input className="sec-input-full" type="number" step="0.01" name="ingreso_mensual_hogar" value={formMatricula.ingreso_mensual_hogar} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Número habitaciones *</label>
+                              <input className="sec-input-full" type="number" name="numero_habitaciones" value={formMatricula.numero_habitaciones} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Con quién vive *</label>
+                              <input className="sec-input-full" type="text" name="con_quien_vive" value={formMatricula.con_quien_vive} onChange={handleMatriculaChange} required />
+                            </div>
+                            <div className="sec-form-group">
+                              <label>Sistema de salud *</label>
+                              <input className="sec-input-full" type="text" name="sistema_salud" value={formMatricula.sistema_salud} onChange={handleMatriculaChange} required />
+                            </div>
+                          </div>
+
+                          <div className="sec-form-group">
+                            <label>Observaciones relevantes *</label>
+                            <textarea className="sec-input-full" rows="2" name="observaciones_relevantes" value={formMatricula.observaciones_relevantes} onChange={handleMatriculaChange} required />
+                          </div>
+
+                          <div className="sec-form-group">
+                            <label>Observaciones generales *</label>
+                            <textarea className="sec-input-full" rows="2" name="observaciones" value={formMatricula.observaciones} onChange={handleMatriculaChange} required />
+                          </div>
+
+                          <div className="sec-filter-row">
+                            <label><input type="checkbox" name="ha_repetido" checked={Boolean(formMatricula.ha_repetido)} onChange={handleMatriculaChange} /> Ha repetido</label>
+                            <label><input type="checkbox" name="opta_religion" checked={Boolean(formMatricula.opta_religion)} onChange={handleMatriculaChange} /> Opta a religión</label>
+                            <label><input type="checkbox" name="pertenece_programa_social" checked={Boolean(formMatricula.pertenece_programa_social)} onChange={handleMatriculaChange} /> Pertenece a programa social</label>
+                            <label><input type="checkbox" name="se_atiende_centro_salud" checked={Boolean(formMatricula.se_atiende_centro_salud)} onChange={handleMatriculaChange} /> Se atiende en centro de salud</label>
+                            <label><input type="checkbox" name="pertenece_pueblo_indigena" checked={Boolean(formMatricula.pertenece_pueblo_indigena)} onChange={handleMatriculaChange} /> Pertenece a pueblo indígena</label>
+                            <label><input type="checkbox" name="tiene_agua" checked={Boolean(formMatricula.tiene_agua)} onChange={handleMatriculaChange} /> Tiene agua</label>
+                            <label><input type="checkbox" name="tiene_electricidad" checked={Boolean(formMatricula.tiene_electricidad)} onChange={handleMatriculaChange} /> Tiene electricidad</label>
+                            <label><input type="checkbox" name="tiene_alcantarillado" checked={Boolean(formMatricula.tiene_alcantarillado)} onChange={handleMatriculaChange} /> Tiene alcantarillado</label>
+                            <label><input type="checkbox" name="autorizado_salir_solo" checked={Boolean(formMatricula.autorizado_salir_solo)} onChange={handleMatriculaChange} /> Autorizado a salir solo</label>
+                          </div>
+                        </>
+                      )}
 
                       {mensajeMatricula.texto && (
                         <div className={`sec-ficha-modal ${mensajeMatricula.tipo === 'error' ? 'sec-alert-error' : ''}`} style={{ backgroundColor: mensajeMatricula.tipo === 'exito' ? '#d4edda' : undefined, color: mensajeMatricula.tipo === 'exito' ? '#155724' : undefined }}>

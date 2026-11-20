@@ -359,6 +359,47 @@ export const cambiarEstadoJustificativo = async (req, res) => {
   }
 };
 
+export const getMatriculasActivasPorCurso = async (req, res) => {
+  try {
+    const { cursoId } = req.params;
+    const anio = Number(req.query.anio) || 2026;
+
+    if (!cursoId || cursoId === "undefined") {
+      return res.json([]);
+    }
+
+    const result = await query(
+      `
+      SELECT
+        m.id AS matricula_id,
+        m.alumno_id,
+        m.curso_id,
+        m.anio,
+        m.estado,
+        m.ha_repetido,
+        a.rut,
+        a.nombres,
+        a.apellido_paterno,
+        a.apellido_materno,
+        TRIM(CONCAT(a.nombres, ' ', a.apellido_paterno, ' ', COALESCE(a.apellido_materno, ''))) AS nombre_completo,
+        c.nombre AS curso_nombre
+      FROM matriculas m
+      INNER JOIN alumnos a ON a.id = m.alumno_id
+      INNER JOIN cursos c ON c.id = m.curso_id
+      WHERE m.curso_id = $1::uuid
+        AND UPPER(COALESCE(m.estado, 'ACTIVA')) = 'ACTIVA'
+        AND m.anio = $2
+      ORDER BY a.apellido_paterno ASC, a.apellido_materno ASC NULLS FIRST, a.nombres ASC;
+      `,
+      [cursoId, anio]
+    );
+
+    return res.json(result.rows);
+  } catch (error) {
+    console.error("Error al obtener matrículas activas por curso:", error.message);
+    return res.status(500).json({ error: "Error al obtener matrículas activas del curso." });
+  }
+};
 
 export const registrarMatricula = async (req, res) => {
   try {
@@ -371,29 +412,56 @@ export const registrarMatricula = async (req, res) => {
       nuevo_rut,
       curso_id,
       anio,
+      ha_repetido,
+      opta_religion,
+      credo_religioso,
+      pertenece_programa_social,
+      procedencia_escolar,
+      observaciones_relevantes,
+      se_atiende_centro_salud,
+      nombre_centro_salud,
+      pertenece_pueblo_indigena,
+      porcentaje_registro_social,
+      vivienda,
+      numero_personas_hogar,
+      personas_trabajando_hogar,
+      ingreso_mensual_hogar,
+      numero_habitaciones,
+      con_quien_vive,
+      sistema_salud,
+      tiene_agua,
+      tiene_electricidad,
+      tiene_alcantarillado,
+      autorizado_salir_solo,
+      observaciones,
+      estado
     } = req.body;
 
-
     let idEstudianteFinal = alumno_id;
+    const esAlumnoNuevo = es_nuevo === true || es_nuevo === "true";
 
+    if (esAlumnoNuevo) {
+      if (!nuevo_nombres?.trim() || !nuevo_apellido_paterno?.trim() || !nuevo_rut?.trim()) {
+        return res.status(400).json({
+          error: "Para un alumno nuevo, nombres, apellido paterno y RUT son obligatorios."
+        });
+      }
 
-    if (es_nuevo) {
       const nuevoAlumno = await query(
         `
         INSERT INTO alumnos (nombres, apellido_paterno, apellido_materno, rut)
         VALUES ($1, $2, $3, $4)
         RETURNING id;
-      `,
+        `,
         [
-          nuevo_nombres,
-          nuevo_apellido_paterno,
-          nuevo_apellido_materno || null,
-          nuevo_rut,
-        ],
+          nuevo_nombres.trim(),
+          nuevo_apellido_paterno.trim(),
+          nuevo_apellido_materno?.trim() || null,
+          nuevo_rut.trim(),
+        ]
       );
       idEstudianteFinal = nuevoAlumno.rows[0].id;
     }
-
 
     if (!idEstudianteFinal || !curso_id) {
       return res.status(400).json({
@@ -401,20 +469,77 @@ export const registrarMatricula = async (req, res) => {
       });
     }
 
-
-
     const anioMatricula = Number(anio) || 2027;
-
 
     const nuevaMatricula = await query(
       `
-      INSERT INTO matriculas (alumno_id, curso_id, anio, creado_en)
-      VALUES ($1::uuid, $2::uuid, $3, NOW())
-      RETURNING id, anio;
+      INSERT INTO matriculas (
+        alumno_id,
+        curso_id,
+        anio,
+        ha_repetido,
+        opta_religion,
+        credo_religioso,
+        pertenece_programa_social,
+        procedencia_escolar,
+        observaciones_relevantes,
+        se_atiende_centro_salud,
+        nombre_centro_salud,
+        pertenece_pueblo_indigena,
+        porcentaje_registro_social,
+        vivienda,
+        numero_personas_hogar,
+        personas_trabajando_hogar,
+        ingreso_mensual_hogar,
+        numero_habitaciones,
+        con_quien_vive,
+        sistema_salud,
+        tiene_agua,
+        tiene_electricidad,
+        tiene_alcantarillado,
+        autorizado_salir_solo,
+        observaciones,
+        estado,
+        fecha_matricula,
+        creado_en,
+        actualizado_en
+      )
+      VALUES (
+        $1::uuid, $2::uuid, $3, $4, $5, $6, $7, $8, $9, $10,
+        $11, $12, $13, $14, $15, $16, $17, $18, $19, $20,
+        $21, $22, $23, $24, $25, $26, CURRENT_DATE, NOW(), NOW()
+      )
+      RETURNING id, anio, curso_id, ha_repetido;
       `,
-      [idEstudianteFinal, curso_id, anioMatricula],
+      [
+        idEstudianteFinal,
+        curso_id,
+        anioMatricula,
+        Boolean(ha_repetido),
+        Boolean(opta_religion),
+        credo_religioso || null,
+        Boolean(pertenece_programa_social),
+        procedencia_escolar || null,
+        observaciones_relevantes || null,
+        Boolean(se_atiende_centro_salud),
+        nombre_centro_salud || null,
+        Boolean(pertenece_pueblo_indigena),
+        porcentaje_registro_social || null,
+        vivienda || null,
+        numero_personas_hogar !== '' && numero_personas_hogar !== null && numero_personas_hogar !== undefined ? Number(numero_personas_hogar) : null,
+        personas_trabajando_hogar !== '' && personas_trabajando_hogar !== null && personas_trabajando_hogar !== undefined ? Number(personas_trabajando_hogar) : null,
+        ingreso_mensual_hogar !== '' && ingreso_mensual_hogar !== null && ingreso_mensual_hogar !== undefined ? Number(ingreso_mensual_hogar) : null,
+        numero_habitaciones !== '' && numero_habitaciones !== null && numero_habitaciones !== undefined ? Number(numero_habitaciones) : null,
+        con_quien_vive || null,
+        sistema_salud || null,
+        Boolean(tiene_agua),
+        Boolean(tiene_electricidad),
+        Boolean(tiene_alcantarillado),
+        Boolean(autorizado_salir_solo),
+        observaciones || null,
+        estado || 'ACTIVA'
+      ]
     );
-
 
     return res.status(201).json({
       ok: true,

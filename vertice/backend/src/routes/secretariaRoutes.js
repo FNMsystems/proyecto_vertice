@@ -2,6 +2,7 @@ import { Router } from "express";
 import {
   getCursos,
   getAlumnosPorCurso,
+  getMatriculasActivasPorCurso,
   registrarAtraso,
   getRetiroPorId,
   getTodosLosRetiros,
@@ -10,6 +11,8 @@ import {
   cambiarEstadoJustificativo,
   registrarMatricula,
 } from "../controllers/secretariaController.js";
+
+router.get("/cursos/:cursoId/matriculas-activas", getMatriculasActivasPorCurso);
 import { verificarToken } from "../middleware/authMiddleware.js";
 
 import { verPdfJustificativo } from "../controllers/secretariaController.js";
