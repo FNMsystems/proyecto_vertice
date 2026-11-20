@@ -25,14 +25,15 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 app.use(cors({
-  origin:[
+  origin: [
     'http://localhost:5173',
-    'https://xn--vertic-gva.cl'
+    'https://xn--vertic-gva.cl',
+    'https://vertice-i1d1tr1dm-vertice-6c1a.vercel.app'
   ],
   methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
   allowedHeaders: ['Content-Type', 'Authorization']
-
 }));
+
 app.use(express.json());
 
 app.use(
