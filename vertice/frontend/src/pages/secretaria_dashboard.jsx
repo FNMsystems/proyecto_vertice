@@ -686,8 +686,16 @@ function SecretariaDashboard() {
 
   const terminoLimpio = limpiarTexto(busquedaEstudiante);
 
-  const estudiantesFiltrados = listaEstudiantes.filter(item => {
+  const estudiantesFiltrados = listaEstudiantes.filter((item) => {
+    const estado = String(item.estadoMatricula || item.estado_matricula || 'ACTIVA').trim().toUpperCase();
+    if (estado !== 'ACTIVA') return false;
+
+    const cursoItem = String(item.curso || item.nombre_curso || '').trim().toLowerCase();
+    const cursoFiltro = String(cursoFiltroEstudiante || '').trim().toLowerCase();
+    if (cursoFiltro && cursoItem !== cursoFiltro) return false;
+
     if (!terminoLimpio) return true;
+
     const rutAlumno = limpiarTexto(item.rut || item.rut_alumno || item.rut_estudiante);
     const rutApoderado = limpiarTexto(item.rutApoderado || item.rut_apoderado);
     const nombreAlumnoBD = item.nombre || `${item.nombres || ''} ${item.apellido_paterno || ''} ${item.apellido_materno || ''}`;
@@ -696,16 +704,17 @@ function SecretariaDashboard() {
     const nombreApoderado = limpiarTexto(nombreApoderadoBD);
 
     return (
-      (rutAlumno.includes(terminoLimpio) ||
-        rutApoderado.includes(terminoLimpio) ||
-        nombreAlumno.includes(terminoLimpio) ||
-        nombreApoderado.includes(terminoLimpio)) &&
-      (!cursoFiltroEstudiante || String(item.curso || item.nombre_curso || '').trim() === cursoFiltroEstudiante)
+      rutAlumno.includes(terminoLimpio) ||
+      rutApoderado.includes(terminoLimpio) ||
+      nombreAlumno.includes(terminoLimpio) ||
+      nombreApoderado.includes(terminoLimpio)
     );
   });
 
   const toggleFicha = (item) => {
-    if (estudianteSeleccionado?.id === item.id) {
+    const claveActual = estudianteSeleccionado?.matricula_id || estudianteSeleccionado?.id;
+    const claveNueva = item?.matricula_id || item?.id;
+    if (claveActual && claveActual === claveNueva) {
       setEstudianteSeleccionado(null);
     } else {
       setEstudianteSeleccionado(item);
@@ -1186,60 +1195,133 @@ function SecretariaDashboard() {
                   <div className="sec-card-topbar">
                     <div>
                       <h3>Listado General de Estudiantes</h3>
-                      <p>Busque y gestione la información de los estudiantes y sus apoderados.</p>
+                      <p>Busque y gestione la información de los estudiantes activos y sus apoderados principales.</p>
                     </div>
-                    <span className="sec-badge-tag">Estudiantes</span>
+                    <span className="sec-badge-tag">Estudiantes ({estudiantesFiltrados.length})</span>
                   </div>
                   <div className="sec-card-body">
                     <div className="sec-filter-row">
                       <div className="sec-form-group">
                         <label>Buscar alumno o apoderado</label>
-                        <input className="sec-input-full" type="search" placeholder="Nombre o RUT" value={busquedaEstudiante} onChange={(e) => setBusquedaEstudiante(e.target.value)} />
+                        <input
+                          className="sec-input-full"
+                          type="search"
+                          placeholder="Nombre o RUT"
+                          value={busquedaEstudiante}
+                          onChange={(e) => setBusquedaEstudiante(e.target.value)}
+                        />
                       </div>
                       <div className="sec-form-group">
                         <label>Filtrar por Curso</label>
-                        <select className="sec-input-full" value={cursoFiltroEstudiante} onChange={(e) => setCursoFiltroEstudiante(e.target.value)}>
+                        <select
+                          className="sec-input-full"
+                          value={cursoFiltroEstudiante}
+                          onChange={(e) => {
+                            setCursoFiltroEstudiante(e.target.value);
+                            setEstudianteSeleccionado(null);
+                          }}
+                        >
                           <option value="">Todos los cursos</option>
-                          {listaCursos.map(c => <option key={c.id} value={c.nombre}>{c.nombre}</option>)}
+                          {listaCursos.map((c) => (
+                            <option key={c.id} value={c.nombre}>{c.nombre}</option>
+                          ))}
                         </select>
                       </div>
                     </div>
 
-                    {cargandoEstudiantes ? <p>Cargando estudiantes...</p> : (
+                    {cargandoEstudiantes ? (
+                      <p>Cargando estudiantes...</p>
+                    ) : (
                       <div style={{ overflowX: 'auto' }}>
                         <table className="sec-table">
-                          <thead><tr><th>Estudiante</th><th>RUT</th><th>Curso</th><th>Apoderado</th><th>Acciones</th></tr></thead>
+                          <thead>
+                            <tr>
+                              <th>Estudiante</th>
+                              <th>RUT</th>
+                              <th>Curso</th>
+                              <th>Apoderado</th>
+                              <th style={{ textAlign: 'center', width: '140px' }}>Acciones</th>
+                            </tr>
+                          </thead>
                           <tbody>
-                            {estudiantesFiltrados.map(item => (
-                              <tr key={item.id}>
-                                <td>{item.nombre || `${item.nombres || ''} ${item.apellido_paterno || ''}`.trim()}</td>
-                                <td>{item.rut || item.rut_alumno || '-'}</td>
-                                <td>{item.curso || item.nombre_curso || '-'}</td>
-                                <td>{item.apoderado || item.nombre_apoderado || '-'}</td>
-                                <td>
-                                  <button type="button" className="sec-btn-outline" onClick={() => toggleFicha(item)}>
-                                    {estudianteSeleccionado?.id === item.id ? 'Ocultar ficha' : 'Ver ficha'}
-                                  </button>
+                            {estudiantesFiltrados.map((item) => {
+                              const claveItem = item.matricula_id || item.id;
+                              const abierto =
+                                (estudianteSeleccionado?.matricula_id || estudianteSeleccionado?.id) === claveItem;
+
+                              return (
+                                <React.Fragment key={claveItem}>
+                                  <tr>
+                                    <td><strong>{item.nombre || `${item.nombres || ''} ${item.apellido_paterno || ''}`.trim()}</strong></td>
+                                    <td style={{ whiteSpace: 'nowrap' }}>{item.rut || item.rut_alumno || '-'}</td>
+                                    <td style={{ whiteSpace: 'nowrap' }}>{item.curso || item.nombre_curso || '-'}</td>
+                                    <td>{item.apoderado || item.nombre_apoderado || '-'}</td>
+                                    <td style={{ textAlign: 'center' }}>
+                                      <button
+                                        type="button"
+                                        className="sec-btn-outline"
+                                        onClick={() => toggleFicha(item)}
+                                        style={{
+                                          minWidth: '115px',
+                                          padding: '8px 14px',
+                                          whiteSpace: 'nowrap',
+                                          borderRadius: '8px',
+                                          fontWeight: '600',
+                                          backgroundColor: abierto ? '#800020' : '#fff',
+                                          color: abierto ? '#fff' : '#800020',
+                                          border: '1px solid #800020',
+                                          cursor: 'pointer'
+                                        }}
+                                      >
+                                        {abierto ? 'Ocultar ficha' : 'Ver ficha'}
+                                      </button>
+                                    </td>
+                                  </tr>
+
+                                  {abierto && (
+                                    <tr>
+                                      <td colSpan="5" style={{ backgroundColor: '#fdf8f9', padding: '18px 22px', borderBottom: '2px solid #800020' }}>
+                                        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(260px, 1fr))', gap: '16px' }}>
+                                          <div style={{ background: '#fff', border: '1px solid #ead0d4', borderRadius: '10px', padding: '14px' }}>
+                                            <h4 style={{ margin: '0 0 10px 0', color: '#800020' }}>🎓 Datos del Estudiante</h4>
+                                            <p style={{ margin: '4px 0' }}><strong>Nombre:</strong> {item.nombre || '-'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>RUT:</strong> {item.rut || '-'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>Curso:</strong> {item.curso || '-'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>Sistema de Salud:</strong> {item.sistema_salud || 'No especificado'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>Centro de Salud:</strong> {item.nombre_centro_salud || 'No especificado'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>Observaciones:</strong> {item.observaciones_relevantes || 'Sin observaciones'}</p>
+                                          </div>
+
+                                          <div style={{ background: '#fff', border: '1px solid #ead0d4', borderRadius: '10px', padding: '14px' }}>
+                                            <h4 style={{ margin: '0 0 10px 0', color: '#800020' }}>👨‍👩‍👧 Apoderado Principal</h4>
+                                            <p style={{ margin: '4px 0' }}><strong>Nombre:</strong> {item.apoderado || 'No registrado'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>RUT:</strong> {item.rutApoderado || 'Sin RUT'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>Contacto (Teléfono):</strong> {item.telefono || 'Sin teléfono'}</p>
+                                            <p style={{ margin: '4px 0' }}><strong>Correo:</strong> {item.correoApoderado || 'Sin correo'}</p>
+                                            <p style={{ margin: '4px 0' }}>
+                                              <strong>Apoderado principal:</strong>{' '}
+                                              <span style={{ color: item.esApoderadoPrincipal ? '#166534' : '#92400e', fontWeight: '700' }}>
+                                                {item.esApoderadoPrincipal ? 'Sí (Principal)' : `No (${item.parentescoApoderado || 'Suplente'})`}
+                                              </span>
+                                            </p>
+                                            <p style={{ margin: '4px 0' }}><strong>Dirección:</strong> {item.direccion || 'Sin dirección'}</p>
+                                          </div>
+                                        </div>
+                                      </td>
+                                    </tr>
+                                  )}
+                                </React.Fragment>
+                              );
+                            })}
+                            {estudiantesFiltrados.length === 0 && (
+                              <tr>
+                                <td colSpan="5" style={{ textAlign: 'center', padding: 20 }}>
+                                  No se encontraron estudiantes activos con esos filtros.
                                 </td>
                               </tr>
-                            ))}
-                            {estudiantesFiltrados.length === 0 && (
-                              <tr><td colSpan="5" style={{ textAlign: 'center', padding: 20 }}>No se encontraron estudiantes.</td></tr>
                             )}
                           </tbody>
                         </table>
-                      </div>
-                    )}
-
-                    {estudianteSeleccionado && (
-                      <div className="sec-ficha-modal" style={{ marginTop: '20px' }}>
-                        <h4>Ficha de Estudiante: {estudianteSeleccionado.nombre || estudianteSeleccionado.nombres}</h4>
-                        <p><strong>RUT:</strong> {estudianteSeleccionado.rut}</p>
-                        <p><strong>Curso:</strong> {estudianteSeleccionado.curso || estudianteSeleccionado.nombre_curso}</p>
-                        <p><strong>Sistema de Salud:</strong> {estudianteSeleccionado.sistema_salud || 'No especificado'}</p>
-                        <p><strong>Centro de Salud:</strong> {estudianteSeleccionado.nombre_centro_salud || 'No especificado'}</p>
-                        <p><strong>Observaciones:</strong> {estudianteSeleccionado.observaciones_relevantes || 'Sin observaciones'}</p>
-                        <button type="button" className="sec-btn-burgundy-full" onClick={() => setEstudianteSeleccionado(null)} style={{ marginTop: '10px' }}>Cerrar ficha</button>
                       </div>
                     )}
                   </div>

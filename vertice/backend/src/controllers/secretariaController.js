@@ -8,7 +8,6 @@ const formatearFecha = (fechaRaw) => {
   return str.split("T")[0];
 };
 
-
 const formatearCreadoEn = (fechaRaw) => {
   if (!fechaRaw) return "-";
   const date = new Date(fechaRaw);
@@ -18,7 +17,6 @@ const formatearCreadoEn = (fechaRaw) => {
   const anio = date.getFullYear();
   return `${dia}-${mes}-${anio}`;
 };
-
 
 export const getCursos = async (req, res) => {
   try {
@@ -34,16 +32,13 @@ export const getCursos = async (req, res) => {
   }
 };
 
-
 export const getAlumnosPorCurso = async (req, res) => {
   try {
     const { cursoId } = req.params;
 
-
     if (!cursoId || cursoId === "undefined") {
       return res.json([]);
     }
-
 
     const result = await query(
       `
@@ -61,7 +56,6 @@ export const getAlumnosPorCurso = async (req, res) => {
       [cursoId],
     );
 
-
     return res.json(result.rows);
   } catch (error) {
     console.error("Error al obtener alumnos por curso:", error.message);
@@ -70,7 +64,6 @@ export const getAlumnosPorCurso = async (req, res) => {
       .json({ error: "Error al obtener alumnos por curso." });
   }
 };
-
 
 export const registrarAtraso = async (req, res) => {
   try {
@@ -84,20 +77,15 @@ export const registrarAtraso = async (req, res) => {
       registrado_por,
     } = req.body;
 
-
     if (!alumno_id || !curso_id) {
       return res
         .status(400)
         .json({ error: "El alumno y el curso son obligatorios." });
     }
 
-
-   
     const usuarioId = req.usuario?.id || registrado_por || null;
 
-
     const fechaSql = fecha || new Date().toISOString().split("T")[0];
-
 
     const result = await query(
       `
@@ -116,7 +104,6 @@ export const registrarAtraso = async (req, res) => {
       ],
     );
 
-
     return res.status(201).json({
       message: "Atraso registrado exitosamente",
       atraso: result.rows[0],
@@ -132,7 +119,6 @@ export const registrarAtraso = async (req, res) => {
 export const getRetiroPorId = async (req, res) => {
   try {
     const { id } = req.params;
-
 
     const result = await query(
       `
@@ -170,21 +156,16 @@ export const getRetiroPorId = async (req, res) => {
       [id.trim()],
     );
 
-
     if (result.rows.length === 0) {
       return res.status(404).json({
         error: "No se encontró ningún registro de retiro con ese ID.",
       });
     }
 
-
     const row = result.rows[0];
 
-
-   
     let nombreRetira = "Apoderado Titular / Registrado Presencial";
     let rutRetira = "Sin RUT";
-
 
     if (row.retira_nombre) {
       nombreRetira = `${row.retira_nombre} (${row.retira_parentesco || "AUTORIZADO"})`;
@@ -193,7 +174,6 @@ export const getRetiroPorId = async (req, res) => {
       nombreRetira = `${row.apoderado_titular_nombre} (APODERADO TITULAR)`;
       rutRetira = row.apoderado_titular_rut || "Sin RUT";
     }
-
 
     res.json({
       id: row.id,
@@ -215,8 +195,6 @@ export const getRetiroPorId = async (req, res) => {
       .json({ error: "Error interno al consultar el pase de retiro." });
   }
 };
-
-
 
 export const getTodosLosRetiros = async (req, res) => {
   try {
@@ -245,42 +223,80 @@ export const getTodosLosRetiros = async (req, res) => {
   }
 };
 
-
 export const getEstudiantesSecretaria = async (req, res) => {
   try {
     const sqlQuery = `
-      SELECT
+      SELECT DISTINCT ON (a.id)
         a.id,
+        m.id AS matricula_id,
         a.rut AS rut_alumno,
         TRIM(CONCAT(a.nombres, ' ', a.apellido_paterno, ' ', COALESCE(a.apellido_materno, ''))) AS nombre_alumno,
-        a.direccion,
+        a.direccion AS direccion_alumno,
         COALESCE(c.nombre, 'Por Asignar') AS curso_nombre,
         m.estado AS estado_matricula,
+        m.sistema_salud,
+        m.nombre_centro_salud,
+        m.observaciones_relevantes,
         ap.rut AS rut_apoderado,
         ap.nombre_completo AS apoderado_nombre,
-        ap.telefono AS apoderado_telefono
+        ap.telefono AS apoderado_telefono,
+        ap.correo AS apoderado_correo,
+        ap.direccion AS apoderado_direccion,
+        ap.comuna AS apoderado_comuna,
+        aa.parentesco AS apoderado_parentesco,
+        COALESCE(aa.es_apoderado_principal, TRUE) AS es_apoderado_principal
       FROM alumnos a
-      LEFT JOIN matriculas m ON a.id = m.alumno_id
+      INNER JOIN matriculas m ON a.id = m.alumno_id
       LEFT JOIN cursos c ON m.curso_id = c.id
-      LEFT JOIN alumno_apoderado aa ON a.id = aa.alumno_id AND (aa.es_apoderado_principal = TRUE OR aa.es_apoderado_principal IS NULL)
+      LEFT JOIN alumno_apoderado aa ON a.id = aa.alumno_id
       LEFT JOIN apoderados ap ON aa.apoderado_id = ap.id
-      ORDER BY a.apellido_paterno ASC;
+      WHERE UPPER(COALESCE(m.estado, 'ACTIVA')) = 'ACTIVA'
+      ORDER BY
+        a.id,
+        m.anio DESC NULLS LAST,
+        m.creado_en DESC NULLS LAST,
+        COALESCE(aa.es_apoderado_principal, TRUE) DESC;
     `;
     const result = await query(sqlQuery);
-    const estudiantesFormateados = result.rows.map((item) => ({
-      id: item.id,
-      rut: item.rut_alumno || "Sin RUT",
-      nombre: item.nombre_alumno || "Sin Nombre",
-      direccion: item.direccion || "Sin Dirección",
-      curso:
-        item.estado_matricula === "RETIRADA"
-          ? "Retirado/a"
-          : item.curso_nombre || "Por Asignar",
-      estadoMatricula: item.estado_matricula || "SIN MATRÍCULA",
-      apoderado: item.apoderado_nombre || "Por Asignar",
-      rutApoderado: item.rut_apoderado || "N/A",
-      telefono: item.apoderado_telefono || "N/A",
-    }));
+
+    const estudiantesFormateados = result.rows
+      .sort((a, b) =>
+        String(a.nombre_alumno || "").localeCompare(
+          String(b.nombre_alumno || ""),
+          "es",
+          { sensitivity: "base" },
+        ),
+      )
+      .map((item) => {
+        const direccionFinal =
+          [
+            item.apoderado_direccion || item.direccion_alumno,
+            item.apoderado_comuna,
+          ]
+            .filter(Boolean)
+            .join(", ") || "Sin dirección registrada";
+
+        return {
+          id: item.id,
+          matricula_id: item.matricula_id,
+          rut: item.rut_alumno || "Sin RUT",
+          nombre: item.nombre_alumno || "Sin Nombre",
+          direccion: direccionFinal,
+          curso: item.curso_nombre || "Por Asignar",
+          estadoMatricula: item.estado_matricula || "ACTIVA",
+          sistema_salud: item.sistema_salud || "No especificado",
+          nombre_centro_salud: item.nombre_centro_salud || "No especificado",
+          observaciones_relevantes:
+            item.observaciones_relevantes || "Sin observaciones",
+          apoderado: item.apoderado_nombre || "Por Asignar",
+          rutApoderado: item.rut_apoderado || "Sin RUT",
+          telefono: item.apoderado_telefono || "Sin teléfono",
+          correoApoderado: item.apoderado_correo || "Sin correo",
+          parentescoApoderado: item.apoderado_parentesco || "Apoderado",
+          esApoderadoPrincipal: Boolean(item.es_apoderado_principal),
+        };
+      });
+
     return res.json(estudiantesFormateados);
   } catch (error) {
     console.error("Error al obtener estudiantes:", error);
@@ -290,25 +306,19 @@ export const getEstudiantesSecretaria = async (req, res) => {
   }
 };
 
-
-
 export const getJustificativos = async (req, res) => {
   try {
     const result = await query(
       `SELECT * FROM justificativos ORDER BY id DESC LIMIT 50;`,
     );
 
-
-   
     const alumnosRes = await query(
       `SELECT id, TRIM(CONCAT(nombres, ' ', apellido_paterno, ' ', COALESCE(apellido_materno, ''))) AS nombre_completo FROM alumnos;`,
     );
     const alumnosMap = new Map();
     alumnosRes.rows.forEach((a) => alumnosMap.set(a.id, a.nombre_completo));
 
-
     const justificativosFormateados = result.rows.map((item) => {
-   
       const aId =
         item.alumno_id ||
         item.estudiante_id ||
@@ -320,7 +330,6 @@ export const getJustificativos = async (req, res) => {
         item.nombre_estudiante ||
         "Estudiante";
 
-
       return {
         ...item,
         fecha_inicio: formatearCreadoEn(item.fecha_inicio),
@@ -329,14 +338,12 @@ export const getJustificativos = async (req, res) => {
       };
     });
 
-
     return res.json(justificativosFormateados);
   } catch (error) {
     console.error("Error en justificativos:", error.message);
     return res.json([]);
   }
 };
-
 
 export const cambiarEstadoJustificativo = async (req, res) => {
   try {
@@ -391,13 +398,18 @@ export const getMatriculasActivasPorCurso = async (req, res) => {
         AND m.anio = $2
       ORDER BY a.apellido_paterno ASC, a.apellido_materno ASC NULLS FIRST, a.nombres ASC;
       `,
-      [cursoId, anio]
+      [cursoId, anio],
     );
 
     return res.json(result.rows);
   } catch (error) {
-    console.error("Error al obtener matrículas activas por curso:", error.message);
-    return res.status(500).json({ error: "Error al obtener matrículas activas del curso." });
+    console.error(
+      "Error al obtener matrículas activas por curso:",
+      error.message,
+    );
+    return res
+      .status(500)
+      .json({ error: "Error al obtener matrículas activas del curso." });
   }
 };
 
@@ -434,16 +446,21 @@ export const registrarMatricula = async (req, res) => {
       tiene_alcantarillado,
       autorizado_salir_solo,
       observaciones,
-      estado
+      estado,
     } = req.body;
 
     let idEstudianteFinal = alumno_id;
     const esAlumnoNuevo = es_nuevo === true || es_nuevo === "true";
 
     if (esAlumnoNuevo) {
-      if (!nuevo_nombres?.trim() || !nuevo_apellido_paterno?.trim() || !nuevo_rut?.trim()) {
+      if (
+        !nuevo_nombres?.trim() ||
+        !nuevo_apellido_paterno?.trim() ||
+        !nuevo_rut?.trim()
+      ) {
         return res.status(400).json({
-          error: "Para un alumno nuevo, nombres, apellido paterno y RUT son obligatorios."
+          error:
+            "Para un alumno nuevo, nombres, apellido paterno y RUT son obligatorios.",
         });
       }
 
@@ -458,7 +475,7 @@ export const registrarMatricula = async (req, res) => {
           nuevo_apellido_paterno.trim(),
           nuevo_apellido_materno?.trim() || null,
           nuevo_rut.trim(),
-        ]
+        ],
       );
       idEstudianteFinal = nuevoAlumno.rows[0].id;
     }
@@ -526,10 +543,26 @@ export const registrarMatricula = async (req, res) => {
         Boolean(pertenece_pueblo_indigena),
         porcentaje_registro_social || null,
         vivienda || null,
-        numero_personas_hogar !== '' && numero_personas_hogar !== null && numero_personas_hogar !== undefined ? Number(numero_personas_hogar) : null,
-        personas_trabajando_hogar !== '' && personas_trabajando_hogar !== null && personas_trabajando_hogar !== undefined ? Number(personas_trabajando_hogar) : null,
-        ingreso_mensual_hogar !== '' && ingreso_mensual_hogar !== null && ingreso_mensual_hogar !== undefined ? Number(ingreso_mensual_hogar) : null,
-        numero_habitaciones !== '' && numero_habitaciones !== null && numero_habitaciones !== undefined ? Number(numero_habitaciones) : null,
+        numero_personas_hogar !== "" &&
+        numero_personas_hogar !== null &&
+        numero_personas_hogar !== undefined
+          ? Number(numero_personas_hogar)
+          : null,
+        personas_trabajando_hogar !== "" &&
+        personas_trabajando_hogar !== null &&
+        personas_trabajando_hogar !== undefined
+          ? Number(personas_trabajando_hogar)
+          : null,
+        ingreso_mensual_hogar !== "" &&
+        ingreso_mensual_hogar !== null &&
+        ingreso_mensual_hogar !== undefined
+          ? Number(ingreso_mensual_hogar)
+          : null,
+        numero_habitaciones !== "" &&
+        numero_habitaciones !== null &&
+        numero_habitaciones !== undefined
+          ? Number(numero_habitaciones)
+          : null,
         con_quien_vive || null,
         sistema_salud || null,
         Boolean(tiene_agua),
@@ -537,8 +570,8 @@ export const registrarMatricula = async (req, res) => {
         Boolean(tiene_alcantarillado),
         Boolean(autorizado_salir_solo),
         observaciones || null,
-        estado || 'ACTIVA'
-      ]
+        estado || "ACTIVA",
+      ],
     );
 
     return res.status(201).json({
@@ -567,77 +600,63 @@ export const verPdfJustificativo = async (req, res) => {
       "SECRETARIA",
       "DIRECTOR",
       "ADMIN",
-      "ADMINISTRADOR"
+      "ADMINISTRADOR",
     ];
 
     if (!rolesPermitidos.includes(rol)) {
       return res.status(403).json({
-        error: "No tienes autorización para ver este documento."
+        error: "No tienes autorización para ver este documento.",
       });
     }
 
     const resultBD = await query(
       `SELECT archivo_pdf FROM justificativos WHERE id = $1 LIMIT 1`,
-      [id]
+      [id],
     );
 
     if (resultBD.rows.length === 0) {
       return res.status(404).json({
-        error: "No se encontró el justificativo."
+        error: "No se encontró el justificativo.",
       });
     }
 
     const pathname = resultBD.rows[0].archivo_pdf;
 
-    if (
-      !pathname ||
-      !String(pathname).startsWith("justificativos/")
-    ) {
+    if (!pathname || !String(pathname).startsWith("justificativos/")) {
       return res.status(404).json({
-        error: "El documento no está almacenado en Blob."
+        error: "El documento no está almacenado en Blob.",
       });
     }
 
     const archivo = await get(pathname, {
-      access: "private"
+      access: "private",
     });
 
     if (!archivo || archivo.statusCode !== 200) {
       return res.status(404).json({
-        error: "No se encontró el archivo PDF."
+        error: "No se encontró el archivo PDF.",
       });
     }
 
-    res.setHeader(
-      "Content-Type",
-      "application/pdf"
-    );
+    res.setHeader("Content-Type", "application/pdf");
 
     res.setHeader(
       "Content-Disposition",
-      'inline; filename="justificativo.pdf"'
+      'inline; filename="justificativo.pdf"',
     );
 
-    res.setHeader(
-      "Cache-Control",
-      "private, no-store"
-    );
+    res.setHeader("Cache-Control", "private, no-store");
 
-    res.setHeader(
-      "X-Content-Type-Options",
-      "nosniff"
-    );
+    res.setHeader("X-Content-Type-Options", "nosniff");
 
     Readable.fromWeb(archivo.stream).pipe(res);
-
   } catch (error) {
     console.error("Error mostrando PDF:", error);
 
     if (!res.headersSent) {
       return res.status(500).json({
-        error: "No se pudo visualizar el justificativo."
+        error: "No se pudo visualizar el justificativo.",
       });
     }
   }
 };
-
