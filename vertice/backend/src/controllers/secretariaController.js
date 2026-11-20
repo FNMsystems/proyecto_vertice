@@ -315,7 +315,7 @@ export const getEstudiantesSecretaria = async (req, res) => {
 export const getJustificativos = async (req, res) => {
   try {
     const result = await query(
-      `SELECT * FROM justificativos ORDER BY id DESC LIMIT 50;`,
+      `SELECT * FROM justificativos ORDER BY creado_en DESC NULLS LAST, id DESC LIMIT 50;`,
     );
 
     const alumnosRes = await query(
