@@ -1,6 +1,12 @@
 import { query } from "../config/db.js";
 import { get } from "@vercel/blob";
 import { Readable } from "node:stream";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const formatearFecha = (fechaRaw) => {
   if (!fechaRaw) return "-";
@@ -650,7 +656,41 @@ export const verPdfJustificativo = async (req, res) => {
       });
     }
 
-    let pathname = rawArchivo;
+    const normalizado = rawArchivo.replace(/\\/g, "/");
+    const nombreArchivo = path.basename(normalizado);
+    const descargar = String(req.query?.download || "") === "1";
+
+    const rutasCandidatas = [
+      normalizado,
+      path.resolve(process.cwd(), "uploads/justificativos", nombreArchivo),
+      path.resolve(process.cwd(), "vertice/backend/uploads/justificativos", nombreArchivo),
+      path.resolve(__dirname, "../uploads/justificativos", nombreArchivo),
+      path.resolve(__dirname, "../../uploads/justificativos", nombreArchivo),
+    ];
+
+    const rutaEncontrada = rutasCandidatas.find((ruta) => {
+      try {
+        return ruta && fs.existsSync(ruta) && fs.statSync(ruta).isFile();
+      } catch {
+        return false;
+      }
+    });
+
+    if (rutaEncontrada) {
+      res.setHeader("Content-Type", "application/pdf");
+      res.setHeader(
+        "Content-Disposition",
+        descargar
+          ? `attachment; filename="${nombreArchivo}"`
+          : `inline; filename="${nombreArchivo}"`,
+      );
+      res.setHeader("Cache-Control", "private, no-store");
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      fs.createReadStream(rutaEncontrada).pipe(res);
+      return;
+    }
+
+    let pathname = normalizado;
     if (pathname.startsWith("http://") || pathname.startsWith("https://")) {
       try {
         pathname = decodeURIComponent(new URL(pathname).pathname).replace(/^\/+/, "");
@@ -677,11 +717,12 @@ export const verPdfJustificativo = async (req, res) => {
     if ((!archivo || archivo.statusCode !== 200 || !archivo.stream) && rawArchivo.startsWith("http")) {
       const respRemota = await fetch(rawArchivo);
       if (respRemota.ok && respRemota.body) {
-        const descargar = String(req.query?.download || "") === "1";
         res.setHeader("Content-Type", respRemota.headers.get("content-type") || "application/pdf");
         res.setHeader(
           "Content-Disposition",
-          descargar ? 'attachment; filename="justificativo.pdf"' : 'inline; filename="justificativo.pdf"',
+          descargar
+            ? `attachment; filename="${nombreArchivo}"`
+            : `inline; filename="${nombreArchivo}"`,
         );
         res.setHeader("Cache-Control", "private, no-store");
         res.setHeader("X-Content-Type-Options", "nosniff");
@@ -696,11 +737,12 @@ export const verPdfJustificativo = async (req, res) => {
       });
     }
 
-    const descargar = String(req.query?.download || "") === "1";
     res.setHeader("Content-Type", archivo.contentType || "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      descargar ? 'attachment; filename="justificativo.pdf"' : 'inline; filename="justificativo.pdf"',
+      descargar
+        ? `attachment; filename="${nombreArchivo}"`
+        : `inline; filename="${nombreArchivo}"`,
     );
     res.setHeader("Cache-Control", "private, no-store");
     res.setHeader("X-Content-Type-Options", "nosniff");
