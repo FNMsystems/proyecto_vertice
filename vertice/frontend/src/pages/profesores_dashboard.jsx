@@ -12,7 +12,7 @@ import {
 
 import logoColegio from '../img/logo_Institucional.png';
 import fondoInstitucional from '../img/fondo_institucional.jpeg';
-import CambiarPassword from './CambiarPassword';
+import CambiarPassword from '../components/CambiarPassword.jsx';
 import './profesores_dashboard.css';
 
 
