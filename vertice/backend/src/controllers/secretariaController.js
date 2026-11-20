@@ -306,57 +306,30 @@ export const getEstudiantesSecretaria = async (req, res) => {
   }
 };
 
-export const getJustificativos = async (req, res) => {
+const verJustificativoArchivo = async (item) => {
+  if (!item?.id) return;
   try {
-    const result = await query(
-      `SELECT * FROM justificativos ORDER BY id DESC LIMIT 50;`,
+    const blobRaw = await fetchArchivoConAuth(
+      `/api/secretaria/justificativos/${encodeURIComponent(item.id)}/pdf`,
     );
-
-    const alumnosRes = await query(
-      `SELECT id, TRIM(CONCAT(nombres, ' ', apellido_paterno, ' ', COALESCE(apellido_materno, ''))) AS nombre_completo FROM alumnos;`,
-    );
-    const alumnosMap = new Map();
-    alumnosRes.rows.forEach((a) =>
-      alumnosMap.set(String(a.id), a.nombre_completo),
-    );
-
-    const justificativosFormateados = result.rows.map((item) => {
-      const aId =
-        item.alumno_id ||
-        item.estudiante_id ||
-        item.id_alumno ||
-        item.usuario_id;
-      const nombreAlumno =
-        alumnosMap.get(String(aId)) ||
-        item.alumno_nombre ||
-        item.nombre_alumno ||
-        item.estudiante ||
-        item.nombre_estudiante ||
-        "Estudiante";
-
-      const rutaArchivo =
-        item.archivo_pdf ||
-        item.archivo_url ||
-        item.archivo ||
-        item.documento_url ||
-        item.url_archivo ||
-        null;
-
-      return {
-        ...item,
-        fecha_inicio: formatearCreadoEn(item.fecha_inicio),
-        fecha_fin: formatearCreadoEn(item.fecha_fin),
-        estudiante: nombreAlumno,
-        alumno_nombre: nombreAlumno,
-        archivo_pdf: rutaArchivo,
-        tiene_archivo: Boolean(rutaArchivo),
-      };
-    });
-
-    return res.json(justificativosFormateados);
-  } catch (error) {
-    console.error("Error en justificativos:", error.message);
-    return res.json([]);
+    const pdfBlob =
+      blobRaw.type === "application/pdf"
+        ? blobRaw
+        : new Blob([blobRaw], { type: "application/pdf" });
+    const url = window.URL.createObjectURL(pdfBlob);
+    const ventana = window.open("", "_blank");
+    if (ventana) {
+      ventana.document.write(
+        `<html><head><title>Justificativo PDF</title></head><body style="margin:0;height:100vh;"><embed src="${url}" type="application/pdf" width="100%" height="100%" /></body></html>`,
+      );
+      ventana.document.close();
+    } else {
+      window.location.href = url;
+    }
+    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+  } catch (err) {
+    console.error("Error al ver justificativo:", err);
+    alert(err.message || "No se pudo abrir el justificativo adjunto.");
   }
 };
 
