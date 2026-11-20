@@ -306,30 +306,55 @@ export const getEstudiantesSecretaria = async (req, res) => {
   }
 };
 
-const verJustificativoArchivo = async (item) => {
-  if (!item?.id) return;
+export const getJustificativos = async (req, res) => {
   try {
-    const blobRaw = await fetchArchivoConAuth(
-      `/api/secretaria/justificativos/${encodeURIComponent(item.id)}/pdf`,
+    const result = await query(
+      `SELECT * FROM justificativos ORDER BY id DESC LIMIT 50;`,
     );
-    const pdfBlob =
-      blobRaw.type === "application/pdf"
-        ? blobRaw
-        : new Blob([blobRaw], { type: "application/pdf" });
-    const url = window.URL.createObjectURL(pdfBlob);
-    const ventana = window.open("", "_blank");
-    if (ventana) {
-      ventana.document.write(
-        `<html><head><title>Justificativo PDF</title></head><body style="margin:0;height:100vh;"><embed src="${url}" type="application/pdf" width="100%" height="100%" /></body></html>`,
-      );
-      ventana.document.close();
-    } else {
-      window.location.href = url;
-    }
-    setTimeout(() => window.URL.revokeObjectURL(url), 60000);
-  } catch (err) {
-    console.error("Error al ver justificativo:", err);
-    alert(err.message || "No se pudo abrir el justificativo adjunto.");
+
+    const alumnosRes = await query(
+      `SELECT id, TRIM(CONCAT(nombres, ' ', apellido_paterno, ' ', COALESCE(apellido_materno, ''))) AS nombre_completo FROM alumnos;`,
+    );
+    const alumnosMap = new Map();
+    alumnosRes.rows.forEach((a) => alumnosMap.set(String(a.id), a.nombre_completo));
+
+    const justificativosFormateados = result.rows.map((item) => {
+      const aId =
+        item.alumno_id ||
+        item.estudiante_id ||
+        item.id_alumno ||
+        item.usuario_id;
+      const nombreAlumno =
+        alumnosMap.get(String(aId)) ||
+        item.alumno_nombre ||
+        item.nombre_alumno ||
+        item.estudiante ||
+        item.nombre_estudiante ||
+        "Estudiante";
+
+      const rutaArchivo =
+        item.archivo_pdf ||
+        item.archivo_url ||
+        item.archivo ||
+        item.documento_url ||
+        item.url_archivo ||
+        null;
+
+      return {
+        ...item,
+        fecha_inicio: formatearCreadoEn(item.fecha_inicio),
+        fecha_fin: formatearCreadoEn(item.fecha_fin),
+        estudiante: nombreAlumno,
+        alumno_nombre: nombreAlumno,
+        archivo_pdf: rutaArchivo,
+        tiene_archivo: Boolean(rutaArchivo),
+      };
+    });
+
+    return res.json(justificativosFormateados);
+  } catch (error) {
+    console.error("Error en justificativos:", error.message);
+    return res.json([]);
   }
 };
 
@@ -598,7 +623,7 @@ export const verPdfJustificativo = async (req, res) => {
     }
 
     const resultBD = await query(
-      `SELECT archivo_pdf FROM justificativos WHERE id = $1 LIMIT 1`,
+      `SELECT * FROM justificativos WHERE id = $1 LIMIT 1`,
       [id],
     );
 
@@ -608,33 +633,76 @@ export const verPdfJustificativo = async (req, res) => {
       });
     }
 
-    const pathname = resultBD.rows[0].archivo_pdf;
+    const fila = resultBD.rows[0];
+    let rawArchivo =
+      fila.archivo_pdf ||
+      fila.archivo_url ||
+      fila.archivo ||
+      fila.documento_url ||
+      fila.url_archivo ||
+      "";
 
-    if (!pathname || !String(pathname).startsWith("justificativos/")) {
+    rawArchivo = String(rawArchivo).trim();
+
+    if (!rawArchivo) {
       return res.status(404).json({
-        error: "El documento no está almacenado en Blob.",
+        error: "El justificativo no tiene un archivo adjunto.",
       });
     }
 
-    const archivo = await get(pathname, {
-      access: "private",
-    });
+    let pathname = rawArchivo;
+    if (pathname.startsWith("http://") || pathname.startsWith("https://")) {
+      try {
+        pathname = decodeURIComponent(new URL(pathname).pathname).replace(/^\/+/, "");
+      } catch {
 
-    if (!archivo || archivo.statusCode !== 200) {
+      }
+    }
+
+    let archivo = null;
+    try {
+      archivo = await get(pathname, { access: "private" });
+    } catch {
+      archivo = null;
+    }
+
+    if (!archivo || archivo.statusCode !== 200 || !archivo.stream) {
+      try {
+        archivo = await get(pathname, { access: "public" });
+      } catch {
+        archivo = null;
+      }
+    }
+
+    if ((!archivo || archivo.statusCode !== 200 || !archivo.stream) && rawArchivo.startsWith("http")) {
+      const respRemota = await fetch(rawArchivo);
+      if (respRemota.ok && respRemota.body) {
+        const descargar = String(req.query?.download || "") === "1";
+        res.setHeader("Content-Type", respRemota.headers.get("content-type") || "application/pdf");
+        res.setHeader(
+          "Content-Disposition",
+          descargar ? 'attachment; filename="justificativo.pdf"' : 'inline; filename="justificativo.pdf"',
+        );
+        res.setHeader("Cache-Control", "private, no-store");
+        res.setHeader("X-Content-Type-Options", "nosniff");
+        Readable.fromWeb(respRemota.body).pipe(res);
+        return;
+      }
+    }
+
+    if (!archivo || archivo.statusCode !== 200 || !archivo.stream) {
       return res.status(404).json({
         error: "No se encontró el archivo PDF.",
       });
     }
 
-    res.setHeader("Content-Type", "application/pdf");
-
+    const descargar = String(req.query?.download || "") === "1";
+    res.setHeader("Content-Type", archivo.contentType || "application/pdf");
     res.setHeader(
       "Content-Disposition",
-      'inline; filename="justificativo.pdf"',
+      descargar ? 'attachment; filename="justificativo.pdf"' : 'inline; filename="justificativo.pdf"',
     );
-
     res.setHeader("Cache-Control", "private, no-store");
-
     res.setHeader("X-Content-Type-Options", "nosniff");
 
     Readable.fromWeb(archivo.stream).pipe(res);
