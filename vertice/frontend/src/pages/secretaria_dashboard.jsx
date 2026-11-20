@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import logoColegio from "../img/logo_Institucional.png";
 import "./secretaria_dashboard.css";
+import CambiarPassword from '../components/CambiarPassword.jsx';
 import {
   fetchConAuth,
   fetchArchivoConAuth,
@@ -773,6 +774,14 @@ function SecretariaDashboard() {
 
           <div className="sec-user-info">
             <span>Secretario/a: <strong>{usuarioSecretaria}</strong></span>
+            <CambiarPassword />
+            <button
+              type="button"
+              className="sec-btn-outline"
+              onClick={() => window.location.reload()}
+            >
+              Actualizar
+            </button>
             <button type="button" className="sec-btn-logout" onClick={cerrarSesion}>
               Cerrar Sesión
             </button>
@@ -1407,12 +1416,12 @@ function SecretariaDashboard() {
                                 item.tiene_archivo !== undefined
                                   ? Boolean(item.tiene_archivo)
                                   : Boolean(
-                                      item.archivo_pdf ||
-                                      item.archivo_url ||
-                                      item.archivo ||
-                                      item.documento_url ||
-                                      item.url_archivo
-                                    );
+                                    item.archivo_pdf ||
+                                    item.archivo_url ||
+                                    item.archivo ||
+                                    item.documento_url ||
+                                    item.url_archivo
+                                  );
 
                               return (
                                 <tr key={item.id}>
