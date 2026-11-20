@@ -10,17 +10,15 @@ import {
   getJustificativos,
   cambiarEstadoJustificativo,
   registrarMatricula,
+  verPdfJustificativo,
 } from "../controllers/secretariaController.js";
-
-router.get("/cursos/:cursoId/matriculas-activas", getMatriculasActivasPorCurso);
 import { verificarToken } from "../middleware/authMiddleware.js";
-
-import { verPdfJustificativo } from "../controllers/secretariaController.js";
 
 const router = Router();
 
 router.get("/cursos", getCursos);
 router.get("/cursos/:cursoId/alumnos", getAlumnosPorCurso);
+router.get("/cursos/:cursoId/matriculas-activas", getMatriculasActivasPorCurso);
 router.post("/atrasos", registrarAtraso);
 router.get("/justificativos/:id/pdf", verificarToken, verPdfJustificativo);
 
