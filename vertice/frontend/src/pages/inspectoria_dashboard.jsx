@@ -15,6 +15,7 @@ import {
 } from '../services/retrasoService.js';
 import logoColegio from '../img/logo_Institucional.png';
 import fondoInstitucional from '../img/fondo_institucional.jpeg';
+import CambiarPassword from '../components/CambiarPassword.jsx';
 import './inspectoria_dashboard.css';
 
 export default function InspectoriaDashboard() {
@@ -526,6 +527,8 @@ export default function InspectoriaDashboard() {
             </span>
           </div>
 
+          <CambiarPassword />
+          
           <button
             className="inspectoria-logout"
             onClick={handleLogout}
