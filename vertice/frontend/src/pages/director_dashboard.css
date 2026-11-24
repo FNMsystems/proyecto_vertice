@@ -968,7 +968,7 @@
 .attendance-stats {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 10px;
+  gap: 8px;
 }
 
 .attendance-stats > div {
@@ -977,16 +977,28 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  padding: 12px 8px;
+  padding: 12px 6px;
   border: 1px solid #efe7ea;
-  border-radius: 10px;
+  border-radius: 12px;
   background: #faf7f8;
   text-align: center;
 }
 
-.attendance-stats span,
+.attendance-stats span {
+  margin-bottom: 6px;
+  color: var(--director-muted);
+  font-size: 10.5px;
+  font-weight: 700;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+  max-width: 100%;
+}
+
 .attendance-stats strong {
-  display: block;
+  color: #2a2428;
+  font-size: 17px;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .attendance-stats span {
