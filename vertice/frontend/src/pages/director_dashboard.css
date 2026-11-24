@@ -1683,3 +1683,243 @@
     transition-duration: .01ms !important;
   }
 }
+
+.attendance-card.selected-course {
+  border-color: var(--director-red);
+  box-shadow: 0 12px 28px rgba(128, 0, 28, .14);
+}
+
+.attendance-detail-panel {
+  margin-top: 24px;
+  padding: 22px;
+}
+
+.attendance-detail-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--director-border);
+}
+
+.attendance-detail-header h3 {
+  margin: 0 0 6px;
+  color: #2a2428;
+  font-size: 18px;
+  font-weight: 800;
+}
+
+.attendance-detail-header p {
+  margin: 0;
+  color: var(--director-muted);
+  font-size: 13px;
+}
+
+.peak-month-badge {
+  flex-shrink: 0;
+  padding: 12px 16px;
+  border: 1px solid #ecc6cf;
+  border-radius: 12px;
+  background: var(--director-red-soft);
+  text-align: right;
+}
+
+.peak-month-badge span {
+  display: block;
+  color: #7c515b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.peak-month-badge strong {
+  display: block;
+  margin-top: 4px;
+  color: var(--director-red);
+  font-size: 14px;
+  font-weight: 800;
+}
+
+.monthly-chart-box {
+  margin-top: 20px;
+  padding: 18px;
+  border: 1px solid #ece7ea;
+  border-radius: 14px;
+  background: #fcfafb;
+}
+
+.monthly-chart-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.monthly-chart-topbar h4 {
+  margin: 0 0 4px;
+  color: #2d2629;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.monthly-chart-topbar span {
+  color: var(--director-muted);
+  font-size: 12px;
+}
+
+.monthly-tooltip-banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 16px;
+  padding: 10px 14px;
+  border: 1px solid #ebd5db;
+  border-radius: 10px;
+  background: #fff;
+  color: #3d3438;
+  font-size: 12px;
+}
+
+.monthly-tooltip-banner strong {
+  color: var(--director-red);
+}
+
+.monthly-bars-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(64px, 1fr));
+  gap: 10px;
+  align-items: end;
+  min-height: 210px;
+  padding-top: 10px;
+}
+
+.month-bar-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 6px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  background: transparent;
+}
+
+.month-bar-item:hover,
+.month-bar-item:focus-visible {
+  border-color: #e4c3cb;
+  background: #fff;
+}
+
+.month-bar-item.is-selected {
+  border-color: var(--director-red);
+  background: var(--director-red-soft);
+}
+
+.month-bar-count {
+  color: #332c2f;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.month-bar-track {
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  width: 100%;
+  height: 130px;
+  padding: 0 8px;
+  border-bottom: 1px solid #e3dde0;
+}
+
+.month-bar-fill {
+  width: 100%;
+  max-width: 34px;
+  border-radius: 8px 8px 2px 2px;
+  background: #b97a88;
+  transition: height .25s ease, background-color .2s ease, transform .2s ease;
+}
+
+.month-bar-item.is-peak .month-bar-fill {
+  background: var(--director-red);
+}
+
+.month-bar-item:hover .month-bar-fill,
+.month-bar-item.is-selected .month-bar-fill {
+  background: var(--director-red-light);
+  transform: translateY(-2px);
+}
+
+.month-bar-label {
+  color: #4d4549;
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.students-absences-section {
+  margin-top: 24px;
+}
+
+.students-absences-header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+
+.students-absences-header h4 {
+  margin: 0;
+  color: #2d2629;
+  font-size: 15px;
+  font-weight: 800;
+}
+
+.students-absences-header span {
+  color: var(--director-muted);
+  font-size: 12px;
+}
+
+.absence-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 32px;
+  padding: 4px 9px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.absence-pill.high {
+  background: #fff0f2;
+  color: #a20e2b;
+  border: 1px solid #f0c4cc;
+}
+
+.absence-pill.medium {
+  background: var(--director-yellow-bg);
+  color: #8c5b00;
+  border: 1px solid #f2dfa3;
+}
+
+.absence-pill.zero {
+  background: #f4f4f7;
+  color: #656570;
+  border: 1px solid #e4e4e9;
+}
+
+@media (max-width: 720px) {
+  .attendance-detail-header,
+  .monthly-chart-topbar,
+  .students-absences-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .peak-month-badge {
+    width: 100%;
+    text-align: left;
+  }
+}

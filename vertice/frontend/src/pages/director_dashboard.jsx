@@ -16,6 +16,7 @@ import {
   crearAsignacion,
   actualizarAsignacion,
   eliminarAsignacion,
+  getAsistenciaDirector,
   getEstadisticasAsistenciaDirector,
   getRendimientoDirector,
   getJustificativosDirector,
@@ -29,6 +30,16 @@ import { logoutService, getUsuarioActual } from '../services/authService.js';
 import './director_dashboard.css';
 
 const ANIO = 2026;
+
+const MESES_CORTOS = [
+  'Ene', 'Feb', 'Mar', 'Abr', 'May', 'Jun',
+  'Jul', 'Ago', 'Sep', 'Oct', 'Nov', 'Dic'
+];
+
+const MESES_LARGOS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
 
 const menu = [
   { id: 'resumen', label: 'Resumen', icon: '▦' },
@@ -76,6 +87,29 @@ const asistenciaColor = (valor) => {
   return 'success';
 };
 
+const clasificarEstadoAsistencia = (estadoRaw) => {
+  const estado = String(estadoRaw || '').trim().toUpperCase();
+  if (['AUSENTE', 'INASISTENTE', 'A'].includes(estado)) return 'ausente';
+  if (['JUSTIFICADO', 'JUSTIFICADA'].includes(estado)) return 'justificado';
+  if (['PRESENTE', 'ASISTIO', 'P'].includes(estado)) return 'presente';
+  return 'otro';
+};
+
+const extraerMesIndice = (fechaRaw) => {
+  if (!fechaRaw) return null;
+  const limpia = String(fechaRaw).split('T')[0];
+  const partes = limpia.split('-');
+  if (partes.length >= 2) {
+    const mesNum = Number(partes[1]);
+    if (mesNum >= 1 && mesNum <= 12) return mesNum - 1;
+  }
+  const fechaObj = new Date(fechaRaw);
+  if (!Number.isNaN(fechaObj.getTime())) {
+    return fechaObj.getMonth();
+  }
+  return null;
+};
+
 export default function DirectorDashboard() {
   const usuario = getUsuarioActual();
 
@@ -89,6 +123,10 @@ export default function DirectorDashboard() {
   const [asignaturas, setAsignaturas] = useState([]);
   const [asignaciones, setAsignaciones] = useState([]);
   const [estadisticasAsistencia, setEstadisticasAsistencia] = useState([]);
+  const [asistenciaCursoDetalle, setAsistenciaCursoDetalle] = useState([]);
+  const [cargandoAsistenciaCurso, setCargandoAsistenciaCurso] = useState(false);
+  const [mesSeleccionado, setMesSeleccionado] = useState(null);
+  const [mesHover, setMesHover] = useState(null);
   const [rendimiento, setRendimiento] = useState([]);
   const [justificativos, setJustificativos] = useState([]);
   const [horarios, setHorarios] = useState([]);
@@ -156,6 +194,27 @@ export default function DirectorDashboard() {
     }
   };
 
+  const cargarDetalleAsistenciaCurso = async (idCurso) => {
+    if (!idCurso) {
+      setAsistenciaCursoDetalle([]);
+      return;
+    }
+
+    setCargandoAsistenciaCurso(true);
+    try {
+      const registros = await getAsistenciaDirector({
+        anio,
+        cursoId: idCurso
+      });
+      setAsistenciaCursoDetalle(Array.isArray(registros) ? registros : []);
+    } catch (err) {
+      setError(err.message || 'No se pudo cargar el detalle de asistencia del curso.');
+      setAsistenciaCursoDetalle([]);
+    } finally {
+      setCargandoAsistenciaCurso(false);
+    }
+  };
+
   const cargarSeccion = async (seccionActual) => {
     try {
       setError('');
@@ -163,6 +222,9 @@ export default function DirectorDashboard() {
       if (seccionActual === 'asistencia') {
         const data = await getEstadisticasAsistenciaDirector(anio);
         setEstadisticasAsistencia(data);
+        if (cursoFiltro) {
+          await cargarDetalleAsistenciaCurso(cursoFiltro);
+        }
       }
 
       if (seccionActual === 'rendimiento') {
@@ -208,7 +270,109 @@ export default function DirectorDashboard() {
   const cambiarSeccion = (id) => {
     setSeccion(id);
     setBusqueda('');
+    if (id !== 'asistencia') {
+      setMesSeleccionado(null);
+      setMesHover(null);
+    }
   };
+
+  const handleSeleccionarCursoAsistencia = async (idCurso) => {
+    setCursoFiltro(idCurso);
+    setMesSeleccionado(null);
+    setMesHover(null);
+    await cargarDetalleAsistenciaCurso(idCurso);
+  };
+
+  const cursoAsistenciaActual = useMemo(() => {
+    if (!cursoFiltro) return null;
+    return estadisticasAsistencia.find(
+      (item) => String(item.curso_id) === String(cursoFiltro)
+    ) || null;
+  }, [estadisticasAsistencia, cursoFiltro]);
+
+  const analisisAsistenciaCurso = useMemo(() => {
+    const mesesBase = MESES_LARGOS.map((nombre, idx) => ({
+      mesIdx: idx,
+      mesCorto: MESES_CORTOS[idx],
+      mesNombre: nombre,
+      ausentes: 0,
+      presentes: 0,
+      justificados: 0,
+      total: 0
+    }));
+
+    const mapaAlumnos = new Map();
+
+    for (const reg of asistenciaCursoDetalle) {
+      const mesIdx = extraerMesIndice(reg.fecha);
+      const tipo = clasificarEstadoAsistencia(reg.estado);
+      const coincideMes =
+        mesSeleccionado === null || mesSeleccionado === undefined
+          ? true
+          : mesIdx === mesSeleccionado;
+
+      if (mesIdx !== null && mesesBase[mesIdx]) {
+        mesesBase[mesIdx].total += 1;
+        if (tipo === 'ausente') mesesBase[mesIdx].ausentes += 1;
+        else if (tipo === 'presente') mesesBase[mesIdx].presentes += 1;
+        else if (tipo === 'justificado') mesesBase[mesIdx].justificados += 1;
+      }
+
+      if (coincideMes) {
+        const key = String(reg.alumno_id || reg.alumno || reg.rut);
+        if (!mapaAlumnos.has(key)) {
+          mapaAlumnos.set(key, {
+            alumno_id: reg.alumno_id || key,
+            rut: reg.rut || '-',
+            alumno: reg.alumno || 'Estudiante sin nombre',
+            ausentes: 0,
+            justificados: 0,
+            presentes: 0,
+            total: 0
+          });
+        }
+        const entry = mapaAlumnos.get(key);
+        entry.total += 1;
+        if (tipo === 'ausente') entry.ausentes += 1;
+        else if (tipo === 'justificado') entry.justificados += 1;
+        else if (tipo === 'presente') entry.presentes += 1;
+      }
+    }
+
+    const mesesConDatos = mesesBase.filter((m) => m.total > 0);
+    const origenMeses = mesesConDatos.length > 0 ? mesesConDatos : mesesBase;
+
+    const mesMasFaltas = [...origenMeses].sort((a, b) => {
+      if (b.ausentes !== a.ausentes) return b.ausentes - a.ausentes;
+      return b.total - a.total;
+    })[0] || null;
+
+    const estudiantesRanking = Array.from(mapaAlumnos.values())
+      .map((est) => {
+        const porcentaje =
+          est.total > 0
+            ? Number((((est.presentes + est.justificados) / est.total) * 100).toFixed(1))
+            : 0;
+        return { ...est, porcentaje };
+      })
+      .sort((a, b) => {
+        if (b.ausentes !== a.ausentes) return b.ausentes - a.ausentes;
+        if (b.justificados !== a.justificados) return b.justificados - a.justificados;
+        return String(a.alumno).localeCompare(String(b.alumno), 'es');
+      });
+
+    const maxAusentesMes = Math.max(
+      1,
+      ...origenMeses.map((m) => m.ausentes)
+    );
+
+    return {
+      meses: origenMeses,
+      mesMasFaltas,
+      estudiantesRanking,
+      maxAusentesMes
+    };
+  }, [asistenciaCursoDetalle, mesSeleccionado]);
 
   const alumnosFiltrados = useMemo(() => {
     const texto = busqueda.trim().toLowerCase();
@@ -658,6 +822,13 @@ export default function DirectorDashboard() {
       }
     ]
     : [];
+
+  const mesActivoTooltip =
+    mesHover !== null
+      ? analisisAsistenciaCurso.meses.find((m) => m.mesIdx === mesHover)
+      : mesSeleccionado !== null
+        ? analisisAsistenciaCurso.meses.find((m) => m.mesIdx === mesSeleccionado)
+        : analisisAsistenciaCurso.mesMasFaltas;
 
   return (
     <div className="director-layout">
@@ -1283,78 +1454,296 @@ export default function DirectorDashboard() {
                   <div>
                     <h2>Asistencia</h2>
                     <p>
-                      Indicadores de asistencia por curso.
+                      Indicadores de asistencia por curso. Selecciona un curso para ver inasistencias por mes y estudiantes que más faltan.
                     </p>
                   </div>
+
+                  {cursoFiltro && (
+                    <button
+                      className="btn-secondary"
+                      onClick={() => handleSeleccionarCursoAsistencia('')}
+                    >
+                      Limpiar filtro de curso
+                    </button>
+                  )}
                 </div>
 
                 <div className="course-grid">
-                  {estadisticasAsistencia.map((item) => (
-                    <div
-                      className={`attendance-card ${asistenciaColor(
-                        item.porcentaje_asistencia
-                      )}`}
-                      key={item.curso_id}
-                    >
-                      <div className="attendance-title">
-                        <strong>{item.curso}</strong>
-                        <span>
-                          {item.porcentaje_asistencia}%
-                        </span>
-                      </div>
-
-                      <div className="progress">
-                        <div
-                          style={{
-                            width: `${Math.min(
-                              100,
-                              Number(
-                                item.porcentaje_asistencia
-                              )
-                            )}%`
-                          }}
-                        />
-                      </div>
-
-                      <div className="attendance-stats">
-                        <div>
-                          <span>Presentes</span>
-                          <strong>
-                            {item.presentes}
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>Ausentes</span>
-                          <strong>
-                            {item.ausentes}
-                          </strong>
-                        </div>
-
-                        <div>
-                          <span>Justificadas</span>
-                          <strong>
-                            {item.justificados}
-                          </strong>
-                        </div>
-                      </div>
-
-                      <button
-                        className="btn-card"
-                        onClick={() => {
-                          setCursoFiltro(item.curso_id);
-                        }}
+                  {estadisticasAsistencia.map((item) => {
+                    const esSeleccionado = String(cursoFiltro) === String(item.curso_id);
+                    return (
+                      <div
+                        className={`attendance-card ${asistenciaColor(
+                          item.porcentaje_asistencia
+                        )} ${esSeleccionado ? 'selected-course' : ''}`}
+                        key={item.curso_id}
                       >
-                        Filtrar curso
-                      </button>
-                    </div>
-                  ))}
+                        <div className="attendance-title">
+                          <strong>{item.curso}</strong>
+                          <span>
+                            {item.porcentaje_asistencia}%
+                          </span>
+                        </div>
+
+                        <div className="progress">
+                          <div
+                            style={{
+                              width: `${Math.min(
+                                100,
+                                Number(
+                                  item.porcentaje_asistencia
+                                )
+                              )}%`
+                            }}
+                          />
+                        </div>
+
+                        <div className="attendance-stats">
+                          <div>
+                            <span>Presentes</span>
+                            <strong>
+                              {item.presentes}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>Ausentes</span>
+                            <strong>
+                              {item.ausentes}
+                            </strong>
+                          </div>
+
+                          <div>
+                            <span>Justificadas</span>
+                            <strong>
+                              {item.justificados}
+                            </strong>
+                          </div>
+                        </div>
+
+                        <button
+                          className="btn-card"
+                          onClick={() =>
+                            handleSeleccionarCursoAsistencia(item.curso_id)
+                          }
+                        >
+                          {esSeleccionado ? 'Curso filtrado' : 'Filtrar curso'}
+                        </button>
+                      </div>
+                    );
+                  })}
                 </div>
 
                 {estadisticasAsistencia.length === 0 && (
                   <div className="empty-state">
                     No hay registros de asistencia para el
                     período seleccionado.
+                  </div>
+                )}
+
+                {cursoFiltro && (
+                  <div className="attendance-detail-panel director-card">
+                    <div className="attendance-detail-header">
+                      <div>
+                        <h3>
+                          Análisis de inasistencias · {cursoAsistenciaActual?.curso || 'Curso'}
+                        </h3>
+                        <p>
+                          Estudiantes con mayor cantidad de ausencias y comparación mensual para detectar el mes con más faltas.
+                        </p>
+                      </div>
+
+                      <div className="peak-month-badge">
+                        <span>Mes con más faltas</span>
+                        <strong>
+                          {analisisAsistenciaCurso.mesMasFaltas
+                            ? `${analisisAsistenciaCurso.mesMasFaltas.mesNombre} (${analisisAsistenciaCurso.mesMasFaltas.ausentes} ausencias)`
+                            : 'Sin datos'}
+                        </strong>
+                      </div>
+                    </div>
+
+                    {cargandoAsistenciaCurso ? (
+                      <div className="director-loading">
+                        <div className="loading-spinner"></div>
+                        <p>Calculando inasistencias por mes y estudiante...</p>
+                      </div>
+                    ) : (
+                      <>
+                        <div className="monthly-chart-box">
+                          <div className="monthly-chart-topbar">
+                            <div>
+                              <h4>Gráfico interactivo de ausencias por mes</h4>
+                              <span>
+                                Pasa el cursor sobre una barra para ver el detalle o haz clic en un mes para filtrar la tabla de estudiantes.
+                              </span>
+                            </div>
+
+                            {mesSeleccionado !== null && (
+                              <button
+                                type="button"
+                                className="btn-small primary"
+                                onClick={() => setMesSeleccionado(null)}
+                              >
+                                Ver todo el año
+                              </button>
+                            )}
+                          </div>
+
+                          {mesActivoTooltip && (
+                            <div className="monthly-tooltip-banner">
+                              <strong>{mesActivoTooltip.mesNombre}:</strong>
+                              <span>
+                                {mesActivoTooltip.ausentes} ausentes
+                              </span>
+                              <span>·</span>
+                              <span>
+                                {mesActivoTooltip.presentes} presentes
+                              </span>
+                              <span>·</span>
+                              <span>
+                                {mesActivoTooltip.justificados} justificados
+                              </span>
+                              <span>·</span>
+                              <span>
+                                {mesActivoTooltip.total} registros totales
+                              </span>
+                            </div>
+                          )}
+
+                          <div className="monthly-bars-grid" role="group" aria-label="Ausencias por mes">
+                            {analisisAsistenciaCurso.meses.map((mes) => {
+                              const alturaPct = Math.round(
+                                (mes.ausentes / analisisAsistenciaCurso.maxAusentesMes) * 100
+                              );
+                              const esPico =
+                                analisisAsistenciaCurso.mesMasFaltas &&
+                                analisisAsistenciaCurso.mesMasFaltas.ausentes > 0 &&
+                                mes.mesIdx === analisisAsistenciaCurso.mesMasFaltas.mesIdx;
+                              const estaActivo = mesSeleccionado === mes.mesIdx;
+
+                              return (
+                                <button
+                                  type="button"
+                                  key={mes.mesIdx}
+                                  className={`month-bar-item ${esPico ? 'is-peak' : ''} ${estaActivo ? 'is-selected' : ''}`}
+                                  onMouseEnter={() => setMesHover(mes.mesIdx)}
+                                  onMouseLeave={() => setMesHover(null)}
+                                  onFocus={() => setMesHover(mes.mesIdx)}
+                                  onBlur={() => setMesHover(null)}
+                                  onClick={() =>
+                                    setMesSeleccionado((prev) =>
+                                      prev === mes.mesIdx ? null : mes.mesIdx
+                                    )
+                                  }
+                                >
+                                  <span className="month-bar-count">{mes.ausentes}</span>
+                                  <div className="month-bar-track">
+                                    <div
+                                      className="month-bar-fill"
+                                      style={{
+                                        height: `${mes.ausentes > 0 ? Math.max(12, alturaPct) : 4}%`
+                                      }}
+                                    />
+                                  </div>
+                                  <span className="month-bar-label">{mes.mesCorto}</span>
+                                </button>
+                              );
+                            })}
+                          </div>
+                        </div>
+
+                        <div className="students-absences-section">
+                          <div className="students-absences-header">
+                            <h4>
+                              Estudiantes que faltan más
+                              {mesSeleccionado !== null
+                                ? ` (${MESES_LARGOS[mesSeleccionado]})`
+                                : ' (acumulado anual)'}
+                            </h4>
+                            <span>Ordenados de mayor a menor cantidad de ausencias</span>
+                          </div>
+
+                          <div className="table-wrapper">
+                            <table className="director-table">
+                              <thead>
+                                <tr>
+                                  <th>#</th>
+                                  <th>RUT</th>
+                                  <th>Estudiante</th>
+                                  <th>Ausencias</th>
+                                  <th>Justificadas</th>
+                                  <th>Presentes</th>
+                                  <th>Asistencia</th>
+                                  <th>Acción</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {analisisAsistenciaCurso.estudiantesRanking.map(
+                                  (est, index) => (
+                                    <tr key={est.alumno_id}>
+                                      <td>
+                                        <strong>{index + 1}</strong>
+                                      </td>
+                                      <td>{est.rut}</td>
+                                      <td>
+                                        <strong>{est.alumno}</strong>
+                                      </td>
+                                      <td>
+                                        <span
+                                          className={`absence-pill ${
+                                            est.ausentes >= 5
+                                              ? 'high'
+                                              : est.ausentes > 0
+                                                ? 'medium'
+                                                : 'zero'
+                                          }`}
+                                        >
+                                          {est.ausentes}
+                                        </span>
+                                      </td>
+                                      <td>{est.justificados}</td>
+                                      <td>{est.presentes}</td>
+                                      <td>
+                                        <span
+                                          className={`grade ${asistenciaColor(
+                                            est.porcentaje
+                                          )}`}
+                                        >
+                                          {est.porcentaje}%
+                                        </span>
+                                      </td>
+                                      <td>
+                                        {est.alumno_id &&
+                                        String(est.alumno_id).length > 10 ? (
+                                          <button
+                                            type="button"
+                                            className="btn-small primary"
+                                            onClick={() =>
+                                              abrirDetalleAlumno(est.alumno_id)
+                                            }
+                                          >
+                                            Ver ficha
+                                          </button>
+                                        ) : (
+                                          <span className="muted">-</span>
+                                        )}
+                                      </td>
+                                    </tr>
+                                  )
+                                )}
+                              </tbody>
+                            </table>
+
+                            {analisisAsistenciaCurso.estudiantesRanking.length === 0 && (
+                              <div className="empty-state">
+                                No hay registros de asistencia para este filtro.
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </>
+                    )}
                   </div>
                 )}
               </section>
@@ -2037,7 +2426,6 @@ export default function DirectorDashboard() {
   );
 }
 
-
 function AsignacionesDocenteAgrupadas({ asignaciones = [] }) {
   const cursosAgrupados = Object.values(
     asignaciones.reduce((grupos, asignacion) => {
@@ -2115,7 +2503,6 @@ function AsignacionesDocenteAgrupadas({ asignaciones = [] }) {
     </div>
   );
 }
-
 
 function AlumnoModal({ detalle }) {
   const alumno = detalle.alumno;
@@ -2357,7 +2744,6 @@ function AlumnoModal({ detalle }) {
   );
 }
 
-
 function DocenteModal({ detalle, onEditar }) {
   const docente = detalle.docente;
   const asignaciones = detalle.asignaciones ?? [];
@@ -2438,8 +2824,6 @@ function DocenteModal({ detalle, onEditar }) {
     </div>
   );
 }
-
-
 
 function CursoModal({ detalle }) {
   return (
